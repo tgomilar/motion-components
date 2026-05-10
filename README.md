@@ -6,7 +6,9 @@ Built around motion from the start, not retrofitted with it. Every component use
 
 Organized by **user intent**: reveal elements on scroll, respond to hover/press/tilt, animate text character-by-character, drive parallax effects, or drop in ready-made widgets like sliders, dialogs, and image comparisons.
 
-Built with [Motion](https://motion.dev/) (animation engine) and [Lit](https://lit.dev/) (web components). Full TypeScript types included.
+**[👉 Docs and Live preview](https://motion-components-docs.vercel.app/)**
+
+Built with [Motion](https://motion.dev/) and [Lit](https://lit.dev/). Full TypeScript types included.
 
 ## Install
 
@@ -18,6 +20,44 @@ Or via CDN — no build step required:
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/motion-components/dist/index.js"></script>
+```
+
+## Usage
+
+Import only the components you need (recommended — keeps bundles small):
+
+```js
+import 'motion-components/motion-reveal'
+import 'motion-components/motion-hover'
+import 'motion-components/motion-stagger'
+```
+
+Or import the whole library to register every component at once:
+
+```js
+import 'motion-components'
+```
+
+Add the preload stylesheet to prevent content flashing before animations run:
+
+```js
+import 'motion-components/preload.css'
+```
+
+```html
+<motion-reveal>
+  <h1>Animates in when scrolled into view</h1>
+</motion-reveal>
+
+<motion-hover scale="1.05">
+  <button>Hover me</button>
+</motion-hover>
+
+<motion-stagger interval="0.06">
+  <p>Staggered</p>
+  <p>Children</p>
+  <p>On entry</p>
+</motion-stagger>
 ```
 
 ## Components
@@ -56,38 +96,6 @@ Syntax-highlighted code display:
 
 **Note:** Import as `motion-components/code-window` (for `<motion-code>`) and `motion-components/code-inline` (for `<motion-code-inline>`). The subpath names differ from the tag names.
 
-## Usage
-
-Import only the components you need (recommended — keeps bundles small):
-
-```js
-import "motion-components/motion-reveal";
-import "motion-components/motion-hover";
-import "motion-components/motion-stagger";
-```
-
-Or import the whole library to register every component at once:
-
-```js
-import "motion-components";
-```
-
-```html
-<motion-reveal>
-  <h1>Animates in when scrolled into view</h1>
-</motion-reveal>
-
-<motion-hover scale="1.05">
-  <button>Hover me</button>
-</motion-hover>
-
-<motion-stagger interval="0.06">
-  <p>Staggered</p>
-  <p>Children</p>
-  <p>On entry</p>
-</motion-stagger>
-```
-
 ## Flash prevention (FOUC)
 
 Web components upgrade asynchronously, so slotted content can flash before animations run. Add one of the following to prevent this.
@@ -97,7 +105,7 @@ Web components upgrade asynchronously, so slotted content can flash before anima
 Import the preload CSS once to hide all preload-registered components until defined:
 
 ```js
-import "motion-components/preload.css";
+import 'motion-components/preload.css'
 ```
 
 Or link via CDN:
@@ -111,9 +119,9 @@ Or link via CDN:
 For granular control — only hide specific tags, or inject rules dynamically:
 
 ```js
-import { preload } from "motion-components";
+import { preload } from 'motion-components'
 
-preload(["motion-reveal", "motion-split", "motion-dialog"]);
+preload(['motion-reveal', 'motion-split', 'motion-dialog'])
 ```
 
 Call `preload()` with no arguments to cover all preload-registered components (a curated subset that hide content on initialization).
@@ -123,7 +131,7 @@ Call `preload()` with no arguments to cover all preload-registered components (a
 Some frameworks (Astro, Svelte, etc.) handle stylesheets differently. Use the raw CSS string directly:
 
 ```js
-import { preloadCSS } from "motion-components";
+import { preloadCSS } from 'motion-components'
 // inject preloadCSS into your framework's <head> mechanism
 ```
 
@@ -142,16 +150,16 @@ Most frameworks need no configuration. Exceptions:
 vue({
   template: {
     compilerOptions: {
-      isCustomElement: (tag) => tag.startsWith("motion-"),
+      isCustomElement: (tag) => tag.startsWith('motion-'),
     },
   },
-});
+})
 ```
 
 **Angular** — add `CUSTOM_ELEMENTS_SCHEMA` to the component or module where you use `motion-*` tags:
 
 ```ts
-import { CUSTOM_ELEMENTS_SCHEMA, Component } from "@angular/core";
+import { CUSTOM_ELEMENTS_SCHEMA, Component } from '@angular/core'
 
 @Component({
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

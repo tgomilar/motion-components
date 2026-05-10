@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Drop-in web components with spring physics animations. Works in React, Vue, Astro, Svelte, Angular, or plain HTML. Built on Motion and Lit.",
   "author": "Tanja Gomilar <tanja.gomilar@gmail.com>",
-  "homepage": "https://github.com/tgomilar/motion-components#readme",
+  "homepage": "https://motion-components-docs.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tgomilar/motion-components.git"
