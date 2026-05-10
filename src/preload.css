@@ -1,0 +1,26 @@
+motion-reveal:not(:defined),
+motion-split:not(:defined),
+motion-headline:not(:defined),
+motion-ticker:not(:defined),
+motion-slider:not(:defined),
+motion-blur:not(:defined),
+motion-blur-in:not(:defined),
+motion-counter:not(:defined),
+motion-flip-card:not(:defined),
+motion-glitch:not(:defined),
+motion-scramble:not(:defined),
+motion-typewriter:not(:defined) {
+  opacity: 0;
+}
+
+motion-gallery:not(:defined) > * {
+  opacity: 0;
+}
+
+motion-dialog:not(:defined) {
+  display: none;
+}
+
+motion-stagger:not(:defined) > * {
+  opacity: 0;
+}

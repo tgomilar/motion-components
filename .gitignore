@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-site
+*.local
+.*
+!.gitignore
+!.prettierrc
+!.size-limit.json
+!.claude/

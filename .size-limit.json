@@ -1,0 +1,41 @@
+[
+  { "name": "barrel (all components)", "path": "dist/index.js",            "limit": "60 kB", "ignore": ["lit", "motion"] },
+  { "name": "preload",                  "path": "dist/preload.js",          "limit": "1 kB",  "ignore": ["lit", "motion"] },
+
+  { "name": "motion-hover",             "path": "dist/motion-hover.js",     "limit": "1.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-press",             "path": "dist/motion-press.js",     "limit": "1.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-reveal",            "path": "dist/motion-reveal.js",    "limit": "1.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-stagger",           "path": "dist/motion-stagger.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-blur",              "path": "dist/motion-blur.js",      "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-blur-in",           "path": "dist/motion-blur-in.js",   "limit": "1.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-magnetic",          "path": "dist/motion-magnetic.js",  "limit": "1.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-tilt",              "path": "dist/motion-tilt.js",      "limit": "2 kB",   "ignore": ["lit", "motion"] },
+
+  { "name": "motion-text-mask",         "path": "dist/motion-text-mask.js", "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-split",             "path": "dist/motion-split.js",     "limit": "2.25 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-headline",          "path": "dist/motion-headline.js",  "limit": "2.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-glitch",            "path": "dist/motion-glitch.js",    "limit": "2 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-typewriter",        "path": "dist/motion-typewriter.js","limit": "2 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-counter",           "path": "dist/motion-counter.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-scramble",          "path": "dist/motion-scramble.js",  "limit": "2 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-ticker",            "path": "dist/motion-ticker.js",    "limit": "3 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-words",             "path": "dist/motion-words.js",     "limit": "2 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-curve",             "path": "dist/motion-curve.js",     "limit": "2.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-circle",            "path": "dist/motion-circle.js",    "limit": "2 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-arc",               "path": "dist/motion-arc.js",       "limit": "2 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-perspective",       "path": "dist/motion-perspective.js","limit": "2 kB",  "ignore": ["lit", "motion"] },
+  { "name": "motion-stretch",           "path": "dist/motion-stretch.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-liquid",            "path": "dist/motion-liquid.js",    "limit": "2 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-gravity",           "path": "dist/motion-gravity.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-font",              "path": "dist/motion-font.js",      "limit": "2 kB",   "ignore": ["lit", "motion"] },
+
+  { "name": "motion-slider",            "path": "dist/motion-slider.js",    "limit": "3.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-gallery",           "path": "dist/motion-gallery.js",   "limit": "5 kB",   "ignore": ["lit", "motion"] },
+  { "name": "motion-countdown",         "path": "dist/motion-countdown.js", "limit": "3 kB",   "ignore": ["lit", "motion"] },
+
+  { "name": "motion-parallax",          "path": "dist/motion-parallax.js",  "limit": "1.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-scene",             "path": "dist/motion-scene.js",     "limit": "2 kB",   "ignore": ["lit", "motion"] },
+
+  { "name": "code-window",              "path": "dist/code-window.js",      "limit": "6.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "code-inline",              "path": "dist/code-inline.js",      "limit": "1.75 kB","ignore": ["lit", "motion"] }
+]

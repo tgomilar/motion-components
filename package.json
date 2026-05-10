@@ -1,0 +1,244 @@
+{
+  "name": "motion-components",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Drop-in web components with spring physics animations. Works in React, Vue, Astro, Svelte, Angular, or plain HTML. Built on Motion and Lit.",
+  "author": "Tanja Gomilar <tanja.gomilar@gmail.com>",
+  "homepage": "https://github.com/tgomilar/motion-components#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tgomilar/motion-components.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tgomilar/motion-components/issues"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./preload": {
+      "types": "./dist/preload.d.ts",
+      "import": "./dist/preload.js"
+    },
+    "./preload.css": "./dist/preload.css",
+    "./code-inline": {
+      "types": "./dist/code/code-inline/code-inline.d.ts",
+      "import": "./dist/code-inline.js"
+    },
+    "./code-window": {
+      "types": "./dist/code/code-window/code-window.d.ts",
+      "import": "./dist/code-window.js"
+    },
+    "./motion-arc": {
+      "types": "./dist/text/motion-arc/motion-arc.d.ts",
+      "import": "./dist/motion-arc.js"
+    },
+    "./motion-blur": {
+      "types": "./dist/reveal/motion-blur/motion-blur.d.ts",
+      "import": "./dist/motion-blur.js"
+    },
+    "./motion-blur-in": {
+      "types": "./dist/reveal/motion-blur-in/motion-blur-in.d.ts",
+      "import": "./dist/motion-blur-in.js"
+    },
+    "./motion-circle": {
+      "types": "./dist/text/motion-circle/motion-circle.d.ts",
+      "import": "./dist/motion-circle.js"
+    },
+    "./motion-countdown": {
+      "types": "./dist/components/motion-countdown/motion-countdown.d.ts",
+      "import": "./dist/motion-countdown.js"
+    },
+    "./motion-counter": {
+      "types": "./dist/text/motion-counter/motion-counter.d.ts",
+      "import": "./dist/motion-counter.js"
+    },
+    "./motion-curve": {
+      "types": "./dist/text/motion-curve/motion-curve.d.ts",
+      "import": "./dist/motion-curve.js"
+    },
+    "./motion-dialog": {
+      "types": "./dist/components/motion-dialog/motion-dialog.d.ts",
+      "import": "./dist/motion-dialog.js"
+    },
+    "./motion-flip-card": {
+      "types": "./dist/components/motion-flip-card/motion-flip-card.d.ts",
+      "import": "./dist/motion-flip-card.js"
+    },
+    "./motion-font": {
+      "types": "./dist/text/motion-font/motion-font.d.ts",
+      "import": "./dist/motion-font.js"
+    },
+    "./motion-gallery": {
+      "types": "./dist/components/motion-gallery/motion-gallery.d.ts",
+      "import": "./dist/motion-gallery.js"
+    },
+    "./motion-glitch": {
+      "types": "./dist/text/motion-glitch/motion-glitch.d.ts",
+      "import": "./dist/motion-glitch.js"
+    },
+    "./motion-gravity": {
+      "types": "./dist/text/motion-gravity/motion-gravity.d.ts",
+      "import": "./dist/motion-gravity.js"
+    },
+    "./motion-headline": {
+      "types": "./dist/text/motion-headline/motion-headline.d.ts",
+      "import": "./dist/motion-headline.js"
+    },
+    "./motion-hover": {
+      "types": "./dist/respond/motion-hover/motion-hover.d.ts",
+      "import": "./dist/motion-hover.js"
+    },
+    "./motion-image-compare": {
+      "types": "./dist/components/motion-image-compare/motion-image-compare.d.ts",
+      "import": "./dist/motion-image-compare.js"
+    },
+    "./motion-liquid": {
+      "types": "./dist/text/motion-liquid/motion-liquid.d.ts",
+      "import": "./dist/motion-liquid.js"
+    },
+    "./motion-magnetic": {
+      "types": "./dist/respond/motion-magnetic/motion-magnetic.d.ts",
+      "import": "./dist/motion-magnetic.js"
+    },
+    "./motion-parallax": {
+      "types": "./dist/scroll/motion-parallax/motion-parallax.d.ts",
+      "import": "./dist/motion-parallax.js"
+    },
+    "./motion-perspective": {
+      "types": "./dist/text/motion-perspective/motion-perspective.d.ts",
+      "import": "./dist/motion-perspective.js"
+    },
+    "./motion-press": {
+      "types": "./dist/respond/motion-press/motion-press.d.ts",
+      "import": "./dist/motion-press.js"
+    },
+    "./motion-progress": {
+      "types": "./dist/components/motion-progress/motion-progress.d.ts",
+      "import": "./dist/motion-progress.js"
+    },
+    "./motion-reveal": {
+      "types": "./dist/reveal/motion-reveal/motion-reveal.d.ts",
+      "import": "./dist/motion-reveal.js"
+    },
+    "./motion-scene": {
+      "types": "./dist/scroll/motion-scene/motion-scene.d.ts",
+      "import": "./dist/motion-scene.js"
+    },
+    "./motion-scramble": {
+      "types": "./dist/text/motion-scramble/motion-scramble.d.ts",
+      "import": "./dist/motion-scramble.js"
+    },
+    "./motion-slider": {
+      "types": "./dist/components/motion-slider/motion-slider.d.ts",
+      "import": "./dist/motion-slider.js"
+    },
+    "./motion-split": {
+      "types": "./dist/text/motion-split/motion-split.d.ts",
+      "import": "./dist/motion-split.js"
+    },
+    "./motion-spotlight": {
+      "types": "./dist/components/motion-spotlight/motion-spotlight.d.ts",
+      "import": "./dist/motion-spotlight.js"
+    },
+    "./motion-stagger": {
+      "types": "./dist/reveal/motion-stagger/motion-stagger.d.ts",
+      "import": "./dist/motion-stagger.js"
+    },
+    "./motion-stretch": {
+      "types": "./dist/text/motion-stretch/motion-stretch.d.ts",
+      "import": "./dist/motion-stretch.js"
+    },
+    "./motion-text-mask": {
+      "types": "./dist/text/motion-text-mask/motion-text-mask.d.ts",
+      "import": "./dist/motion-text-mask.js"
+    },
+    "./motion-ticker": {
+      "types": "./dist/text/motion-ticker/motion-ticker.d.ts",
+      "import": "./dist/motion-ticker.js"
+    },
+    "./motion-tilt": {
+      "types": "./dist/respond/motion-tilt/motion-tilt.d.ts",
+      "import": "./dist/motion-tilt.js"
+    },
+    "./motion-typewriter": {
+      "types": "./dist/text/motion-typewriter/motion-typewriter.d.ts",
+      "import": "./dist/motion-typewriter.js"
+    },
+    "./motion-words": {
+      "types": "./dist/text/motion-words/motion-words.d.ts",
+      "import": "./dist/motion-words.js"
+    }
+  },
+  "sideEffects": [
+    "dist/index.js",
+    "dist/preload.js",
+    "dist/motion-*.js",
+    "dist/code-*.js"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "analyze": "cem analyze",
+    "build": "npm run generate-exports && vite build && npm run analyze",
+    "check:preload": "node scripts/check-preload.mjs",
+    "dev": "vite build --watch",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "generate-exports": "node scripts/generate-exports.mjs",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix",
+    "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run build && npm run size",
+    "size": "size-limit",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "web-components",
+    "custom-elements",
+    "animation",
+    "motion",
+    "lit",
+    "motion-one",
+    "spring",
+    "spring-physics",
+    "physics",
+    "scroll-animation",
+    "text-animation",
+    "interactive",
+    "framework-agnostic",
+    "html",
+    "react",
+    "vue",
+    "astro",
+    "svelte"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "lit": "^3.2.0",
+    "motion": "^11.11.0"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.11.0",
+    "@size-limit/preset-small-lib": "^12.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-lit": "^2.2.1",
+    "eslint-plugin-wc": "^3.1.0",
+    "prettier": "^3.8.3",
+    "size-limit": "^12.1.0",
+    "typescript": "^5.4.0",
+    "vite": "^8.0.1",
+    "vite-plugin-dts": "^4.0.0"
+  },
+  "customElements": "dist/custom-elements.json"
+}
