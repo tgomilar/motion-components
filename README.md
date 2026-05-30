@@ -11,7 +11,7 @@ Architected with animation as a core concern from day one - not bolted on as an 
 
 ▸ Reveal elements on scroll  ▸ Hover/press/tilt responses  ▸ Character-by-character text effects  ▸ Parallax & scroll scenes  ▸ Sliders, dialogs, image comparisons & more
 
-**[👉 Docs & Live Preview](https://motion-components-docs.vercel.app)**
+**[👉 Docs & Live Preview](https://www.motion-components.dev)**
 
 Built with [Motion](https://motion.dev/) and [Lit](https://lit.dev/). Full TypeScript types included.
 
@@ -113,58 +113,46 @@ export class MyComponent {}
 
 ## Components
 
-### Reveal
+### Reveal [🔗](https://www.motion-components.dev/docs/reveal/motion-reveal/)
 
 Entrance & transition effects
 
-```
-motion-reveal    motion-stagger    motion-blur    motion-blur-in
-```
+[`motion-reveal`](https://www.motion-components.dev/docs/reveal/motion-reveal/) [`motion-stagger`](https://www.motion-components.dev/docs/reveal/motion-stagger/) [`motion-blur`](https://www.motion-components.dev/docs/reveal/motion-blur/) [`motion-blur-in`](https://www.motion-components.dev/docs/reveal/motion-blur-in/)
 
-### Respond
+### Respond [🔗](https://www.motion-components.dev/docs/respond/motion-hover/)
 
 Input-driven interactivity
 
-```
-motion-hover    motion-press    motion-magnetic    motion-tilt
-```
+[`motion-hover`](https://www.motion-components.dev/docs/respond/motion-hover/) [`motion-press`](https://www.motion-components.dev/docs/respond/motion-press/) [`motion-magnetic`](https://www.motion-components.dev/docs/respond/motion-magnetic/) [`motion-tilt`](https://www.motion-components.dev/docs/respond/motion-tilt/)
 
-### Text
+### Text [🔗](https://www.motion-components.dev/docs/text/motion-split/)
 
 Typography & character effects
 
-```
-motion-split        motion-typewriter   motion-counter   motion-scramble
-motion-ticker       motion-words        motion-curve     motion-circle
-motion-arc          motion-headline     motion-glitch    motion-gravity
-motion-liquid       motion-perspective  motion-stretch   motion-text-mask
-motion-font
-```
+[`motion-split`](https://www.motion-components.dev/docs/text/motion-split/) [`motion-typewriter`](https://www.motion-components.dev/docs/text/motion-typewriter/) [`motion-counter`](https://www.motion-components.dev/docs/text/motion-counter/) [`motion-scramble`](https://www.motion-components.dev/docs/text/motion-scramble/)
+[`motion-ticker`](https://www.motion-components.dev/docs/text/motion-ticker/) [`motion-words`](https://www.motion-components.dev/docs/text/motion-words/) [`motion-curve`](https://www.motion-components.dev/docs/text/motion-curve/) [`motion-circle`](https://www.motion-components.dev/docs/text/motion-circle/)
+[`motion-arc`](https://www.motion-components.dev/docs/text/motion-arc/) [`motion-headline`](https://www.motion-components.dev/docs/text/motion-headline/) [`motion-glitch`](https://www.motion-components.dev/docs/text/motion-glitch/) [`motion-gravity`](https://www.motion-components.dev/docs/text/motion-gravity/)
+[`motion-liquid`](https://www.motion-components.dev/docs/text/motion-liquid/) [`motion-perspective`](https://www.motion-components.dev/docs/text/motion-perspective/) [`motion-stretch`](https://www.motion-components.dev/docs/text/motion-stretch/) [`motion-text-mask`](https://www.motion-components.dev/docs/text/motion-text-mask/)
+[`motion-font`](https://www.motion-components.dev/docs/text/motion-font/)
 
-### Scroll
+### Scroll [🔗](https://www.motion-components.dev/docs/scroll/motion-parallax/)
 
 Scroll-driven animation
 
-```
-motion-parallax    motion-scene
-```
+[`motion-parallax`](https://www.motion-components.dev/docs/scroll/motion-parallax/) [`motion-scene`](https://www.motion-components.dev/docs/scroll/motion-scene/)
 
-### Components
+### Components [🔗](https://www.motion-components.dev/docs/components/motion-slider/)
 
 Ready-made interactive components
 
-```
-motion-slider    motion-gallery    motion-dialog    motion-countdown
-motion-spotlight motion-progress   motion-image-compare  motion-flip-card
-```
+[`motion-slider`](https://www.motion-components.dev/docs/components/motion-slider/) [`motion-gallery`](https://www.motion-components.dev/docs/components/motion-gallery/) [`motion-dialog`](https://www.motion-components.dev/docs/components/motion-dialog/) [`motion-countdown`](https://www.motion-components.dev/docs/components/motion-countdown/)
+[`motion-spotlight`](https://www.motion-components.dev/docs/components/motion-spotlight/) [`motion-progress`](https://www.motion-components.dev/docs/components/motion-progress/) [`motion-image-compare`](https://www.motion-components.dev/docs/components/motion-image-compare/) [`motion-flip-card`](https://www.motion-components.dev/docs/components/motion-flip-card/)
 
-### Code
+### Code [🔗](https://www.motion-components.dev/docs/code/motion-code/)
 
 Syntax-highlighted code display
 
-```
-motion-code    motion-code-inline
-```
+[`motion-code`](https://www.motion-components.dev/docs/code/motion-code/) [`motion-code-inline`](https://www.motion-components.dev/docs/code/motion-code-inline/)
 
 > **Import note:** `motion-code` lives at `motion-components/code-window` and `motion-code-inline` at `motion-components/code-inline`. The subpath names differ from the tag names.
 
@@ -243,6 +231,18 @@ src/
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for component authoring conventions.
+
+---
+
+## Documentation
+
+[www.motion-components.dev](https://www.motion-components.dev)
+
+---
+
+## Showcase
+
+[Showcase 🔗](https://www.motion-components.dev/showcase/) · [Parallax 🔗](https://www.motion-components.dev/showcase/parallax/) · [Scene 🔗](https://www.motion-components.dev/showcase/scene/) · [Motion Font 🔗](https://www.motion-components.dev/showcase/motion-font/)
 
 ---
 
