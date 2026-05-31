@@ -8,13 +8,12 @@ const entries: Record<string, string> = {
 
   'motion-hover': 'src/respond/motion-hover/motion-hover.ts',
   'motion-press': 'src/respond/motion-press/motion-press.ts',
-  'motion-magnetic': 'src/respond/motion-magnetic/motion-magnetic.ts',
-  'motion-tilt': 'src/respond/motion-tilt/motion-tilt.ts',
-
   'motion-reveal': 'src/reveal/motion-reveal/motion-reveal.ts',
   'motion-stagger': 'src/reveal/motion-stagger/motion-stagger.ts',
   'motion-blur': 'src/reveal/motion-blur/motion-blur.ts',
   'motion-blur-in': 'src/reveal/motion-blur-in/motion-blur-in.ts',
+  'motion-magnetic': 'src/respond/motion-magnetic/motion-magnetic.ts',
+  'motion-tilt': 'src/respond/motion-tilt/motion-tilt.ts',
 
   'motion-text-mask': 'src/text/motion-text-mask/motion-text-mask.ts',
   'motion-split': 'src/text/motion-split/motion-split.ts',
@@ -33,6 +32,7 @@ const entries: Record<string, string> = {
   'motion-liquid': 'src/text/motion-liquid/motion-liquid.ts',
   'motion-gravity': 'src/text/motion-gravity/motion-gravity.ts',
   'motion-font': 'src/text/motion-font/motion-font.ts',
+  'motion-swap': 'src/text/motion-swap/motion-swap.ts',
 
   'motion-slider': 'src/components/motion-slider/motion-slider.ts',
   'motion-gallery': 'src/components/motion-gallery/motion-gallery.ts',

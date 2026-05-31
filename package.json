@@ -153,6 +153,10 @@
       "types": "./dist/text/motion-stretch/motion-stretch.d.ts",
       "import": "./dist/motion-stretch.js"
     },
+    "./motion-swap": {
+      "types": "./dist/text/motion-swap/motion-swap.d.ts",
+      "import": "./dist/motion-swap.js"
+    },
     "./motion-text-mask": {
       "types": "./dist/text/motion-text-mask/motion-text-mask.d.ts",
       "import": "./dist/motion-text-mask.js"
