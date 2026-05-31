@@ -135,7 +135,6 @@ export class MotionCurve extends LitElement implements MotionCurveProps {
     if (this.loop) {
       this.setupLoop()
     } else {
-      if (this.numSets !== 2) this.numSets = 2
       this.measureStatic()
       this.startWave()
     }
@@ -143,31 +142,36 @@ export class MotionCurve extends LitElement implements MotionCurveProps {
 
   private setupLoop() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const firstSet = this.shadowRoot!.querySelector<HTMLElement>('.set')
-    if (!firstSet) return
 
-    const setWidth = firstSet.offsetWidth
-    if (!setWidth) {
-      requestAnimationFrame(() => this.setupLoop())
-      return
-    }
+    // Measure committed layout in a rAF so the numSets update is scheduled
+    // outside Lit's update lifecycle, avoiding a change-in-update warning.
+    this.raf = requestAnimationFrame(() => {
+      const firstSet = this.shadowRoot!.querySelector<HTMLElement>('.set')
+      if (!firstSet) return
 
-    const loopWidth = setWidth + this.loopGap
+      const setWidth = firstSet.offsetWidth
+      if (!setWidth) {
+        this.setupLoop()
+        return
+      }
 
-    const needed = Math.max(2, Math.ceil(this.offsetWidth / loopWidth) + 1)
-    if (needed !== this.numSets) {
-      this.numSets = needed
-      return
-    }
+      const loopWidth = setWidth + this.loopGap
 
-    const track = this.shadowRoot!.querySelector<HTMLElement>('.track')!
-    this.loopControls = animate(
-      track,
-      { x: [0, -loopWidth] },
-      { duration: loopWidth / this.loopSpeed, repeat: Infinity, ease: 'linear' },
-    )
+      const needed = Math.max(2, Math.ceil(this.offsetWidth / loopWidth) + 1)
+      if (needed !== this.numSets) {
+        this.numSets = needed
+        return
+      }
 
-    this.startWave()
+      const track = this.shadowRoot!.querySelector<HTMLElement>('.track')!
+      this.loopControls = animate(
+        track,
+        { x: [0, -loopWidth] },
+        { duration: loopWidth / this.loopSpeed, repeat: Infinity, ease: 'linear' },
+      )
+
+      this.startWave()
+    })
   }
 
   private measureStatic() {
