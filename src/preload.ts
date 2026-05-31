@@ -13,6 +13,7 @@ const RULES: Record<string, string> = {
   'motion-scramble': 'motion-scramble:not(:defined){opacity:0}',
   'motion-typewriter': 'motion-typewriter:not(:defined){opacity:0}',
   'motion-flip-card': 'motion-flip-card:not(:defined){opacity:0}',
+  'motion-swap': 'motion-swap:not(:defined){opacity:0}',
   'motion-dialog': 'motion-dialog:not(:defined){display:none}',
 }
 

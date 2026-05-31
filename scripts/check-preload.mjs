@@ -30,9 +30,6 @@ const INLINE_OPACITY_RE = /opacity\s*:\s*0\b/
 const ANIMATE_PRIVATE_OPACITY_RE = /animate\(\s*this\._\w+\s*,\s*\{\s*[^}]*opacity\s*:\s*0/
 const CHILD_HIDE_RE = /(?:Array\.from\(this\.children\)|this\.children\b)[^;]*\.opacity\s*=\s*['"]0['"]|child\.style\.opacity\s*=\s*['"]0['"]/s
 const STRUCTURAL_STYLE_RE = /Object\.assign\s*\(\s*this\.style\s*,\s*\{[^}]*(?:overflow|position|display)\s*:/s
-const HOST_VISIBILITY_RE = /visibility\s*:\s*hidden/
-// Explicit opt-in: // @preload host  or  // @preload children  or  // @preload (defaults to host)
-const PRELOAD_ANNOTATION_RE = /\/\/\s*@preload(?:\s+(host|children))?/
 
 function detect(file) {
   const src = readFileSync(file, 'utf8')
@@ -48,15 +45,7 @@ function detect(file) {
   if (ANIMATE_PRIVATE_OPACITY_RE.test(src)) { needsHost = true; reasons.push('animate(this._x, { opacity: 0 })') }
   if (INLINE_OPACITY_RE.test(src) && /<span[^>]*opacity\s*:\s*0/.test(src)) { needsHost = true; reasons.push('inline opacity:0 in template') }
   if (STRUCTURAL_STYLE_RE.test(src)) { needsHost = true; reasons.push('structural styles set on host (display/position/overflow)') }
-  if (HOST_VISIBILITY_RE.test(src)) { needsHost = true; reasons.push('visibility:hidden in static styles') }
   if (CHILD_HIDE_RE.test(src)) { needsChildren = true; reasons.push('children opacity = "0" in lifecycle') }
-
-  const annotation = src.match(PRELOAD_ANNOTATION_RE)
-  if (annotation) {
-    const variant = annotation[1] ?? 'host'
-    if (variant === 'children') { needsChildren = true; reasons.push('@preload children (explicit)') }
-    else { needsHost = true; reasons.push('@preload host (explicit)') }
-  }
 
   return { tag, file, needsHost, needsChildren, reasons }
 }

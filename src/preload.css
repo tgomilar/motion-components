@@ -9,6 +9,7 @@ motion-counter:not(:defined),
 motion-flip-card:not(:defined),
 motion-glitch:not(:defined),
 motion-scramble:not(:defined),
+motion-swap:not(:defined),
 motion-typewriter:not(:defined) {
   opacity: 0;
 }
