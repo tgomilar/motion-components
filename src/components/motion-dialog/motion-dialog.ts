@@ -162,10 +162,20 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
       dialog.style.opacity = '0'
     } else {
       const exitDuration = this.duration * 0.65
-      const spring = { type: 'spring', bounce: 0, duration: exitDuration } as const
       await Promise.all([
-        this.noBackdrop ? Promise.resolve() : animate(backdropEl, { opacity: 0 }, spring),
-        animate(dialog, { opacity: 0, y: this.y * 0.6 }, spring),
+        this.noBackdrop
+          ? Promise.resolve()
+          : animate(backdropEl, { opacity: 0 }, { ease: 'easeInOut', duration: exitDuration }),
+        animate(
+          dialog,
+          { opacity: 0, y: this.y * 0.6 },
+          {
+            // Fade the panel on a clean easeIn (no spring tail, so letters don't
+            // linger) and finish ahead of the backdrop. Keep the slide on a spring.
+            opacity: { ease: 'easeIn', duration: exitDuration * 0.7 },
+            y: { type: 'spring', bounce: 0, duration: exitDuration },
+          },
+        ),
       ])
     }
 
