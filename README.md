@@ -132,8 +132,8 @@ Typography & character effects
 [`motion-split`](https://www.motion-components.dev/docs/text/motion-split/) [`motion-typewriter`](https://www.motion-components.dev/docs/text/motion-typewriter/) [`motion-counter`](https://www.motion-components.dev/docs/text/motion-counter/) [`motion-scramble`](https://www.motion-components.dev/docs/text/motion-scramble/)
 [`motion-ticker`](https://www.motion-components.dev/docs/text/motion-ticker/) [`motion-words`](https://www.motion-components.dev/docs/text/motion-words/) [`motion-curve`](https://www.motion-components.dev/docs/text/motion-curve/) [`motion-circle`](https://www.motion-components.dev/docs/text/motion-circle/)
 [`motion-arc`](https://www.motion-components.dev/docs/text/motion-arc/) [`motion-headline`](https://www.motion-components.dev/docs/text/motion-headline/) [`motion-glitch`](https://www.motion-components.dev/docs/text/motion-glitch/) [`motion-gravity`](https://www.motion-components.dev/docs/text/motion-gravity/)
-[`motion-liquid`](https://www.motion-components.dev/docs/text/motion-liquid/) [`motion-perspective`](https://www.motion-components.dev/docs/text/motion-perspective/) [`motion-stretch`](https://www.motion-components.dev/docs/text/motion-stretch/) [`motion-text-mask`](https://www.motion-components.dev/docs/text/motion-text-mask/)
-[`motion-font`](https://www.motion-components.dev/docs/text/motion-font/)
+[`motion-liquid`](https://www.motion-components.dev/docs/text/motion-liquid/) [`motion-perspective`](https://www.motion-components.dev/docs/text/motion-perspective/) [`motion-stretch`](https://www.motion-components.dev/docs/text/motion-stretch/) [`motion-swap`](https://www.motion-components.dev/docs/text/motion-swap/)
+[`motion-text-mask`](https://www.motion-components.dev/docs/text/motion-text-mask/) [`motion-font`](https://www.motion-components.dev/docs/text/motion-font/)
 
 ### Scroll [🔗](https://www.motion-components.dev/docs/scroll/motion-parallax/)
 

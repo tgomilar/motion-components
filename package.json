@@ -2,9 +2,9 @@
   "name": "motion-components",
   "version": "0.1.0",
   "type": "module",
-  "description": "Drop-in web components with spring physics animations. A collection of 30+ motion components for scroll, reveal, respond, code, text and more.",
+  "description": "Framework-agnostic web components with physics-based motion. Built on Motion and Lit.",
   "author": "Tanja Gomilar <tanja.gomilar@gmail.com>",
-  "homepage": "https://www.motion-components.dev",
+  "homepage": "https://github.com/tgomilar/motion-components#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tgomilar/motion-components.git"
@@ -178,15 +178,6 @@
       "import": "./dist/motion-words.js"
     }
   },
-  "sideEffects": [
-    "dist/index.js",
-    "dist/preload.js",
-    "dist/motion-*.js",
-    "dist/code-*.js"
-  ],
-  "engines": {
-    "node": ">=18"
-  },
   "files": [
     "dist"
   ],
@@ -202,34 +193,19 @@
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
     "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run build && npm run size",
     "size": "size-limit",
+    "site:dev": "cd site && npm run dev",
+    "site:build": "cd site && npm run build",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "web-components",
-    "custom-elements",
     "animation",
-    "scroll",
-    "reveal",
-    "respond",
-    "code",
-    "components",
-    "text",
-    "typewriter",
     "motion",
     "lit",
     "motion-one",
     "spring",
-    "spring-physics",
     "physics",
-    "scroll-animation",
-    "text-animation",
-    "interactive",
-    "framework-agnostic",
-    "html",
-    "react",
-    "vue",
-    "astro",
-    "svelte"
+    "framework-agnostic"
   ],
   "license": "MIT",
   "dependencies": {
