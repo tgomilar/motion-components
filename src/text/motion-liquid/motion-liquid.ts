@@ -1,5 +1,5 @@
-import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { LitElement, html, css, svg, nothing } from 'lit'
+import { customElement, property, query } from 'lit/decorators.js'
 import type { MotionLiquidProps } from './motion-liquid.types.js'
 
 export type { MotionLiquidProps } from './motion-liquid.types.js'
@@ -7,6 +7,14 @@ export type { MotionLiquidProps } from './motion-liquid.types.js'
 /**
  * Liquid-distorted text via SVG turbulence + displacement-map. Looped
  * fractal-noise warps the text into a flowing, organic shape.
+ *
+ * The text is rendered as SVG `<text>` and the filter is applied to that SVG
+ * content directly — not to an HTML element via CSS `filter: url(#…)`. On
+ * WebKit (iOS Safari and every iOS browser) a `url()` filter applied to an
+ * HTML element is cached as a composited layer that only re-rasterizes when a
+ * repaint is forced (e.g. scrolling), so the distortion appears frozen except
+ * while scrolling. SVG content re-renders its own filtered output on every
+ * SMIL tick, which animates reliably across platforms.
  *
  * @element motion-liquid
  *
@@ -38,87 +46,127 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
     }
 
     svg {
-      position: absolute;
-      width: 0;
-      height: 0;
-      pointer-events: none;
+      display: inline-block;
+      overflow: visible;
+      vertical-align: baseline;
     }
 
-    .text {
-      display: inline-block;
+    text {
+      fill: currentColor;
     }
   `
 
-  private raf: number | null = null
-  private t = 0
-  private paused = false
+  @query('svg') private svgEl!: SVGSVGElement | null
+  @query('text') private textEl!: SVGTextElement | null
+
+  private hovered = false
+  private resizeObserver: ResizeObserver | null = null
 
   connectedCallback() {
     super.connectedCallback()
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)
+    // Re-fit on zoom, container resize, or CSS-driven font-size changes — none
+    // of which fire a Lit update.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.fit())
+      this.resizeObserver.observe(this)
+    }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    if (this.raf !== null) cancelAnimationFrame(this.raf)
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
+    this.resizeObserver?.disconnect()
+    this.resizeObserver = null
   }
 
-  private onEnter = () => {
-    if (this.pauseOnHover) this.paused = true
-  }
-  private onLeave = () => {
-    if (this.pauseOnHover) this.paused = false
+  firstUpdated() {
+    // Re-fit once web fonts settle, since metrics change after they load.
+    if ('fonts' in document) document.fonts.ready.then(() => this.fit())
   }
 
   updated(changed: Map<string, unknown>) {
-    const needsRestart = changed.has('intensity') || changed.has('speed') || changed.has('text')
-    if (needsRestart) this.startLoop()
+    // Only the text (and font/size events handled elsewhere) changes geometry,
+    // so avoid a forced getBBox reflow on speed/intensity/pause-only updates.
+    if (changed.has('text')) this.fit()
+    if (changed.has('pauseOnHover')) this.syncPause()
   }
 
-  private startLoop() {
-    if (this.raf !== null) {
-      cancelAnimationFrame(this.raf)
-      this.raf = null
+  /** Size the SVG viewport to the text's bounding box so layout reserves the
+   * right space; `overflow: visible` lets the displaced pixels draw outside. */
+  private fit() {
+    const svgEl = this.svgEl
+    const textEl = this.textEl
+    if (!svgEl || !textEl) return
+    if (!this.text) return this.resetFit(svgEl)
+
+    let box: DOMRect
+    try {
+      box = textEl.getBBox()
+    } catch {
+      // getBBox throws when an ancestor is display:none; keep the last good
+      // size rather than collapsing a temporarily-hidden element.
+      return
     }
-    this.t = 0
+    if (!box.width || !box.height) return this.resetFit(svgEl)
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    svgEl.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`)
+    svgEl.setAttribute('width', String(box.width))
+    svgEl.setAttribute('height', String(box.height))
 
-    const turbulence = this.shadowRoot!.querySelector<SVGFETurbulenceElement>('feTurbulence')
-    const displacement =
-      this.shadowRoot!.querySelector<SVGFEDisplacementMapElement>('feDisplacementMap')
-    if (!turbulence || !displacement) return
+    // Text is drawn on its alphabetic baseline at y=0, so the box bottom sits
+    // `box.y + box.height` px below the baseline (the descender depth). The
+    // inline SVG aligns its bottom edge to the parent baseline, so shift it
+    // down by that amount to land the text baseline on the parent baseline.
+    svgEl.style.verticalAlign = `${-(box.y + box.height)}px`
+  }
 
-    let last = performance.now()
+  /** Collapse the SVG to nothing so empty text reserves no space. */
+  private resetFit(svgEl: SVGSVGElement) {
+    svgEl.removeAttribute('viewBox')
+    svgEl.setAttribute('width', '0')
+    svgEl.setAttribute('height', '0')
+    svgEl.style.verticalAlign = ''
+  }
 
-    const step = (now: number) => {
-      const dt = (now - last) / 1000
-      last = now
+  private onEnter = () => {
+    this.hovered = true
+    this.syncPause()
+  }
+  private onLeave = () => {
+    this.hovered = false
+    this.syncPause()
+  }
 
-      if (!this.paused) {
-        this.t += dt * this.speed
-      }
+  /** Pause the SMIL timeline only while hovered AND pause-on-hover is on, and
+   * resume otherwise — so toggling the prop off mid-hover doesn't strand it. */
+  private syncPause() {
+    const svgEl = this.svgEl
+    if (!svgEl) return
+    if (this.pauseOnHover && this.hovered) svgEl.pauseAnimations()
+    else svgEl.unpauseAnimations()
+  }
 
-      const t = this.t
-      const bfx = 0.018 + Math.sin(t * 0.7) * 0.009
-      const bfy = 0.018 + Math.cos(t * 0.5) * 0.009
-      turbulence.setAttribute('baseFrequency', `${bfx} ${bfy}`)
-
-      const scale = this.intensity * (0.3 + 0.7 * ((Math.sin(t * 1.2) + 1) / 2))
-      displacement.setAttribute('scale', String(scale))
-
-      this.raf = requestAnimationFrame(step)
-    }
-
-    this.raf = requestAnimationFrame(step)
+  private get shouldAnimate() {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    return !reduce && this.speed > 0
   }
 
   render() {
+    const animate = this.shouldAnimate
+
+    // Each primitive loops on its own period (derived from `speed`) so the
+    // turbulence wander and the displacement pulse stay decoupled — that
+    // mismatch is what reads as organic, flowing motion.
+    const freqDur = `${(9 / this.speed).toFixed(3)}s`
+    const scaleDur = `${(5.24 / this.speed).toFixed(3)}s`
+    const min = (this.intensity * 0.3).toFixed(3)
+    const max = this.intensity.toFixed(3)
+
     return html`
-      <svg aria-hidden="true">
+      <svg role="img" aria-label=${this.text} xmlns="http://www.w3.org/2000/svg">
         <defs>
           <filter id="liquid-filter" x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence
@@ -127,18 +175,42 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
               numOctaves="3"
               seed="2"
               result="noise"
-            />
+            >
+              ${animate
+                ? svg`<animate
+                    attributeName="baseFrequency"
+                    dur=${freqDur}
+                    values="0.018 0.018; 0.027 0.012; 0.012 0.027; 0.018 0.018"
+                    repeatCount="indefinite"
+                    calcMode="spline"
+                    keyTimes="0; 0.33; 0.66; 1"
+                    keySplines="0.4 0 0.6 1; 0.4 0 0.6 1; 0.4 0 0.6 1"
+                  />`
+                : nothing}
+            </feTurbulence>
             <feDisplacementMap
               in="SourceGraphic"
               in2="noise"
               scale=${this.intensity}
               xChannelSelector="R"
               yChannelSelector="G"
-            />
+            >
+              ${animate
+                ? svg`<animate
+                    attributeName="scale"
+                    dur=${scaleDur}
+                    values="${min}; ${max}; ${min}"
+                    repeatCount="indefinite"
+                    calcMode="spline"
+                    keyTimes="0; 0.5; 1"
+                    keySplines="0.4 0 0.6 1; 0.4 0 0.6 1"
+                  />`
+                : nothing}
+            </feDisplacementMap>
           </filter>
         </defs>
+        <text x="0" y="0" filter=${animate ? 'url(#liquid-filter)' : nothing}>${this.text}</text>
       </svg>
-      <span class="text" style="filter: url(#liquid-filter)">${this.text}</span>
     `
   }
 }
