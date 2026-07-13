@@ -4,6 +4,7 @@ dist-site
 *.local
 .*
 !.gitignore
+!.npmrc
 !.prettierrc
 !.size-limit.json
 !.claude/
