@@ -181,6 +181,10 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "scripts": {
     "analyze": "cem analyze",
     "build": "npm run generate-exports && vite build && npm run analyze",
