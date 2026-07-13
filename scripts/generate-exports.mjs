@@ -30,8 +30,7 @@ const componentExports = {}
 for (const { name, source } of entries) {
   if (name === 'index' || name === 'preload') continue
   const match = source.match(/src\/(.+?)\/motion-[\w-]+\//)
-  const codeMatch = source.match(/src\/(.+?)\/code-[\w-]+\//)
-  const cat = match ? match[1] : codeMatch ? codeMatch[1] : null
+  const cat = match ? match[1] : null
 
   if (cat) {
     componentExports[`./${name}`] = {

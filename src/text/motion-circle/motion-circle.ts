@@ -1,7 +1,8 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate } from 'motion'
-import type { AnimationPlaybackControls } from 'motion'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
+import type { PlaybackRun } from '../../utils/playback.js'
 import type { MotionCircleProps, CircleDirection } from './motion-circle.types.js'
 
 export type { MotionCircleProps, CircleDirection } from './motion-circle.types.js'
@@ -22,7 +23,7 @@ export type { MotionCircleProps, CircleDirection } from './motion-circle.types.j
  * ```
  */
 @customElement('motion-circle')
-export class MotionCircle extends LitElement implements MotionCircleProps {
+export class MotionCircle extends Controllable(LitElement) implements MotionCircleProps {
   /** Text to lay out around the circle. */
   @property({ type: String }) text = ''
   /** Circle radius in pixels. */
@@ -75,7 +76,11 @@ export class MotionCircle extends LitElement implements MotionCircleProps {
     }
   `
 
-  private controls: AnimationPlaybackControls | null = null
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => this.startRun(),
+    applyFinalState: () => this.resetRing(),
+    applyInitialState: () => this.resetRing(),
+  })
 
   connectedCallback() {
     super.connectedCallback()
@@ -85,7 +90,6 @@ export class MotionCircle extends LitElement implements MotionCircleProps {
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.controls?.stop()
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
   }
@@ -98,29 +102,49 @@ export class MotionCircle extends LitElement implements MotionCircleProps {
       changed.has('direction') ||
       changed.has('upright')
 
-    if (needsRestart) this.startAnimation()
+    if (needsRestart) this.restart()
   }
 
   private onEnter = () => {
-    if (this.pauseOnHover) this.controls?.pause()
+    if (this.pauseOnHover) this.pause()
   }
   private onLeave = () => {
-    if (this.pauseOnHover) this.controls?.play()
+    if (this.pauseOnHover && this.playState === 'paused') void this.play()
   }
 
-  private startAnimation() {
-    this.controls?.stop()
-    const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
-    if (!ring) return
+  private restart() {
+    this.playback.teardown()
+    void this.play()
+  }
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  private startRun(): PlaybackRun {
+    const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
+    if (!ring) {
+      return {
+        handle: { pause: () => {}, resume: () => {}, finish: () => {}, cancel: () => {} },
+        done: Promise.resolve(),
+      }
+    }
 
     const to = this.direction === 'ccw' ? -360 : 360
-    this.controls = animate(
+    const controls = animate(
       ring,
       { rotate: [0, to] },
       { duration: this.speed, repeat: Infinity, ease: 'linear' },
     )
+    return {
+      handle: {
+        pause: () => controls.pause(),
+        resume: () => controls.play(),
+        finish: () => controls.cancel(),
+        cancel: () => controls.cancel(),
+      },
+    }
+  }
+
+  private resetRing() {
+    const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
+    if (ring) ring.style.transform = ''
   }
 
   render() {

@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
+import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 import type { MotionTiltProps } from './motion-tilt.types.js'
 
 export type { MotionTiltProps } from './motion-tilt.types.js'
@@ -32,6 +33,8 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
   @property({ type: Number }) scale = 1.04
   /** When `true`, render a moving radial-gradient gloss highlight overlay. */
   @property({ type: Boolean }) gloss = false
+  /** When `true`, ignores pointer input and settles to the rest state. */
+  @property({ type: Boolean, reflect: true }) disabled = false
 
   @query('.inner') private inner!: HTMLElement
   @query('.gloss') private glossEl!: HTMLElement
@@ -66,6 +69,7 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
 
   connectedCallback() {
     super.connectedCallback()
+    registerDisableable(this)
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mousemove', this.onMove)
     this.addEventListener('mouseleave', this.onLeave)
@@ -73,10 +77,15 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
 
   disconnectedCallback() {
     super.disconnectedCallback()
+    unregisterDisableable(this)
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mousemove', this.onMove)
     this.removeEventListener('mouseleave', this.onLeave)
     this.glossAnim?.stop()
+  }
+
+  updated(changed: Map<string, unknown>) {
+    if (changed.get('disabled') === false && this.disabled && !this.reduced) this.settle()
   }
 
   firstUpdated() {
@@ -93,7 +102,7 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
   }
 
   private onEnter = () => {
-    if (this.reduced || !this.gloss || !this.glossEl) return
+    if (this.disabled || this.reduced || !this.gloss || !this.glossEl) return
     this.glossAnim?.stop()
     this.glossAnim = animate(
       this.glossEl,
@@ -103,7 +112,7 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
   }
 
   private onMove = (e: MouseEvent) => {
-    if (this.reduced) return
+    if (this.disabled || this.reduced) return
     const rect = this.getBoundingClientRect()
     const px = (e.clientX - rect.left) / rect.width
     const py = (e.clientY - rect.top) / rect.height
@@ -133,7 +142,11 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
   }
 
   private onLeave = () => {
-    if (this.reduced) return
+    if (this.disabled || this.reduced) return
+    this.settle()
+  }
+
+  private settle() {
     animate(
       this.inner,
       { rotateX: 0, rotateY: 0, scale: 1 },

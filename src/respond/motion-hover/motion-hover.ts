@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate } from 'motion'
+import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 import type { MotionHoverProps } from './motion-hover.types.js'
 
 export type { MotionHoverProps } from './motion-hover.types.js'
@@ -36,6 +37,8 @@ export class MotionHover extends LitElement implements MotionHoverProps {
   @property({ type: Number }) duration = 0.3
   /** Spring bounciness (0 = critically damped, higher = more elastic). */
   @property({ type: Number }) bounce = 0.3
+  /** When `true`, ignores pointer input and settles to the rest state. */
+  @property({ type: Boolean, reflect: true }) disabled = false
 
   static styles = css`
     :host {
@@ -49,14 +52,20 @@ export class MotionHover extends LitElement implements MotionHoverProps {
 
   connectedCallback() {
     super.connectedCallback()
+    registerDisableable(this)
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
+    unregisterDisableable(this)
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
+  }
+
+  updated(changed: Map<string, unknown>) {
+    if (changed.get('disabled') === false && this.disabled && !this.reduced) this.settle()
   }
 
   private get spring() {
@@ -64,7 +73,7 @@ export class MotionHover extends LitElement implements MotionHoverProps {
   }
 
   private onEnter = () => {
-    if (this.reduced) return
+    if (this.disabled || this.reduced) return
     animate(
       this,
       { scale: this.scale, x: this.x, y: this.y, rotate: this.rotate, skewX: this.skew },
@@ -73,7 +82,11 @@ export class MotionHover extends LitElement implements MotionHoverProps {
   }
 
   private onLeave = () => {
-    if (this.reduced) return
+    if (this.disabled || this.reduced) return
+    this.settle()
+  }
+
+  private settle() {
     animate(this, { scale: 1, x: 0, y: 0, rotate: 0, skewX: 0 }, this.spring)
   }
 

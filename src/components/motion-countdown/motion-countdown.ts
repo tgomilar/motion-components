@@ -1,7 +1,9 @@
-import { LitElement, html, css } from 'lit'
+import { LitElement, html, css, type PropertyValues } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { ref } from 'lit/directives/ref.js'
 import { animate } from 'motion'
+import type { AnimationPlaybackControls } from 'motion'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
 
 const FLIP_SPRING = { type: 'spring', stiffness: 160, damping: 22 } as const
 import type { MotionCountdownProps } from './motion-countdown.types.js'
@@ -39,7 +41,7 @@ const STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
  * ```
  */
 @customElement('motion-countdown')
-export class MotionCountdown extends LitElement implements MotionCountdownProps {
+export class MotionCountdown extends Controllable(LitElement) implements MotionCountdownProps {
   /** ISO date string the countdown counts down to. */
   @property({ type: String, reflect: true }) to = ''
   /** Space-separated list of units to display: `days`, `hours`, `minutes`, `seconds`. */
@@ -56,6 +58,8 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
   private refCache = new Map<string, (el: Element | undefined) => void>()
   private interval: ReturnType<typeof setInterval> | null = null
   private ready = false
+  private flips = new Set<AnimationPlaybackControls>()
+  private flipEpoch = 0
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -133,15 +137,34 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
     }
   `
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.startTicking()
+      return {
+        handle: {
+          pause: () => this.stopTicking(),
+          resume: () => this.startTicking(),
+          finish: () => {
+            this.stopTicking()
+            this.applyTime({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+          },
+          cancel: () => this.stopTicking(),
+        },
+      }
+    },
+    applyFinalState: () => this.applyTime({ days: 0, hours: 0, minutes: 0, seconds: 0 }),
+    applyInitialState: () => this.applyTime(this.timeLeft()),
+  })
+
   connectedCallback() {
     super.connectedCallback()
-    this.tick()
-    this.interval = setInterval(() => this.tick(), 1000)
+    if (this.reduced) this.startTicking()
+    else void this.play()
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    if (this.interval !== null) clearInterval(this.interval)
+    this.stopTicking()
   }
 
   async firstUpdated() {
@@ -151,17 +174,63 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
     })
   }
 
-  private tick() {
-    const target = new Date(this.to).getTime()
-    if (isNaN(target)) return
+  protected updated(changed: PropertyValues) {
+    if (changed.has('to') && this.interval !== null) this.tick()
+  }
 
-    const diff = Math.max(0, target - Date.now())
-    const next: TimeLeft = {
+  private startTicking() {
+    this.tick()
+    this.interval = setInterval(() => this.tick(), 1000)
+  }
+
+  private stopTicking() {
+    if (this.interval !== null) clearInterval(this.interval)
+    this.interval = null
+  }
+
+  private timeLeft(): TimeLeft {
+    const target = new Date(this.to).getTime()
+    const diff = isNaN(target) ? 0 : Math.max(0, target - Date.now())
+    return {
       days: Math.floor(diff / 86400000),
       hours: Math.floor((diff % 86400000) / 3600000),
       minutes: Math.floor((diff % 3600000) / 60000),
       seconds: Math.floor((diff % 60000) / 1000),
     }
+  }
+
+  private setDigit(el: HTMLElement, digit: number) {
+    if (this.roll) {
+      const h = this.digitH(el)
+      if (h) animate(el, { y: -digit * h }, { duration: 0 })
+    } else {
+      el.textContent = String(digit)
+    }
+  }
+
+  private applyTime(next: TimeLeft) {
+    this.stopFlips()
+    this.time = next
+    for (const unit of this.activeUnits()) {
+      const padded = this.pad(next[unit])
+      for (let pos = 0; pos < padded.length; pos++) {
+        const key = `${unit}-${pos}`
+        const digit = parseInt(padded[pos])
+        this.prevDigits.set(key, digit)
+        const el = this.els.get(key)
+        if (!el) continue
+        this.setDigit(el, digit)
+        if (!this.roll) {
+          el.style.transform = ''
+          el.style.opacity = ''
+        }
+      }
+    }
+  }
+
+  private tick() {
+    if (isNaN(new Date(this.to).getTime())) return
+    const next = this.timeLeft()
 
     for (const unit of this.activeUnits()) {
       const padded = this.pad(next[unit])
@@ -172,6 +241,8 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
 
         if (oldDigit === undefined) {
           this.prevDigits.set(key, newDigit)
+          const el = this.els.get(key)
+          if (el) this.setDigit(el, newDigit)
         } else if (this.ready && newDigit !== oldDigit) {
           this.prevDigits.set(key, newDigit)
           const el = this.els.get(key)
@@ -200,13 +271,26 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
 
     const spring = { type: 'spring', stiffness: 220, damping: 28 } as const
     if (newDigit > oldDigit) {
+      const epoch = this.flipEpoch
       animate(strip, { y: -10 * h }, { duration: 0 })
       requestAnimationFrame(() => {
-        animate(strip, { y: -9 * h }, spring)
+        if (epoch !== this.flipEpoch) return
+        this.retain(animate(strip, { y: -9 * h }, spring))
       })
     } else {
-      animate(strip, { y: -newDigit * h }, spring)
+      this.retain(animate(strip, { y: -newDigit * h }, spring))
     }
+  }
+
+  private retain(controls: AnimationPlaybackControls) {
+    this.flips.add(controls)
+    void controls.then(() => this.flips.delete(controls))
+  }
+
+  private stopFlips() {
+    this.flipEpoch++
+    for (const controls of this.flips) controls.stop()
+    this.flips.clear()
   }
 
   private digitH(strip: HTMLElement): number {
@@ -222,9 +306,13 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
       el.textContent = newVal
       return
     }
-    await animate(el, { y: '-40%', opacity: 0 }, FLIP_SPRING)
+    const epoch = this.flipEpoch
+    const out = animate(el, { y: '-40%', opacity: 0 }, FLIP_SPRING)
+    this.retain(out)
+    await out
+    if (epoch !== this.flipEpoch) return
     el.textContent = newVal
-    animate(el, { y: ['30%', '0%'], opacity: [0, 1] }, FLIP_SPRING)
+    this.retain(animate(el, { y: ['30%', '0%'], opacity: [0, 1] }, FLIP_SPRING))
   }
 
   private pad(n: number): string {
@@ -241,14 +329,14 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
       this.refCache.set(key, (el: Element | undefined) => {
         if (el) {
           this.els.set(key, el as HTMLElement)
+          const digit = this.prevDigits.get(key) ?? 0
           if (this.roll) {
-            const digit = this.prevDigits.get(key) ?? 0
             requestAnimationFrame(() => {
               const strip = this.els.get(key)
-              if (!strip) return
-              const h = this.digitH(strip)
-              animate(strip, { y: -digit * h }, { duration: 0 })
+              if (strip) this.setDigit(strip, digit)
             })
+          } else {
+            ;(el as HTMLElement).textContent = String(digit)
           }
         } else {
           this.els.delete(key)
@@ -276,7 +364,7 @@ export class MotionCountdown extends LitElement implements MotionCountdownProps 
                       </div>
                     </div>`
                   : html` <div class="flip-wrap">
-                      <span class="digit flip-digit" ${ref(this.ref(key))}>${padded[pos]}</span>
+                      <span class="digit flip-digit" ${ref(this.ref(key))}></span>
                     </div>`
               })}
             </div>

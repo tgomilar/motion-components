@@ -1,6 +1,8 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate, scroll } from 'motion'
+import type { AnimationPlaybackControls } from 'motion'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionProgressProps, ProgressPosition } from './motion-progress.types.js'
 
 export type { MotionProgressProps, ProgressPosition } from './motion-progress.types.js'
@@ -18,7 +20,7 @@ export type { MotionProgressProps, ProgressPosition } from './motion-progress.ty
  * ```
  */
 @customElement('motion-progress')
-export class MotionProgress extends LitElement implements MotionProgressProps {
+export class MotionProgress extends Controllable(LitElement) implements MotionProgressProps {
   /** `'top'` or `'bottom'` of the viewport. */
   @property({ type: String, reflect: true }) position: ProgressPosition = 'top'
   /** Bar color (any valid CSS color). */
@@ -49,28 +51,40 @@ export class MotionProgress extends LitElement implements MotionProgressProps {
   `
 
   private bar: HTMLDivElement | null = null
+  private controls: AnimationPlaybackControls | null = null
   private cleanup: (() => void) | null = null
 
-  private get reduced() {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  }
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.bind()
+      return {
+        handle: {
+          pause: () => this.unbind(),
+          resume: () => this.bind(),
+          finish: () => {
+            this.release()
+            this.setScale(1)
+          },
+          cancel: () => this.release(),
+        },
+      }
+    },
+    applyFinalState: () => this.setScale(1),
+    applyInitialState: () => this.setScale(0),
+  })
 
   firstUpdated() {
     this.bar = this.renderRoot.querySelector('.bar')
     this.apply()
-    this.bind()
+    void this.play()
   }
 
   updated() {
     this.apply()
-    this.cleanup?.()
-    this.bind()
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback()
-    this.cleanup?.()
-    this.cleanup = null
+    if (this.playState === 'running') {
+      this.unbind()
+      this.bind()
+    }
   }
 
   private apply() {
@@ -84,14 +98,27 @@ export class MotionProgress extends LitElement implements MotionProgressProps {
   private bind() {
     if (!this.bar) return
     const target = this.target ? document.querySelector(this.target) : null
-    const controls = animate(
+    this.controls = animate(
       this.bar,
       { scaleX: [0, 1] },
-      this.reduced
-        ? { duration: 0 }
-        : { type: 'spring', bounce: this.bounce, duration: this.duration },
+      { type: 'spring', bounce: this.bounce, duration: this.duration },
     )
-    this.cleanup = scroll(controls, target ? { target: target as Element } : undefined)
+    this.cleanup = scroll(this.controls, target ? { target: target as Element } : undefined)
+  }
+
+  private unbind() {
+    this.cleanup?.()
+    this.cleanup = null
+  }
+
+  private release() {
+    this.unbind()
+    this.controls?.cancel()
+    this.controls = null
+  }
+
+  private setScale(value: number) {
+    if (this.bar) this.bar.style.transform = `scaleX(${value})`
   }
 
   render() {

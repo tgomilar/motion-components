@@ -2,7 +2,9 @@ import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate, scroll } from 'motion'
 import { useIntersect } from '../utils/use-intersect.js'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionFontProps, FontTrigger } from './motion-font.types.js'
+import type { AnimationPlaybackControls } from 'motion'
 
 export type { MotionFontProps, FontTrigger } from './motion-font.types.js'
 
@@ -39,7 +41,7 @@ interface AxisDef {
  * ```
  */
 @customElement('motion-font')
-export class MotionFont extends LitElement implements MotionFontProps {
+export class MotionFont extends Controllable(LitElement) implements MotionFontProps {
   /** Single-axis tag to animate (e.g. `'wght'`, `'slnt'`, `'opsz'`). Ignored if `axes` is set. */
   @property({ type: String }) axis = 'wght'
   /** Multi-axis spec: space-separated `axis:from:to` triples. Overrides `axis`/`from`/`to`. */
@@ -70,6 +72,8 @@ export class MotionFont extends LitElement implements MotionFontProps {
   private disconnectIntersect: (() => void) | null = null
   private scrollCleanup: (() => void) | null = null
   private triggered = false
+  private hoverInAnim: AnimationPlaybackControls | null = null
+  private hoverOutAnim: AnimationPlaybackControls | null = null
 
   constructor() {
     super()
@@ -78,6 +82,72 @@ export class MotionFont extends LitElement implements MotionFontProps {
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      if (this.trigger === 'scroll') {
+        return this.scrollStart()
+      }
+      return this.autoStart()
+    },
+    applyFinalState: () => {
+      this.setAll((ax) => ax.to)
+    },
+    applyInitialState: () => {
+      this.setAll((ax) => ax.from)
+    },
+  })
+
+  private autoStart() {
+    const targets = this.axesDef.map((ax) => ax.to)
+    const controls: AnimationPlaybackControls[] = []
+    for (let i = 0; i < this.axesDef.length; i++) {
+      const ax = this.axesDef[i]
+      const obj = { value: ax.from }
+      const c = animate(
+        obj,
+        { value: targets[i] },
+        {
+          duration: this.duration,
+          type: 'spring',
+          bounce: this.bounce,
+          delay: this.delay,
+          onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
+        },
+      )
+      controls.push(c)
+    }
+    return controlsRun(controls[0])
+  }
+
+  private scrollStart() {
+    this.scrollCleanup?.()
+    this.scrollCleanup = scroll(
+      (progress: number) => {
+        for (const ax of this.axesDef) {
+          const value = ax.from + progress * (ax.to - ax.from)
+          this.style.setProperty(ax.prop, String(value))
+        }
+      },
+      { target: this, offset: ['start end', 'end start'] },
+    )
+    return {
+      handle: {
+        pause: () => this.unbindScroll(),
+        resume: () => this.scrollStart(),
+        finish: () => {
+          this.unbindScroll()
+          this.setAll((ax) => ax.to)
+        },
+        cancel: () => this.unbindScroll(),
+      },
+    }
+  }
+
+  private unbindScroll() {
+    this.scrollCleanup?.()
+    this.scrollCleanup = null
   }
 
   private parseAxes(): AxisDef[] {
@@ -124,49 +194,35 @@ export class MotionFont extends LitElement implements MotionFontProps {
       return
     }
 
-    if (this.trigger === 'scroll') {
-      if (!this.reduced) this.setupScroll()
-      else this.setAll((ax) => ax.to)
-      return
-    }
-
-    // trigger === 'auto'
     if (this.reduced) {
       this.setAll((ax) => ax.to)
       return
     }
 
+    if (this.trigger === 'scroll') {
+      void this.play()
+      return
+    }
+
+    // trigger === 'auto'
     this.setupIntersect()
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
     this.disconnectIntersect?.()
-    this.scrollCleanup?.()
+    this.unbindScroll()
     this.removeEventListener('mouseenter', this.onHoverIn)
     this.removeEventListener('mouseleave', this.onHoverOut)
     this.removeEventListener('focusin', this.onHoverIn)
     this.removeEventListener('focusout', this.onHoverOut)
   }
 
-  private setupScroll() {
-    this.scrollCleanup?.()
-    this.scrollCleanup = scroll(
-      (progress: number) => {
-        for (const ax of this.axesDef) {
-          const value = ax.from + progress * (ax.to - ax.from)
-          this.style.setProperty(ax.prop, String(value))
-        }
-      },
-      { target: this, offset: ['start end', 'end start'] },
-    )
-  }
-
   private setupIntersect() {
     this.disconnectIntersect?.()
     this.disconnectIntersect = useIntersect(this, 0.2, () => {
-      if (!this.triggered) {
-        this.animateTo(this.axesDef.map((ax) => ax.to))
+      if (!this.triggered && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.triggered = true
           this.disconnectIntersect?.()
@@ -175,18 +231,17 @@ export class MotionFont extends LitElement implements MotionFontProps {
     })
   }
 
-  private onHoverIn = () => this.animateTo(this.axesDef.map((ax) => ax.to))
-  private onHoverOut = () => this.animateTo(this.axesDef.map((ax) => ax.from))
-
-  private animateTo(targets: number[]) {
+  private onHoverIn = () => {
+    this.hoverOutAnim?.stop()
+    const targets = this.axesDef.map((ax) => ax.to)
+    const controls: AnimationPlaybackControls[] = []
     for (let i = 0; i < this.axesDef.length; i++) {
       const ax = this.axesDef[i]
-      const target = targets[i]
       const current = Number(this.style.getPropertyValue(ax.prop) || ax.from)
       const obj = { value: current }
-      animate(
+      const c = animate(
         obj,
-        { value: target },
+        { value: targets[i] },
         {
           duration: this.duration,
           type: 'spring',
@@ -195,7 +250,33 @@ export class MotionFont extends LitElement implements MotionFontProps {
           onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
         },
       )
+      controls.push(c)
     }
+    this.hoverInAnim = controls[0]
+  }
+
+  private onHoverOut = () => {
+    this.hoverInAnim?.stop()
+    const targets = this.axesDef.map((ax) => ax.from)
+    const controls: AnimationPlaybackControls[] = []
+    for (let i = 0; i < this.axesDef.length; i++) {
+      const ax = this.axesDef[i]
+      const current = Number(this.style.getPropertyValue(ax.prop) || ax.to)
+      const obj = { value: current }
+      const c = animate(
+        obj,
+        { value: targets[i] },
+        {
+          duration: this.duration,
+          type: 'spring',
+          bounce: this.bounce,
+          delay: this.delay,
+          onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
+        },
+      )
+      controls.push(c)
+    }
+    this.hoverOutAnim = controls[0]
   }
 
   private setAll(getValue: (ax: AxisDef) => number) {
@@ -208,7 +289,7 @@ export class MotionFont extends LitElement implements MotionFontProps {
   replay() {
     if (this.trigger !== 'auto') return
     this.triggered = false
-    this.setAll((ax) => ax.from)
+    this.cancel()
     this.setupIntersect()
   }
 

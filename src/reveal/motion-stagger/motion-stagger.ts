@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { REVEAL_SPRING } from '../../utils/springs.js'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
 
 export type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
@@ -24,7 +25,7 @@ export type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
  * ```
  */
 @customElement('motion-stagger')
-export class MotionStagger extends LitElement implements MotionStaggerProps {
+export class MotionStagger extends Controllable(LitElement) implements MotionStaggerProps {
   /** Delay between each child's reveal, in seconds. */
   @property({ type: Number }) interval = 0.06
   /** Spring duration of each child's reveal, in seconds. */
@@ -50,6 +51,33 @@ export class MotionStagger extends LitElement implements MotionStaggerProps {
 
   private observer: IntersectionObserver | null = null
   private animated = false
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () =>
+      controlsRun(
+        animate(
+          this.slotEl.assignedElements(),
+          { opacity: [0, 1], y: [this.y, 0] },
+          {
+            delay: stagger(this.interval, { from: this.from }),
+            ...REVEAL_SPRING,
+            duration: this.duration,
+          },
+        ),
+      ),
+    applyFinalState: () => {
+      for (const el of this.slotEl.assignedElements() as HTMLElement[]) {
+        el.style.opacity = '1'
+        el.style.transform = ''
+      }
+    },
+    applyInitialState: () => {
+      for (const el of this.slotEl.assignedElements() as HTMLElement[]) {
+        el.style.opacity = '0'
+        el.style.transform = ''
+      }
+    },
+  })
 
   connectedCallback() {
     super.connectedCallback()
@@ -83,8 +111,8 @@ export class MotionStagger extends LitElement implements MotionStaggerProps {
 
   private onIntersect = (entries: IntersectionObserverEntry[]) => {
     for (const entry of entries) {
-      if (entry.isIntersecting && !this.animated) {
-        this.play()
+      if (entry.isIntersecting && !this.animated && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.animated = true
           this.observer?.disconnect()
@@ -93,33 +121,11 @@ export class MotionStagger extends LitElement implements MotionStaggerProps {
     }
   }
 
-  private play() {
-    if (this.reduced) return
-    const elements = this.slotEl.assignedElements()
-    animate(
-      elements,
-      { opacity: [0, 1], y: [this.y, 0] },
-      {
-        delay: stagger(this.interval, { from: this.from }),
-        ...REVEAL_SPRING,
-        duration: this.duration,
-      },
-    )
-  }
-
   /** Resets and re-runs the staggered reveal. */
   replay() {
-    if (this.reduced) {
-      const elements = this.slotEl.assignedElements() as HTMLElement[]
-      elements.forEach((el) => {
-        el.style.opacity = '1'
-        el.style.transform = ''
-      })
-      return
-    }
     this.animated = false
-    const elements = this.slotEl.assignedElements() as HTMLElement[]
-    animate(elements, { opacity: 0, y: this.y }, { duration: 0 }).then(() => this.play())
+    this.cancel()
+    void this.play()
   }
 
   render() {

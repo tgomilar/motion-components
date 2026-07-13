@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionGravityProps } from './motion-gravity.types.js'
 
 export type { MotionGravityProps } from './motion-gravity.types.js'
@@ -17,7 +18,7 @@ export type { MotionGravityProps } from './motion-gravity.types.js'
  * ```
  */
 @customElement('motion-gravity')
-export class MotionGravity extends LitElement implements MotionGravityProps {
+export class MotionGravity extends Controllable(LitElement) implements MotionGravityProps {
   /** Text to drop in. */
   @property({ type: String }) text = ''
   /** Drop distance in pixels (each char starts this far above its rest). */
@@ -47,6 +48,44 @@ export class MotionGravity extends LitElement implements MotionGravityProps {
     }
   `
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
+      if (!chars.length) return { handle: { pause() {}, resume() {}, finish() {}, cancel() {} } }
+      return controlsRun(
+        animate(
+          chars,
+          { y: [-this.height, 0], opacity: [0, 1] },
+          {
+            delay: stagger(this.stagger, { startDelay: this.delay }),
+            duration: this.duration,
+            type: 'spring',
+            stiffness: 380,
+            damping: 22,
+          },
+        ),
+      )
+    },
+    applyFinalState: () => {
+      const chars = this.shadowRoot?.querySelectorAll<HTMLElement>('.char')
+      if (chars) {
+        for (const char of chars) {
+          char.style.opacity = '1'
+          char.style.transform = ''
+        }
+      }
+    },
+    applyInitialState: () => {
+      const chars = this.shadowRoot?.querySelectorAll<HTMLElement>('.char')
+      if (chars) {
+        for (const char of chars) {
+          char.style.opacity = '0'
+          char.style.transform = `translateY(${-this.height}px)`
+        }
+      }
+    },
+  })
+
   updated(changed: Map<string, unknown>) {
     const needsPlay =
       changed.has('text') ||
@@ -55,39 +94,16 @@ export class MotionGravity extends LitElement implements MotionGravityProps {
       changed.has('duration') ||
       changed.has('delay')
 
-    if (needsPlay) this.play()
+    if (needsPlay) {
+      this.cancel()
+      void this.play()
+    }
   }
 
-  private play() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
-    if (!chars.length) return
-
-    // Set initial hidden state before animating
-    chars.forEach((char) => {
-      char.style.opacity = '0'
-      char.style.transform = `translateY(${-this.height}px)`
-    })
-
-    animate(
-      chars,
-      { y: [-this.height, 0], opacity: [0, 1] },
-      {
-        delay: stagger(this.stagger, { startDelay: this.delay }),
-        duration: this.duration,
-        type: 'spring',
-        stiffness: 380,
-        damping: 22,
-      },
-    )
-  }
-
+  /** Resets and re-runs the gravity drop. */
   replay() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
-    if (!chars.length) return
-    animate(chars, { opacity: 0, y: -this.height }, { duration: 0 }).then(() => this.play())
+    this.cancel()
+    void this.play()
   }
 
   render() {

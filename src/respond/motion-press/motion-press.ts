@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate } from 'motion'
+import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 import type { MotionPressProps } from './motion-press.types.js'
 
 export type { MotionPressProps } from './motion-press.types.js'
@@ -26,6 +27,8 @@ export class MotionPress extends LitElement implements MotionPressProps {
   @property({ type: Number }) scale = 0.95
   /** Duration of press and release transitions, in seconds. */
   @property({ type: Number }) duration = 0.15
+  /** When `true`, ignores pointer input and settles to the rest state. */
+  @property({ type: Boolean, reflect: true }) disabled = false
 
   static styles = css`
     :host {
@@ -39,6 +42,7 @@ export class MotionPress extends LitElement implements MotionPressProps {
 
   connectedCallback() {
     super.connectedCallback()
+    registerDisableable(this)
     this.addEventListener('pointerdown', this.onPress)
     this.addEventListener('pointerup', this.onRelease)
     this.addEventListener('pointerleave', this.onRelease)
@@ -46,18 +50,27 @@ export class MotionPress extends LitElement implements MotionPressProps {
 
   disconnectedCallback() {
     super.disconnectedCallback()
+    unregisterDisableable(this)
     this.removeEventListener('pointerdown', this.onPress)
     this.removeEventListener('pointerup', this.onRelease)
     this.removeEventListener('pointerleave', this.onRelease)
   }
 
+  updated(changed: Map<string, unknown>) {
+    if (changed.get('disabled') === false && this.disabled && !this.reduced) this.settle()
+  }
+
   private onPress = () => {
-    if (this.reduced) return
+    if (this.disabled || this.reduced) return
     animate(this, { scale: this.scale }, { type: 'spring', bounce: 0, duration: this.duration })
   }
 
   private onRelease = () => {
-    if (this.reduced) return
+    if (this.disabled || this.reduced) return
+    this.settle()
+  }
+
+  private settle() {
     animate(this, { scale: 1 }, { type: 'spring', bounce: 0.4, duration: this.duration })
   }
 

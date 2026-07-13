@@ -1,8 +1,11 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate } from 'motion'
-import type { AnimationPlaybackControls } from 'motion'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
+import type { PlaybackHandle } from '../../utils/playback.types.js'
 import type { MotionArcProps, ArcAlign, ArcDirection } from './motion-arc.types.js'
+
+const noopHandle: PlaybackHandle = { pause() {}, resume() {}, finish() {}, cancel() {} }
 
 export type { MotionArcProps, ArcAlign, ArcDirection } from './motion-arc.types.js'
 
@@ -21,7 +24,7 @@ export type { MotionArcProps, ArcAlign, ArcDirection } from './motion-arc.types.
  * ```
  */
 @customElement('motion-arc')
-export class MotionArc extends LitElement implements MotionArcProps {
+export class MotionArc extends Controllable(LitElement) implements MotionArcProps {
   /** Text to lay out along the arc. */
   @property({ type: String }) text = ''
   /** Arc radius in pixels. */
@@ -78,7 +81,29 @@ export class MotionArc extends LitElement implements MotionArcProps {
     }
   `
 
-  private controls: AnimationPlaybackControls | null = null
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      if (this.speed === 0) return { handle: noopHandle }
+      const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
+      if (!ring) return { handle: noopHandle }
+      const to = this.direction === 'ccw' ? -360 : 360
+      return controlsRun(
+        animate(
+          ring,
+          { rotate: [0, to] },
+          { duration: this.speed, repeat: Infinity, ease: 'linear' },
+        ),
+      )
+    },
+    applyFinalState: () => {
+      const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
+      if (ring) ring.style.rotate = this.direction === 'ccw' ? '-360deg' : '360deg'
+    },
+    applyInitialState: () => {
+      const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
+      if (ring) ring.style.rotate = ''
+    },
+  })
 
   connectedCallback() {
     super.connectedCallback()
@@ -88,7 +113,6 @@ export class MotionArc extends LitElement implements MotionArcProps {
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.controls?.stop()
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
   }
@@ -103,33 +127,17 @@ export class MotionArc extends LitElement implements MotionArcProps {
       changed.has('direction') ||
       changed.has('upright')
 
-    if (needsRestart) this.startAnimation()
+    if (needsRestart) {
+      this.cancel()
+      void this.play()
+    }
   }
 
   private onEnter = () => {
-    if (this.pauseOnHover) this.controls?.pause()
+    if (this.pauseOnHover && this.playState === 'running') this.pause()
   }
   private onLeave = () => {
-    if (this.pauseOnHover) this.controls?.play()
-  }
-
-  private startAnimation() {
-    this.controls?.stop()
-    this.controls = null
-
-    if (this.speed === 0) return
-
-    const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
-    if (!ring) return
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    const to = this.direction === 'ccw' ? -360 : 360
-    this.controls = animate(
-      ring,
-      { rotate: [0, to] },
-      { duration: this.speed, repeat: Infinity, ease: 'linear' },
-    )
+    if (this.pauseOnHover && this.playState === 'paused') void this.play()
   }
 
   render() {

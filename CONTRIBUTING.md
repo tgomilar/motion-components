@@ -4,11 +4,13 @@
 
 ```
 src/
-  primitives/      animation wrappers (hover, press, reveal, stagger, …)
+  reveal/          entrance & transition effects (reveal, stagger, blur, …)
+  respond/         input-driven interactivity (hover, press, magnetic, tilt)
   text/            typography effects (split, typewriter, counter, …)
   scroll/          scroll-driven components (parallax, scene)
-  interaction/     interactive widgets (slider, dialog, flip-card, …)
-  code/            code-display components (code-window, code-inline)
+  components/      interactive widgets (slider, dialog, flip-card, …)
+  code/            code-display components (motion-code, motion-code-inline)
+  utils/           shared animation & playback utilities
 ```
 
 Each component lives in its own directory: `src/<category>/motion-<name>/motion-<name>.ts` with a co-located `motion-<name>.types.ts`.
