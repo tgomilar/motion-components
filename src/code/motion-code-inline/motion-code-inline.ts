@@ -1,11 +1,11 @@
-import type { CodeInlineProps } from './code-inline.types.js'
-export type { CodeInlineProps } from './code-inline.types.js'
+import type { MotionCodeInlineProps } from './motion-code-inline.types.js'
+export type { MotionCodeInlineProps } from './motion-code-inline.types.js'
 
 import { LitElement, html, css, svg, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 
 @customElement('motion-code-inline')
-export class CodeInline extends LitElement implements CodeInlineProps {
+export class MotionCodeInline extends LitElement implements MotionCodeInlineProps {
   @property({ type: Boolean }) copy = false
   @property({ type: Boolean, attribute: 'copy-visible', reflect: true }) copyVisible = false
 
@@ -97,6 +97,6 @@ export class CodeInline extends LitElement implements CodeInlineProps {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'motion-code-inline': CodeInline
+    'motion-code-inline': MotionCodeInline
   }
 }

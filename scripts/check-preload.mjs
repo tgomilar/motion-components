@@ -30,6 +30,7 @@ const INLINE_OPACITY_RE = /opacity\s*:\s*0\b/
 const ANIMATE_PRIVATE_OPACITY_RE = /animate\(\s*this\._\w+\s*,\s*\{\s*[^}]*opacity\s*:\s*0/
 const CHILD_HIDE_RE = /(?:Array\.from\(this\.children\)|this\.children\b)[^;]*\.opacity\s*=\s*['"]0['"]|child\.style\.opacity\s*=\s*['"]0['"]/s
 const STRUCTURAL_STYLE_RE = /Object\.assign\s*\(\s*this\.style\s*,\s*\{[^}]*(?:overflow|position|display)\s*:/s
+const ANNOTATION_RE = /\/\/\s*@preload\s+(host|children)\b/
 
 function detect(file) {
   const src = readFileSync(file, 'utf8')
@@ -46,6 +47,12 @@ function detect(file) {
   if (INLINE_OPACITY_RE.test(src) && /<span[^>]*opacity\s*:\s*0/.test(src)) { needsHost = true; reasons.push('inline opacity:0 in template') }
   if (STRUCTURAL_STYLE_RE.test(src)) { needsHost = true; reasons.push('structural styles set on host (display/position/overflow)') }
   if (CHILD_HIDE_RE.test(src)) { needsChildren = true; reasons.push('children opacity = "0" in lifecycle') }
+  const ann = src.match(ANNOTATION_RE)
+  if (ann) {
+    if (ann[1] === 'children') needsChildren = true
+    else needsHost = true
+    reasons.push(`@preload ${ann[1]} annotation`)
+  }
 
   return { tag, file, needsHost, needsChildren, reasons }
 }

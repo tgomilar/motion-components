@@ -1,5 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
+import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
+import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionPerspectiveProps, VanishDirection } from './motion-perspective.types.js'
 
 export type { MotionPerspectiveProps, VanishDirection } from './motion-perspective.types.js'
@@ -18,7 +20,7 @@ export type { MotionPerspectiveProps, VanishDirection } from './motion-perspecti
  * ```
  */
 @customElement('motion-perspective')
-export class MotionPerspective extends LitElement implements MotionPerspectiveProps {
+export class MotionPerspective extends Controllable(LitElement) implements MotionPerspectiveProps {
   /** Text to render with depth. */
   @property({ type: String }) text = ''
   /** How far the far end recedes (0 = flat, 1 = full vanish). */
@@ -55,9 +57,35 @@ export class MotionPerspective extends LitElement implements MotionPerspectivePr
     }
   `
 
-  private raf: number | null = null
+  private loop: FrameLoop | null = null
   private phase = 0
-  private paused = false
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.loop = frameLoop((dt) => this.tick(dt / 1000))
+      this.loop.start()
+      return {
+        handle: {
+          pause: () => this.loop?.stop(),
+          resume: () => this.loop?.start(),
+          finish: () => {
+            this.loop?.stop()
+            this.loop = null
+            this.applyNeutral()
+          },
+          cancel: () => {
+            this.loop?.stop()
+            this.loop = null
+          },
+        },
+      }
+    },
+    applyFinalState: () => this.applyNeutral(),
+    applyInitialState: () => {
+      this.phase = 0
+      this.applyNeutral()
+    },
+  })
 
   connectedCallback() {
     super.connectedCallback()
@@ -67,16 +95,15 @@ export class MotionPerspective extends LitElement implements MotionPerspectivePr
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    if (this.raf !== null) cancelAnimationFrame(this.raf)
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
   }
 
   private onEnter = () => {
-    if (this.pauseOnHover) this.paused = true
+    if (this.pauseOnHover) this.pause()
   }
   private onLeave = () => {
-    if (this.pauseOnHover) this.paused = false
+    if (this.pauseOnHover && this.playState === 'paused') void this.play()
   }
 
   updated(changed: Map<string, unknown>) {
@@ -91,11 +118,7 @@ export class MotionPerspective extends LitElement implements MotionPerspectivePr
   }
 
   private setup() {
-    if (this.raf !== null) {
-      cancelAnimationFrame(this.raf)
-      this.raf = null
-    }
-    this.phase = 0
+    this.cancel()
 
     if (!this.oscillate) {
       this.applyStatic()
@@ -107,7 +130,7 @@ export class MotionPerspective extends LitElement implements MotionPerspectivePr
       return
     }
 
-    this.startLoop()
+    void this.play()
   }
 
   private applyStatic() {
@@ -120,40 +143,34 @@ export class MotionPerspective extends LitElement implements MotionPerspectivePr
     })
   }
 
-  private startLoop() {
-    let last = performance.now()
-
-    const step = (now: number) => {
-      const dt = (now - last) / 1000
-      last = now
-
-      if (!this.paused) {
-        this.phase += this.speed * dt
-      }
-
-      const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
-      const n = chars.length
-
-      chars.forEach((char, i) => {
-        const t = i / Math.max(n - 1, 1)
-        // cosine creates the back-and-forth 3D rotation illusion
-        const sineVal = Math.cos(this.phase * Math.PI * 2 + t * Math.PI)
-        const perspT = (sineVal + 1) / 2
-        char.style.fontSize = `${1 - this.depth * (1 - perspT)}em`
-        char.style.opacity = String(1 - (1 - perspT) * this.depth * 0.45)
-      })
-
-      this.raf = requestAnimationFrame(step)
+  private applyNeutral() {
+    for (const char of this.shadowRoot?.querySelectorAll<HTMLElement>('.char') ?? []) {
+      char.style.fontSize = ''
+      char.style.opacity = ''
     }
+  }
 
-    this.raf = requestAnimationFrame(step)
+  private tick(dt: number) {
+    this.phase += this.speed * dt
+
+    const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
+    const n = chars.length
+
+    chars.forEach((char, i) => {
+      const t = i / Math.max(n - 1, 1)
+      // cosine creates the back-and-forth 3D rotation illusion
+      const sineVal = Math.cos(this.phase * Math.PI * 2 + t * Math.PI)
+      const perspT = (sineVal + 1) / 2
+      char.style.fontSize = `${1 - this.depth * (1 - perspT)}em`
+      char.style.opacity = String(1 - (1 - perspT) * this.depth * 0.45)
+    })
   }
 
   render() {
     return html`
       <span class="track">
         ${[...this.text].map(
-          (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
+          (char) => html`<span class="char">${char === ' ' ? ' ' : char}</span>`,
         )}
       </span>
     `

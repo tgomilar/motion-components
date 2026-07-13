@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
-import { animate, scroll } from 'motion'
+import { scroll } from 'motion'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
 
 export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
@@ -22,7 +23,7 @@ export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
  * ```
  */
 @customElement('motion-blur')
-export class MotionBlur extends LitElement implements MotionBlurProps {
+export class MotionBlur extends Controllable(LitElement) implements MotionBlurProps {
   /** Reserved for future use; reveal speed is driven by scroll progress. */
   @property({ type: Number }) duration = 0.7
   /** Maximum blur amount in pixels at the unfocused extreme. */
@@ -49,6 +50,30 @@ export class MotionBlur extends LitElement implements MotionBlurProps {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.latched = false
+      this.bind()
+      return {
+        handle: {
+          pause: () => this.unbind(),
+          resume: () => this.bind(),
+          finish: () => {
+            this.unbind()
+            this.applyEnd()
+          },
+          cancel: () => this.unbind(),
+        },
+      }
+    },
+    applyFinalState: () => this.applyEnd(),
+    applyInitialState: () => {
+      this.style.opacity = this.direction === 'out' ? '' : '0'
+      this.style.filter = ''
+      this.style.transform = ''
+    },
+  })
+
   connectedCallback() {
     super.connectedCallback()
     // Set initial hidden state before first paint to avoid flash
@@ -64,18 +89,23 @@ export class MotionBlur extends LitElement implements MotionBlurProps {
       this.style.transform = ''
       return
     }
-    this.bind()
+    void this.play()
   }
 
-  disconnectedCallback() {
-    super.disconnectedCallback()
-    this.cleanup?.()
-    this.cleanup = null
+  private applyEnd() {
+    if (this.direction === 'in') {
+      this.style.opacity = '1'
+      this.style.filter = ''
+      this.style.transform = ''
+    } else {
+      this.style.opacity = '0'
+      this.style.filter = `blur(${this.amount}px)`
+      this.style.transform = `translateY(${-this.y}px)`
+    }
   }
 
   private bind() {
-    this.cleanup?.()
-    this.latched = false
+    this.unbind()
 
     if (this.direction === 'in') {
       this.cleanup = scroll(
@@ -89,8 +119,7 @@ export class MotionBlur extends LitElement implements MotionBlurProps {
             this.latched = true
             this.style.filter = ''
             this.style.transform = ''
-            this.cleanup?.()
-            this.cleanup = null
+            this.unbind()
           }
         },
         { target: this, offset: ['start end', 'center center'] },
@@ -121,10 +150,13 @@ export class MotionBlur extends LitElement implements MotionBlurProps {
     }
   }
 
-  /** Resets the latch and re-binds the scroll handler. */
-  replay() {
+  private unbind() {
     this.cleanup?.()
     this.cleanup = null
+  }
+
+  /** Resets the latch and re-binds the scroll handler. */
+  replay() {
     this.latched = false
 
     if (this.reduced) {
@@ -134,18 +166,11 @@ export class MotionBlur extends LitElement implements MotionBlurProps {
       return
     }
 
-    if (this.direction === 'in') {
-      this.style.opacity = '0'
-      this.style.filter = `blur(${this.amount}px)`
-      this.style.transform = `translateY(${this.y}px)`
-      this.bind()
-      return
-    }
-
-    animate(this, { opacity: 1 }, { type: 'spring', bounce: 0, duration: 0.3 })
-    this.style.filter = ''
-    this.style.transform = ''
-    setTimeout(() => this.bind(), 330)
+    this.cancel()
+    void this.play()
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new Event('scroll', { bubbles: true }))
+    })
   }
 
   render() {

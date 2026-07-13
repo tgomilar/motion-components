@@ -3,4 +3,5 @@ export interface MotionTiltProps {
   duration: number
   scale: number
   gloss: boolean
+  disabled: boolean
 }

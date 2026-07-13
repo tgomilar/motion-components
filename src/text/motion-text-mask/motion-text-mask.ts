@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
 import { animate } from 'motion'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionTextMaskProps } from './motion-text-mask.types.js'
 
@@ -21,7 +22,7 @@ export type { MotionTextMaskProps } from './motion-text-mask.types.js'
  * ```
  */
 @customElement('motion-text-mask')
-export class MotionTextMask extends LitElement implements MotionTextMaskProps {
+export class MotionTextMask extends Controllable(LitElement) implements MotionTextMaskProps {
   /** Spring duration of the slide-up reveal, in seconds. */
   @property({ type: Number }) duration = 0.9
   /** Delay before the reveal starts, in seconds. */
@@ -52,6 +53,23 @@ export class MotionTextMask extends LitElement implements MotionTextMaskProps {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () =>
+      controlsRun(
+        animate(
+          this.inner,
+          { y: ['110%', '0%'] },
+          { duration: this.duration, delay: this.delay, type: 'spring', bounce: 0.05 },
+        ),
+      ),
+    applyFinalState: () => {
+      this.inner.style.transform = ''
+    },
+    applyInitialState: () => {
+      this.inner.style.transform = 'translateY(110%)'
+    },
+  })
+
   connectedCallback() {
     super.connectedCallback()
   }
@@ -62,8 +80,8 @@ export class MotionTextMask extends LitElement implements MotionTextMaskProps {
     }
 
     this.disconnectIntersect = useIntersect(this, this.threshold, () => {
-      if (!this.revealed) {
-        this.play()
+      if (!this.revealed && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.revealed = true
           this.disconnectIntersect?.()
@@ -77,22 +95,11 @@ export class MotionTextMask extends LitElement implements MotionTextMaskProps {
     this.disconnectIntersect?.()
   }
 
-  private play() {
-    if (this.reduced) {
-      this.inner.style.transform = ''
-      return
-    }
-    animate(
-      this.inner,
-      { y: ['110%', '0%'] },
-      { duration: this.duration, delay: this.delay, type: 'spring', bounce: 0.05 },
-    )
-  }
-
   /** Resets the inner mask offset and re-runs the reveal. */
   replay() {
     this.revealed = false
-    animate(this.inner, { y: '110%' }, { duration: 0 }).then(() => this.play())
+    this.cancel()
+    void this.play()
   }
 
   render() {

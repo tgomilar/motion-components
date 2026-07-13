@@ -1,9 +1,18 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { scroll } from 'motion'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionSceneProps } from './motion-scene.types.js'
 
 export type { MotionSceneProps } from './motion-scene.types.js'
+
+interface SceneRange {
+  start: number
+  end: number
+  from: Record<string, number | string>
+  to: Record<string, number | string>
+  keys: string[]
+}
 
 /**
  * Scroll-driven scene with sticky positioning and data-driven child animations.
@@ -28,7 +37,7 @@ export type { MotionSceneProps } from './motion-scene.types.js'
  * ```
  */
 @customElement('motion-scene')
-export class MotionScene extends LitElement implements MotionSceneProps {
+export class MotionScene extends Controllable(LitElement) implements MotionSceneProps {
   /** Height of the scroll-driven scene (e.g. `"200vh"`, `"150%"`). */
   @property({ type: String }) height = '200vh'
   /** Whether the inner stage is `position: sticky`. Set `false` for a floating layout. */
@@ -59,9 +68,40 @@ export class MotionScene extends LitElement implements MotionSceneProps {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.bind()
+      return {
+        handle: {
+          pause: () => this.unbind(),
+          resume: () => this.bind(),
+          finish: () => {
+            this.unbind()
+            this.applyProgress(1)
+          },
+          cancel: () => this.unbind(),
+        },
+      }
+    },
+    applyFinalState: () => this.applyProgress(1),
+    applyInitialState: () => {
+      this.style.removeProperty('--progress')
+      for (const el of [...this.querySelectorAll<HTMLElement>('[data-from]')]) {
+        const range = this.parseChild(el)
+        if (!range) continue
+        el.style.transform = ''
+        for (const key of range.keys) {
+          if (!['x', 'y', 'scale', 'rotate'].includes(key)) el.style.removeProperty(key)
+        }
+      }
+      this.transformMap.clear()
+    },
+  })
+
   firstUpdated() {
     this.style.height = this.height
-    this.bind()
+    if (this.reduced) return
+    void this.play()
   }
 
   updated(changed: Map<string, unknown>) {
@@ -74,21 +114,18 @@ export class MotionScene extends LitElement implements MotionSceneProps {
         inner.style.position = this.pin ? 'sticky' : 'relative'
       }
     }
-    if (changed.has('height') || changed.has('container') || changed.has('pin')) {
-      this.destroy()
+    if (
+      (changed.has('height') || changed.has('container') || changed.has('pin')) &&
+      this.playState === 'running'
+    ) {
+      this.unbind()
       this.bind()
     }
   }
 
-  disconnectedCallback() {
-    super.disconnectedCallback()
-    this.destroy()
-  }
-
-  private destroy() {
+  private unbind() {
     for (const stop of this.cleanups) stop()
     this.cleanups = []
-    this.transformMap.clear()
   }
 
   private resolveContainer(): HTMLElement | undefined {
@@ -98,8 +135,6 @@ export class MotionScene extends LitElement implements MotionSceneProps {
   }
 
   private bind() {
-    if (this.reduced) return
-
     const source = this.resolveContainer()
 
     const stageHeight = source ? `${source.clientHeight}px` : '100vh'
@@ -119,8 +154,23 @@ export class MotionScene extends LitElement implements MotionSceneProps {
   }
 
   private bindChild(el: HTMLElement, source?: HTMLElement) {
-    const startRaw = parseFloat(el.dataset.start ?? '0')
-    const endRaw = parseFloat(el.dataset.end ?? '1')
+    const range = this.parseChild(el)
+    if (!range) return
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const scrollOptions: any = { target: this, offset: ['start start', 'end end'] }
+    if (source) scrollOptions.container = source
+
+    const cleanup = scroll((progress: number) => {
+      this.applyChild(el, range, progress)
+    }, scrollOptions)
+
+    this.cleanups.push(cleanup)
+  }
+
+  private parseChild(el: HTMLElement): SceneRange | null {
+    const start = parseFloat(el.dataset.start ?? '0')
+    const end = parseFloat(el.dataset.end ?? '1')
 
     let from: Record<string, number | string>
     let to: Record<string, number | string>
@@ -129,25 +179,29 @@ export class MotionScene extends LitElement implements MotionSceneProps {
       from = JSON.parse(el.dataset.from ?? '{}')
       to = JSON.parse(el.dataset.to ?? '{}')
     } catch {
-      return
+      return null
     }
 
     const keys = Object.keys(from)
-    if (!keys.length) return
+    if (!keys.length) return null
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const scrollOptions: any = { target: this, offset: ['start start', 'end end'] }
-    if (source) scrollOptions.container = source
+    return { start, end, from, to, keys }
+  }
 
-    const cleanup = scroll((progress: number) => {
-      const clamped = Math.max(0, Math.min(1, (progress - startRaw) / (endRaw - startRaw)))
-      for (const key of keys) {
-        const val = this.lerp(from[key], to[key], clamped)
-        this.applyProp(el, key, val)
-      }
-    }, scrollOptions)
+  private applyChild(el: HTMLElement, range: SceneRange, progress: number) {
+    const clamped = Math.max(0, Math.min(1, (progress - range.start) / (range.end - range.start)))
+    for (const key of range.keys) {
+      const val = this.lerp(range.from[key], range.to[key], clamped)
+      this.applyProp(el, key, val)
+    }
+  }
 
-    this.cleanups.push(cleanup)
+  private applyProgress(progress: number) {
+    this.style.setProperty('--progress', String(progress))
+    for (const el of [...this.querySelectorAll<HTMLElement>('[data-from]')]) {
+      const range = this.parseChild(el)
+      if (range) this.applyChild(el, range, progress)
+    }
   }
 
   private lerp(a: number | string, b: number | string, t: number): string {

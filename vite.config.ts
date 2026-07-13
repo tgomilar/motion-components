@@ -46,8 +46,8 @@ const entries: Record<string, string> = {
   'motion-parallax': 'src/scroll/motion-parallax/motion-parallax.ts',
   'motion-scene': 'src/scroll/motion-scene/motion-scene.ts',
 
-  'code-window': 'src/code/code-window/code-window.ts',
-  'code-inline': 'src/code/code-inline/code-inline.ts',
+  'motion-code': 'src/code/motion-code/motion-code.ts',
+  'motion-code-inline': 'src/code/motion-code-inline/motion-code-inline.ts',
 }
 
 export default defineConfig({

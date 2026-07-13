@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { useIntersect } from '../utils/use-intersect.js'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionSwapProps, TriggerMode } from './motion-swap.types.js'
 import type { AnimationPlaybackControls } from 'motion'
 
@@ -32,7 +33,7 @@ interface CharPair {
  * ```
  */
 @customElement('motion-swap')
-export class MotionSwap extends LitElement implements MotionSwapProps {
+export class MotionSwap extends Controllable(LitElement) implements MotionSwapProps {
   /** Trigger mode: `'hover'` (swap on mouseenter/mouseleave) or `'reveal'` (one-shot on viewport entry). */
   @property({ type: String }) trigger: TriggerMode = 'hover'
 
@@ -58,6 +59,9 @@ export class MotionSwap extends LitElement implements MotionSwapProps {
     :host {
       display: inline;
     }
+    :host(:not([data-ready])) {
+      visibility: hidden;
+    }
   `
 
   private pairs: CharPair[] = []
@@ -71,12 +75,65 @@ export class MotionSwap extends LitElement implements MotionSwapProps {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  private anims: AnimationPlaybackControls[] = []
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.stopAnims()
+      const originals = this.pairs.map((p) => p.original)
+      const duplicates = this.pairs.map((p) => p.duplicate)
+      const delayFn = stagger(this.staggerDuration)
+      const oAnim = animate(
+        originals,
+        { y: ['0%', this.reverse ? '-100%' : '100%'], opacity: [1, 0] },
+        { delay: delayFn, ...this.transition },
+      )
+      const dAnim = animate(
+        duplicates,
+        { y: [this.reverse ? '100%' : '-100%', '0%'], opacity: [0, 1] },
+        { delay: delayFn, ...this.transition },
+      )
+      this.anims = [oAnim, dAnim]
+      this.swapped = true
+      return {
+        handle: {
+          pause: () => {
+            for (const a of this.anims) a.pause()
+          },
+          resume: () => {
+            for (const a of this.anims) a.play()
+          },
+          finish: () => {
+            for (const a of this.anims) a.complete()
+          },
+          cancel: () => {
+            for (const a of this.anims) a.cancel()
+          },
+        },
+        done: oAnim,
+      }
+    },
+    applyFinalState: () => this.setPose(true),
+    applyInitialState: () => this.setPose(false),
+  })
+
+  private setPose(swapped: boolean) {
+    const originals = this.pairs.map((p) => p.original)
+    const duplicates = this.pairs.map((p) => p.duplicate)
+    const oY = swapped ? (this.reverse ? '-100%' : '100%') : '0%'
+    const dY = swapped ? '0%' : this.reverse ? '100%' : '-100%'
+    animate(originals, { y: oY, opacity: swapped ? 0 : 1 }, { duration: 0 })
+    animate(duplicates, { y: dY, opacity: swapped ? 1 : 0 }, { duration: 0 })
+  }
+
   firstUpdated() {
     const text = this.textContent?.trim()
     if (!text) return
 
     this.replaceChildren()
     this.build(text)
+    this.setPose(false)
+    this.setAttribute('data-ready', '')
 
     if (this.reduced) return
 
@@ -87,20 +144,22 @@ export class MotionSwap extends LitElement implements MotionSwapProps {
       this.disconnectIntersect = useIntersect(this, 0.1, () => {
         if (this.triggered) return
         this.triggered = true
-        if (this.delay) {
-          setTimeout(() => this.play(true), this.delay * 1000)
-        } else {
-          this.play(true)
-        }
-        if (this.once) {
-          this.disconnectIntersect?.()
-        }
+        if (this.once) this.disconnectIntersect?.()
+        const delayMs = this.delay * 1000
+        if (delayMs) setTimeout(() => void this.play(), delayMs)
+        else void this.play()
       })
     }
   }
 
+  private stopAnims() {
+    for (const a of this.anims) a.stop()
+    this.anims = []
+  }
+
   disconnectedCallback() {
     super.disconnectedCallback()
+    this.stopAnims()
     this.oAnim?.stop()
     this.dAnim?.stop()
     this.removeEventListener('mouseenter', this.onEnter)
@@ -145,29 +204,31 @@ export class MotionSwap extends LitElement implements MotionSwapProps {
     const duplicate = document.createElement('span')
     duplicate.textContent = char
     const dupeStart = this.reverse ? '100%' : '-100%'
-    duplicate.style.cssText = `display: inline-block; position: absolute; left: 0; top: 0; will-change: transform; transform: translateY(${dupeStart});`
+    duplicate.style.cssText = `display: inline-block; position: absolute; left: 0; top: 0; will-change: transform, opacity; transform: translateY(${dupeStart}); opacity: 0;`
     container.appendChild(duplicate)
 
     return { container, original, duplicate }
   }
 
   private onEnter = () => {
+    if (this.trigger !== 'hover') return
     if (this.delay) {
-      setTimeout(() => this.play(true), this.delay * 1000)
+      setTimeout(() => this.animateSwap(true), this.delay * 1000)
     } else {
-      this.play(true)
+      this.animateSwap(true)
     }
   }
 
   private onLeave = () => {
+    if (this.trigger !== 'hover') return
     if (this.delay) {
-      setTimeout(() => this.play(false), this.delay * 1000)
+      setTimeout(() => this.animateSwap(false), this.delay * 1000)
     } else {
-      this.play(false)
+      this.animateSwap(false)
     }
   }
 
-  private play(enter: boolean) {
+  private animateSwap(enter: boolean) {
     if (this.reduced) return
     this.oAnim?.stop()
     this.dAnim?.stop()
@@ -180,8 +241,16 @@ export class MotionSwap extends LitElement implements MotionSwapProps {
 
     const delayFn = stagger(this.staggerDuration)
 
-    this.oAnim = animate(originals, { y: oTarget }, { delay: delayFn, ...this.transition })
-    this.dAnim = animate(duplicates, { y: dTarget }, { delay: delayFn, ...this.transition })
+    this.oAnim = animate(
+      originals,
+      { y: oTarget, opacity: enter ? 0 : 1 },
+      { delay: delayFn, ...this.transition },
+    )
+    this.dAnim = animate(
+      duplicates,
+      { y: dTarget, opacity: enter ? 1 : 0 },
+      { delay: delayFn, ...this.transition },
+    )
 
     this.swapped = enter
   }
@@ -190,11 +259,8 @@ export class MotionSwap extends LitElement implements MotionSwapProps {
   replay() {
     this.triggered = false
     this.swapped = false
-    this.pairs.forEach((p) => {
-      p.original.style.transform = 'translateY(0%)'
-      p.duplicate.style.transform = `translateY(${this.reverse ? '100%' : '-100%'})`
-    })
-    this.play(true)
+    this.cancel()
+    void this.play()
   }
 
   render() {

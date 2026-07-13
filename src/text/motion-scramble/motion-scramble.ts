@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
+import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
 import type { MotionScrambleProps } from './motion-scramble.types.js'
 
 export type { MotionScrambleProps } from './motion-scramble.types.js'
@@ -26,7 +27,7 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
  * ```
  */
 @customElement('motion-scramble')
-export class MotionScramble extends LitElement implements MotionScrambleProps {
+export class MotionScramble extends Controllable(LitElement) implements MotionScrambleProps {
   /** Time between glyph swaps, in milliseconds. */
   @property({ type: Number }) speed = 40
   /** Delay before scrambling starts, in milliseconds. */
@@ -50,9 +51,47 @@ export class MotionScramble extends LitElement implements MotionScrambleProps {
   private full = ''
   private frame = 0
   private iter = 0
-  private raf: number | null = null
+  private elapsed = 0
   private observer: IntersectionObserver | null = null
   private triggered = false
+  private resolveSettled: (() => void) | null = null
+
+  private loop = frameLoop((dt) => {
+    this.elapsed += dt
+    if (this.elapsed < this.speed) return
+    this.elapsed = 0
+    this.scramble()
+  })
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.frame = 0
+      this.iter = 0
+      this.elapsed = 0
+      const done = new Promise<void>((resolve) => {
+        this.resolveSettled = resolve
+      })
+      this.loop.start()
+      return {
+        handle: {
+          pause: () => this.loop.stop(),
+          resume: () => this.loop.start(),
+          finish: () => this.settle(),
+          cancel: () => {
+            this.loop.stop()
+            this.resolveSettled = null
+          },
+        },
+        done,
+      }
+    },
+    applyFinalState: () => {
+      this.displayed = this.full
+    },
+    applyInitialState: () => {
+      this.displayed = this.full
+    },
+  })
 
   connectedCallback() {
     // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
@@ -90,14 +129,18 @@ export class MotionScramble extends LitElement implements MotionScrambleProps {
     super.disconnectedCallback()
     this.observer?.disconnect()
     this.removeEventListener('mouseenter', this.trigger)
-    if (this.raf) cancelAnimationFrame(this.raf)
   }
 
   private trigger = () => {
-    if (this.raf) cancelAnimationFrame(this.raf)
-    this.frame = 0
-    this.iter = 0
-    this.scramble()
+    this.cancel()
+    void this.play()
+  }
+
+  private settle() {
+    this.loop.stop()
+    this.resolveSettled?.()
+    this.resolveSettled = null
+    this.displayed = this.full
   }
 
   private scramble() {
@@ -117,10 +160,8 @@ export class MotionScramble extends LitElement implements MotionScrambleProps {
     this.frame++
     this.iter++
 
-    if (revealed < len) {
-      this.raf = requestAnimationFrame(() => setTimeout(() => this.scramble(), this.speed))
-    } else {
-      this.displayed = this.full
+    if (revealed >= len) {
+      this.settle()
     }
   }
 

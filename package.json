@@ -25,14 +25,6 @@
       "import": "./dist/preload.js"
     },
     "./preload.css": "./dist/preload.css",
-    "./code-inline": {
-      "types": "./dist/code/code-inline/code-inline.d.ts",
-      "import": "./dist/code-inline.js"
-    },
-    "./code-window": {
-      "types": "./dist/code/code-window/code-window.d.ts",
-      "import": "./dist/code-window.js"
-    },
     "./motion-arc": {
       "types": "./dist/text/motion-arc/motion-arc.d.ts",
       "import": "./dist/motion-arc.js"
@@ -48,6 +40,14 @@
     "./motion-circle": {
       "types": "./dist/text/motion-circle/motion-circle.d.ts",
       "import": "./dist/motion-circle.js"
+    },
+    "./motion-code": {
+      "types": "./dist/code/motion-code/motion-code.d.ts",
+      "import": "./dist/motion-code.js"
+    },
+    "./motion-code-inline": {
+      "types": "./dist/code/motion-code-inline/motion-code-inline.d.ts",
+      "import": "./dist/motion-code-inline.js"
     },
     "./motion-countdown": {
       "types": "./dist/components/motion-countdown/motion-countdown.d.ts",
@@ -184,6 +184,7 @@
   "scripts": {
     "analyze": "cem analyze",
     "build": "npm run generate-exports && vite build && npm run analyze",
+    "check:exports": "node scripts/check-exports.mjs",
     "check:preload": "node scripts/check-preload.mjs",
     "dev": "vite build --watch",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -191,10 +192,8 @@
     "generate-exports": "node scripts/generate-exports.mjs",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
-    "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run build && npm run size",
+    "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run build && npm run check:exports && npm run size",
     "size": "size-limit",
-    "site:dev": "cd site && npm run dev",
-    "site:build": "cd site && npm run build",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

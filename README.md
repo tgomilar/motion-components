@@ -154,7 +154,45 @@ Syntax-highlighted code display
 
 [`motion-code`](https://www.motion-components.dev/docs/code/motion-code/) [`motion-code-inline`](https://www.motion-components.dev/docs/code/motion-code-inline/)
 
-> **Import note:** `motion-code` lives at `motion-components/code-window` and `motion-code-inline` at `motion-components/code-inline`. The subpath names differ from the tag names.
+---
+
+## JavaScript API
+
+Every animation component implements the same playback interface, so you can drive animations imperatively:
+
+```js
+const el = document.querySelector('motion-typewriter')
+
+await el.play()   // start if idle/finished, resume if paused
+el.pause()        // freeze in place
+el.finish()       // jump to the end state
+el.cancel()       // reset to the initial state
+
+el.playState      // 'idle' | 'running' | 'paused' | 'finished'
+await el.finished // per-run promise, resolves on finish or cancel
+```
+
+Components emit `motion-start`, `motion-finish`, and `motion-cancel` events (bubbling and composed), so you can also listen at any ancestor:
+
+```js
+document.addEventListener('motion-finish', (e) => console.log(e.target, 'done'))
+```
+
+Input-reactive components (`motion-hover`, `motion-press`, `motion-magnetic`, `motion-tilt`) expose a `disabled` property/attribute instead — set it to make them settle and stop responding to input.
+
+### Global controls
+
+```js
+import { pauseAll, resumeAll, cancelAll } from 'motion-components'
+
+pauseAll()          // pause every running animation, disable input-reactive components
+resumeAll()         // resume what pauseAll paused, re-enable what it disabled
+cancelAll()         // reset everything to its initial state
+
+pauseAll(sidebar)   // all three accept a root node to scope the effect
+```
+
+When `prefers-reduced-motion: reduce` is set, `play()` skips straight to the final state — the `finished` promise and events still fire, so control flow keeps working.
 
 ---
 

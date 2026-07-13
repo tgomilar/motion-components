@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { REVEAL_SPRING } from '../../utils/springs.js'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionRevealProps } from './motion-reveal.types.js'
 
 export type { MotionRevealProps } from './motion-reveal.types.js'
@@ -22,7 +23,7 @@ export type { MotionRevealProps } from './motion-reveal.types.js'
  * ```
  */
 @customElement('motion-reveal')
-export class MotionReveal extends LitElement implements MotionRevealProps {
+export class MotionReveal extends Controllable(LitElement) implements MotionRevealProps {
   /** Spring duration of the reveal animation, in seconds. */
   @property({ type: Number }) duration = 0.6
   /** Initial vertical offset in pixels; element rises to 0 on reveal. */
@@ -45,6 +46,25 @@ export class MotionReveal extends LitElement implements MotionRevealProps {
   private observer: IntersectionObserver | null = null
   private revealed = false
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () =>
+      controlsRun(
+        animate(
+          this,
+          { opacity: [0, 1], y: [this.y, 0] },
+          { ...REVEAL_SPRING, duration: this.duration },
+        ),
+      ),
+    applyFinalState: () => {
+      this.style.opacity = '1'
+      this.style.transform = ''
+    },
+    applyInitialState: () => {
+      this.style.opacity = '0'
+      this.style.transform = ''
+    },
+  })
+
   connectedCallback() {
     this.style.opacity = this.reduced ? '1' : '0'
     super.connectedCallback()
@@ -62,8 +82,8 @@ export class MotionReveal extends LitElement implements MotionRevealProps {
 
   private onIntersect = (entries: IntersectionObserverEntry[]) => {
     for (const entry of entries) {
-      if (entry.isIntersecting && !this.revealed) {
-        this.play()
+      if (entry.isIntersecting && !this.revealed && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.revealed = true
           this.observer?.disconnect()
@@ -72,24 +92,11 @@ export class MotionReveal extends LitElement implements MotionRevealProps {
     }
   }
 
-  private play() {
-    if (this.reduced) return
-    animate(
-      this,
-      { opacity: [0, 1], y: [this.y, 0] },
-      { ...REVEAL_SPRING, duration: this.duration },
-    )
-  }
-
   /** Re-runs the reveal animation from its hidden initial state. */
   replay() {
-    if (this.reduced) {
-      this.style.opacity = '1'
-      return
-    }
     this.revealed = false
-    this.style.opacity = '0'
-    this.play()
+    this.cancel()
+    void this.play()
   }
 
   render() {

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { splitText } from '../utils/split-text.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-headline.types.js'
@@ -25,7 +26,7 @@ export type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-
  * ```
  */
 @customElement('motion-headline')
-export class MotionHeadline extends LitElement implements MotionHeadlineProps {
+export class MotionHeadline extends Controllable(LitElement) implements MotionHeadlineProps {
   /** Split unit: `'words'`, `'chars'`, or `'lines'`. */
   @property({ type: String, reflect: true }) by: HeadlineBy = 'words'
   /** Reveal style: `'slide'` (mask + slide up) or `'flip'` (3D rotateX). */
@@ -54,9 +55,50 @@ export class MotionHeadline extends LitElement implements MotionHeadlineProps {
   private disconnectIntersect: (() => void) | null = null
   private revealed = false
 
-  private get reduced() {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  }
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () =>
+      this.variant === 'flip'
+        ? controlsRun(
+            animate(
+              this.units,
+              { rotateX: [90, 0], opacity: [0, 1] },
+              {
+                delay: stagger(this.interval, { startDelay: this.delay }),
+                duration: this.duration,
+                type: 'spring',
+                bounce: 0.1,
+              },
+            ),
+          )
+        : controlsRun(
+            animate(
+              this.units,
+              { y: ['110%', '0%'] },
+              {
+                delay: stagger(this.interval, { startDelay: this.delay }),
+                duration: this.duration,
+                type: 'spring',
+                bounce: 0.05,
+              },
+            ),
+          ),
+    applyFinalState: () => {
+      for (const u of this.units) {
+        u.style.transform = ''
+        u.style.opacity = '1'
+      }
+    },
+    applyInitialState: () => {
+      for (const u of this.units) {
+        if (this.variant === 'flip') {
+          u.style.transform = 'perspective(400px) rotateX(90deg)'
+          u.style.opacity = '0'
+        } else {
+          u.style.transform = 'translateY(110%)'
+        }
+      }
+    },
+  })
 
   firstUpdated() {
     const isFlip = this.variant === 'flip'
@@ -76,8 +118,8 @@ export class MotionHeadline extends LitElement implements MotionHeadlineProps {
     this.setAttribute('data-ready', '')
 
     this.disconnectIntersect = useIntersect(this, this.threshold, () => {
-      if (!this.revealed) {
-        this.play()
+      if (!this.revealed && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.revealed = true
           this.disconnectIntersect?.()
@@ -129,48 +171,11 @@ export class MotionHeadline extends LitElement implements MotionHeadlineProps {
     this.disconnectIntersect?.()
   }
 
-  private play() {
-    if (this.reduced) {
-      this.units.forEach((u) => {
-        u.style.transform = ''
-        u.style.opacity = '1'
-      })
-      return
-    }
-
-    if (this.variant === 'flip') {
-      animate(
-        this.units,
-        { rotateX: [90, 0], opacity: [0, 1] },
-        {
-          delay: stagger(this.interval, { startDelay: this.delay }),
-          duration: this.duration,
-          type: 'spring',
-          bounce: 0.1,
-        },
-      )
-    } else {
-      animate(
-        this.units,
-        { y: ['110%', '0%'] },
-        {
-          delay: stagger(this.interval, { startDelay: this.delay }),
-          duration: this.duration,
-          type: 'spring',
-          bounce: 0.05,
-        },
-      )
-    }
-  }
-
   /** Resets and re-runs the headline reveal. */
   replay() {
     this.revealed = false
-    if (this.variant === 'flip') {
-      animate(this.units, { rotateX: 90, opacity: 0 }, { duration: 0 }).then(() => this.play())
-    } else {
-      animate(this.units, { y: '110%' }, { duration: 0 }).then(() => this.play())
-    }
+    this.cancel()
+    void this.play()
   }
 
   render() {

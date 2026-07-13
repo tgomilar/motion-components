@@ -2,6 +2,8 @@ import { LitElement, html, css } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
+import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
+import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionCurveProps } from './motion-curve.types.js'
 
 export type { MotionCurveProps } from './motion-curve.types.js'
@@ -20,7 +22,7 @@ export type { MotionCurveProps } from './motion-curve.types.js'
  * ```
  */
 @customElement('motion-curve')
-export class MotionCurve extends LitElement implements MotionCurveProps {
+export class MotionCurve extends Controllable(LitElement) implements MotionCurveProps {
   /** Text to render along the wave. */
   @property({ type: String }) text = ''
   /** Peak vertical offset of the wave, in pixels. */
@@ -76,8 +78,45 @@ export class MotionCurve extends LitElement implements MotionCurveProps {
   `
 
   private xPositions: number[] = []
-  private raf: number | null = null
+  private waveLoop: FrameLoop | null = null
   private loopControls: AnimationPlaybackControls | null = null
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.waveLoop = frameLoop(() => this.tick())
+      this.waveLoop.start()
+      if (this.loop) this.setupLoopControls()
+      return {
+        handle: {
+          pause: () => {
+            this.waveLoop?.stop()
+            this.loopControls?.pause()
+          },
+          resume: () => {
+            this.waveLoop?.start()
+            this.loopControls?.play()
+          },
+          finish: () => {
+            this.waveLoop?.stop()
+            this.waveLoop = null
+            this.loopControls?.complete()
+          },
+          cancel: () => {
+            this.waveLoop?.stop()
+            this.waveLoop = null
+            this.loopControls?.stop()
+            this.loopControls = null
+            this.phase = 0
+          },
+        },
+      }
+    },
+    applyFinalState: () => {},
+    applyInitialState: () => {
+      this.phase = 0
+    },
+  })
+
   private phase = 0
 
   connectedCallback() {
@@ -88,25 +127,16 @@ export class MotionCurve extends LitElement implements MotionCurveProps {
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    if (this.raf !== null) cancelAnimationFrame(this.raf)
-    this.loopControls?.stop()
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
   }
 
   private onEnter = () => {
-    if (!this.pauseOnHover) return
-    if (this.raf !== null) {
-      cancelAnimationFrame(this.raf)
-      this.raf = null
-    }
-    this.loopControls?.pause()
+    if (this.pauseOnHover) this.pause()
   }
 
   private onLeave = () => {
-    if (!this.pauseOnHover) return
-    this.loopControls?.play()
-    this.startWave()
+    if (this.pauseOnHover && this.playState === 'paused') void this.play()
   }
 
   updated(changed: Map<string, unknown>) {
@@ -125,97 +155,73 @@ export class MotionCurve extends LitElement implements MotionCurveProps {
   }
 
   private setup() {
-    if (this.raf !== null) cancelAnimationFrame(this.raf)
+    this.cancel()
+    this.style.paddingTop = this.noPad ? '0' : `${this.amplitude}px`
+    this.style.paddingBottom = this.noPad ? '0' : `${this.amplitude}px`
+    if (!this.loop) {
+      const spans = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
+      let x = 0
+      this.xPositions = spans.map((span) => {
+        const pos = x
+        x += span.offsetWidth
+        return pos
+      })
+    }
+    void this.play()
+  }
+
+  private tick() {
+    this.phase += (this.speed * 2 * Math.PI) / 60
+
+    const spans = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
+    const amp = this.amplitude
+    const k = (2 * Math.PI) / this.waveLength
+
+    if (this.loop) {
+      const hostLeft = this.getBoundingClientRect().left
+      const xs = spans.map((s) => {
+        const r = s.getBoundingClientRect()
+        return r.left + r.width / 2 - hostLeft
+      })
+      spans.forEach((span, i) => {
+        const t = k * xs[i] - this.phase
+        span.style.transform = `translateY(${amp * Math.sin(t)}px) rotate(${Math.atan(amp * k * Math.cos(t)) * (180 / Math.PI)}deg)`
+      })
+    } else {
+      spans.forEach((span, i) => {
+        const t = k * (this.xPositions[i] ?? 0) - this.phase
+        span.style.transform = `translateY(${amp * Math.sin(t)}px) rotate(${Math.atan(amp * k * Math.cos(t)) * (180 / Math.PI)}deg)`
+      })
+    }
+  }
+
+  private setupLoopControls() {
     this.loopControls?.stop()
     this.loopControls = null
 
-    this.style.paddingTop = this.noPad ? '0' : `${this.amplitude}px`
-    this.style.paddingBottom = this.noPad ? '0' : `${this.amplitude}px`
-
-    if (this.loop) {
-      this.setupLoop()
-    } else {
-      this.measureStatic()
-      this.startWave()
-    }
-  }
-
-  private setupLoop() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    // Measure committed layout in a rAF so the numSets update is scheduled
-    // outside Lit's update lifecycle, avoiding a change-in-update warning.
-    this.raf = requestAnimationFrame(() => {
-      const firstSet = this.shadowRoot!.querySelector<HTMLElement>('.set')
-      if (!firstSet) return
+    const track = this.shadowRoot!.querySelector<HTMLElement>('.track')
+    if (!track) return
 
-      const setWidth = firstSet.offsetWidth
-      if (!setWidth) {
-        this.setupLoop()
-        return
-      }
+    const firstSet = this.shadowRoot!.querySelector<HTMLElement>('.set')
+    if (!firstSet) return
 
-      const loopWidth = setWidth + this.loopGap
+    const setWidth = firstSet.offsetWidth
+    if (!setWidth) return
 
-      const needed = Math.max(2, Math.ceil(this.offsetWidth / loopWidth) + 1)
-      if (needed !== this.numSets) {
-        this.numSets = needed
-        return
-      }
-
-      const track = this.shadowRoot!.querySelector<HTMLElement>('.track')!
-      this.loopControls = animate(
-        track,
-        { x: [0, -loopWidth] },
-        { duration: loopWidth / this.loopSpeed, repeat: Infinity, ease: 'linear' },
-      )
-
-      this.startWave()
-    })
-  }
-
-  private measureStatic() {
-    const spans = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
-    let x = 0
-    this.xPositions = spans.map((span) => {
-      const pos = x
-      x += span.offsetWidth
-      return pos
-    })
-  }
-
-  private startWave() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    const k = (2 * Math.PI) / this.waveLength
-
-    const step = () => {
-      this.phase += (this.speed * 2 * Math.PI) / 60
-
-      const spans = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
-      const amp = this.amplitude
-
-      if (this.loop) {
-        const hostLeft = this.getBoundingClientRect().left
-        const xs = spans.map((s) => {
-          const r = s.getBoundingClientRect()
-          return r.left + r.width / 2 - hostLeft
-        })
-        spans.forEach((span, i) => {
-          const t = k * xs[i] - this.phase
-          span.style.transform = `translateY(${amp * Math.sin(t)}px) rotate(${Math.atan(amp * k * Math.cos(t)) * (180 / Math.PI)}deg)`
-        })
-      } else {
-        spans.forEach((span, i) => {
-          const t = k * (this.xPositions[i] ?? 0) - this.phase
-          span.style.transform = `translateY(${amp * Math.sin(t)}px) rotate(${Math.atan(amp * k * Math.cos(t)) * (180 / Math.PI)}deg)`
-        })
-      }
-
-      this.raf = requestAnimationFrame(step)
+    const loopWidth = setWidth + this.loopGap
+    const needed = Math.max(2, Math.ceil(this.offsetWidth / loopWidth) + 1)
+    if (needed !== this.numSets) {
+      this.numSets = needed
+      return
     }
 
-    this.raf = requestAnimationFrame(step)
+    this.loopControls = animate(
+      track,
+      { x: [0, -loopWidth] },
+      { duration: loopWidth / this.loopSpeed, repeat: Infinity, ease: 'linear' },
+    )
   }
 
   render() {

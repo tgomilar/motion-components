@@ -1,5 +1,6 @@
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionTickerProps, TickerDirection } from './motion-ticker.types.js'
 
 export type { MotionTickerProps, TickerDirection } from './motion-ticker.types.js'
@@ -34,7 +35,7 @@ document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
  * </motion-ticker>
  * ```
  */
-export class MotionTicker extends HTMLElement {
+export class MotionTicker extends Controllable(HTMLElement) {
   static observedAttributes = [
     'speed',
     'gap',
@@ -45,7 +46,7 @@ export class MotionTicker extends HTMLElement {
     'wave-length',
   ]
 
-  private controls: AnimationPlaybackControls | null = null
+  private ctrls: AnimationPlaybackControls | null = null
   private track: HTMLElement | null = null
   private setA: HTMLElement | null = null
 
@@ -58,6 +59,49 @@ export class MotionTicker extends HTMLElement {
   private wavePhase = 0
   private itemLocalPositions: number[] = []
   private resizeObserver: ResizeObserver | null = null
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      this.startMarquee()
+      return {
+        handle: {
+          pause: () => {
+            this.ctrls?.pause()
+            this.stopWave()
+            if (this.rateRaf !== null) {
+              cancelAnimationFrame(this.rateRaf)
+              this.rateRaf = null
+            }
+          },
+          resume: () => {
+            this.ctrls?.play()
+            if (this.wave) this.startWave()
+            if (this.currentRate < 1) this.lerpRate(1)
+          },
+          finish: () => {
+            this.ctrls?.stop()
+            this.ctrls = null
+            this.stopWave()
+            if (this.rateRaf !== null) {
+              cancelAnimationFrame(this.rateRaf)
+              this.rateRaf = null
+            }
+          },
+          cancel: () => {
+            this.ctrls?.stop()
+            this.ctrls = null
+            this.stopWave()
+            if (this.rateRaf !== null) {
+              cancelAnimationFrame(this.rateRaf)
+              this.rateRaf = null
+            }
+          },
+        },
+      }
+    },
+    applyFinalState: () => {},
+    applyInitialState: () => {},
+  })
 
   private get speed(): MotionTickerProps['speed'] {
     return Number(this.getAttribute('speed') ?? 60)
@@ -82,6 +126,7 @@ export class MotionTicker extends HTMLElement {
   }
 
   connectedCallback() {
+    super.connectedCallback()
     this.style.display = 'block'
     this.style.overflow = this.wave ? 'visible' : 'hidden'
     this.style.width = '100%'
@@ -93,7 +138,8 @@ export class MotionTicker extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.controls?.stop()
+    super.disconnectedCallback()
+    this.ctrls?.stop()
     if (this.rateRaf !== null) cancelAnimationFrame(this.rateRaf)
     this.stopWave()
     this.resizeObserver?.disconnect()
@@ -105,17 +151,17 @@ export class MotionTicker extends HTMLElement {
   }
 
   attributeChangedCallback() {
-    if (!this.controls || !this.setA) return
+    if (!this.ctrls || !this.setA) return
     const w = this.setA.offsetWidth + this.gap
     if (!w) return
-    const progress = (this.controls.time / (w / this.speed)) % 1
-    this.controls.stop()
-    this.controls = animate(
+    const progress = (this.ctrls.time / (w / this.speed)) % 1
+    this.ctrls.stop()
+    this.ctrls = animate(
       this.track!,
       { x: this.direction === 'left' ? [0, -w] : [-w, 0] },
       { duration: w / this.speed, repeat: Infinity, ease: 'linear' },
     )
-    this.controls.time = progress * (w / this.speed)
+    this.ctrls.time = progress * (w / this.speed)
   }
 
   private build() {
@@ -155,7 +201,7 @@ export class MotionTicker extends HTMLElement {
 
     requestAnimationFrame(() => {
       this.fillSet(items)
-      this.start()
+      void this.play()
     })
 
     this.resizeObserver?.disconnect()
@@ -178,20 +224,20 @@ export class MotionTicker extends HTMLElement {
     }
   }
 
-  private start() {
+  private startMarquee() {
     if (!this.track || !this.setA) return
     const w = this.setA.offsetWidth + this.gap
     if (!w) {
-      requestAnimationFrame(() => this.start())
+      requestAnimationFrame(() => this.startMarquee())
       return
     }
 
-    this.controls?.stop()
+    this.ctrls?.stop()
     this.currentRate = 1
     this.targetRate = 1
     this.paused = false
 
-    this.controls = animate(
+    this.ctrls = animate(
       this.track,
       { x: this.direction === 'left' ? [0, -w] : [-w, 0] },
       { duration: w / this.speed, repeat: Infinity, ease: 'linear' },
@@ -226,21 +272,21 @@ export class MotionTicker extends HTMLElement {
   }
 
   private onResize() {
-    if (!this.controls || !this.setA || !this.track) return
+    if (!this.ctrls || !this.setA || !this.track) return
     const w = this.setA.offsetWidth + this.gap
     if (!w) return
-    const elapsed = this.controls.time
+    const elapsed = this.ctrls.time
     const oldDuration = w / this.speed
     const progress = (elapsed / oldDuration) % 1
-    this.controls.stop()
+    this.ctrls.stop()
     const newDuration = w / this.speed
-    this.controls = animate(
+    this.ctrls = animate(
       this.track,
       { x: this.direction === 'left' ? [0, -w] : [-w, 0] },
       { duration: newDuration, repeat: Infinity, ease: 'linear' },
     )
-    this.controls.time = progress * newDuration
-    this.controls.speed = this.currentRate
+    this.ctrls.time = progress * newDuration
+    this.ctrls.speed = this.currentRate
   }
 
   private lerpRate(target: number) {
@@ -248,33 +294,37 @@ export class MotionTicker extends HTMLElement {
     if (this.rateRaf !== null) return
 
     const step = () => {
-      if (!this.controls) return
+      if (!this.ctrls) return
       const diff = this.targetRate - this.currentRate
       if (Math.abs(diff) < 0.003) {
         this.currentRate = this.targetRate
         if (this.currentRate === 0) {
-          this.controls.pause()
+          this.ctrls.pause()
           this.paused = true
         } else {
-          this.controls.speed = this.currentRate
+          this.ctrls.speed = this.currentRate
         }
         this.rateRaf = null
         return
       }
       this.currentRate += diff * 0.1
-      this.controls.speed = this.currentRate
+      this.ctrls.speed = this.currentRate
       this.rateRaf = requestAnimationFrame(step)
     }
     this.rateRaf = requestAnimationFrame(step)
   }
 
-  private onEnter = () => this.lerpRate(0)
+  private onEnter = () => {
+    if (this.playState === 'running') this.pause()
+    this.lerpRate(0)
+  }
   private onLeave = () => {
     if (this.paused) {
-      this.controls?.play()
+      this.ctrls?.play()
       this.paused = false
     }
     this.lerpRate(1)
+    if (this.playState === 'paused') void this.play()
   }
 
   private keyboardPaused = false
@@ -285,13 +335,15 @@ export class MotionTicker extends HTMLElement {
     if (this.keyboardPaused) {
       this.keyboardPaused = false
       if (this.paused) {
-        this.controls?.play()
+        this.ctrls?.play()
         this.paused = false
       }
       this.lerpRate(1)
+      if (this.playState === 'paused') void this.play()
     } else {
       this.keyboardPaused = true
       this.lerpRate(0)
+      if (this.playState === 'running') this.pause()
     }
   }
 

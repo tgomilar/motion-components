@@ -1,11 +1,12 @@
-import type { CodeWindowProps } from './code-window.types.js'
-export type { CodeWindowProps } from './code-window.types.js'
+import type { MotionCodeProps } from './motion-code.types.js'
+export type { MotionCodeProps } from './motion-code.types.js'
 
-import { LitElement, html, css, nothing } from 'lit'
+import { LitElement, html, css, svg, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
+import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
 
 interface Token {
   text: string
@@ -13,11 +14,12 @@ interface Token {
 }
 
 @customElement('motion-code')
-export class CodeWindow extends LitElement implements CodeWindowProps {
+export class MotionCode extends Controllable(LitElement) implements MotionCodeProps {
   @property({ type: String }) filename = 'app.html'
   @property({ type: String, attribute: 'code-lang' }) codeLang = ''
   @property({ type: Boolean, attribute: 'hide-chrome' }) hideChrome = false
   @property({ type: Boolean }) copy = false
+  @property({ type: Boolean, attribute: 'copy-label' }) copyLabel = false
   @property({ type: Boolean, reflect: true }) compact = false
   @property({ type: Boolean }) type = false
   @property({ type: Number, attribute: 'type-speed' }) typeSpeed = 80
@@ -32,16 +34,41 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
 
   private tokens: Token[] = []
   private raw = ''
-  private rafId: number | null = null
-  private loopTimeoutId: ReturnType<typeof setTimeout> | null = null
+  private typePhase: 'delay' | 'typing' | 'gap' = 'delay'
+  private phaseElapsed = 0
+  private typeLoop = frameLoop((dt) => this.typeTick(dt))
+  private resolveTyped: (() => void) | null = null
   private cursorControls: AnimationPlaybackControls | null = null
   private revealObserver: IntersectionObserver | null = null
   private isIntersecting = false
   private hasCode = false
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      if (!this.totalChars) return { handle: this.typeHandle(), done: Promise.resolve() }
+      this.beginTyping()
+      if (!this.noLoop) return { handle: this.typeHandle() }
+      return {
+        handle: this.typeHandle(),
+        done: new Promise<void>((resolve) => {
+          this.resolveTyped = resolve
+        }),
+      }
+    },
+    applyFinalState: () => {
+      this.visibleChars = this.totalChars
+      this.typing = false
+    },
+    applyInitialState: () => {
+      this.visibleChars = this.type ? 0 : -1
+      this.typing = false
+    },
+  })
+
   static styles = css`
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       width: 100%;
       min-width: 0;
       background: var(--color-surface-2, #f0f0f8);
@@ -103,10 +130,14 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
     }
 
     .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
       background: transparent;
       border: 1px solid var(--color-border, #dddde8);
       border-radius: 6px;
-      padding: 0.2rem 0.6rem;
+      padding: 0.3rem;
       font-size: 0.72rem;
       color: var(--color-muted, #60608a);
       cursor: pointer;
@@ -114,7 +145,7 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
       transition:
         color 0.15s,
         border-color 0.15s;
-      line-height: 1.6;
+      line-height: 1;
     }
 
     .copy-btn:hover {
@@ -122,10 +153,33 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
       border-color: var(--color-accent, #2563eb);
     }
 
+    .copy-btn.has-label {
+      padding: 0.25rem 0.5rem;
+    }
+
+    .copy-btn svg {
+      width: 13px;
+      height: 13px;
+      display: block;
+    }
+
     .body {
+      flex: 1;
       background: var(--color-surface, #ffffff);
       padding: 1.5rem 1.75rem;
       overflow-x: auto;
+    }
+
+    .code-area {
+      display: grid;
+    }
+
+    .code-area > pre {
+      grid-area: 1 / 1;
+    }
+
+    .sizer {
+      visibility: hidden;
     }
 
     :host([compact]) .body {
@@ -184,8 +238,6 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    if (this.rafId !== null) cancelAnimationFrame(this.rafId)
-    if (this.loopTimeoutId !== null) clearTimeout(this.loopTimeoutId)
     this.cursorControls?.stop()
     this.cursorControls = null
     this.revealObserver?.disconnect()
@@ -193,7 +245,10 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
 
   /** Restart the typing animation from the beginning */
   replay() {
-    if (this.type) this.startTyping()
+    if (this.type) {
+      this.cancel()
+      void this.play()
+    }
   }
 
   /** Set code programmatically — used by the Astro wrapper component */
@@ -203,12 +258,14 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
     this.tokens = this.tokenize(dedented)
     this.highlighted = this.renderTokens(this.tokens)
     this.hasCode = true
+    this.playback.teardown()
     if (this.type) {
       if (this.noLoop) {
-        // Start immediately if already intersecting, otherwise wait for observer
-        if (this.isIntersecting) requestAnimationFrame(() => this.startTyping())
+        // The observer fires immediately with the current intersection state,
+        // so this covers both already-visible and scrolled-to-later windows.
+        this.setupRevealObserver()
       } else {
-        requestAnimationFrame(() => this.startTyping())
+        requestAnimationFrame(() => void this.play())
       }
     }
     this.requestUpdate()
@@ -270,7 +327,7 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
       if (this.noLoop) {
         this.setupRevealObserver()
       } else {
-        this.startTyping()
+        void this.play()
       }
     }
   }
@@ -282,7 +339,7 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
         for (const entry of entries) {
           this.isIntersecting = entry.isIntersecting
           if (entry.isIntersecting && this.hasCode) {
-            this.startTyping()
+            void this.play()
             this.revealObserver?.disconnect()
             this.revealObserver = null
           }
@@ -329,48 +386,68 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
     return this.tokens.reduce((sum, t) => sum + t.text.length, 0)
   }
 
-  private startTyping() {
-    if (this.rafId !== null) cancelAnimationFrame(this.rafId)
-    if (this.loopTimeoutId !== null) {
-      clearTimeout(this.loopTimeoutId)
-      this.loopTimeoutId = null
+  private typeHandle() {
+    return {
+      pause: () => {
+        this.typeLoop.stop()
+        this.cursorControls?.pause()
+      },
+      resume: () => {
+        this.typeLoop.start()
+        this.cursorControls?.play()
+      },
+      finish: () => {
+        this.stopTyping()
+        this.visibleChars = this.totalChars
+        this.typing = false
+      },
+      cancel: () => this.stopTyping(),
     }
+  }
 
-    const total = this.totalChars
-    if (!total) return
-
+  private beginTyping() {
+    this.typePhase = 'delay'
+    this.phaseElapsed = 0
     this.visibleChars = 0
     this.typing = true
+    this.typeLoop.start()
+  }
 
-    const duration = (total / this.typeSpeed) * 1000
+  private stopTyping() {
+    this.typeLoop.stop()
+    this.resolveTyped = null
+  }
 
-    const start = () => {
-      const t0 = performance.now()
-      const tick = (now: number) => {
-        const progress = Math.min((now - t0) / duration, 1)
-        this.visibleChars = Math.floor(progress * total)
-        this.requestUpdate()
-        if (progress < 1) {
-          this.rafId = requestAnimationFrame(tick)
-        } else {
-          this.visibleChars = total
-          this.typing = false
-          this.requestUpdate()
-          if (!this.noLoop) {
-            this.loopTimeoutId = setTimeout(() => {
-              this.loopTimeoutId = null
-              this.startTyping()
-            }, this.typeLoopDelay)
-          }
-        }
-      }
-      this.rafId = requestAnimationFrame(tick)
+  private typeTick(dt: number) {
+    this.phaseElapsed += dt
+    if (this.typePhase === 'delay') {
+      if (this.phaseElapsed < this.typeDelay) return
+      this.typePhase = 'typing'
+      this.phaseElapsed = 0
+      return
     }
-
-    if (this.typeDelay > 0) {
-      setTimeout(start, this.typeDelay)
-    } else {
-      start()
+    if (this.typePhase === 'typing') {
+      const total = this.totalChars
+      const duration = (total / this.typeSpeed) * 1000
+      const progress = Math.min(this.phaseElapsed / duration, 1)
+      this.visibleChars = Math.floor(progress * total)
+      if (progress < 1) return
+      this.typing = false
+      if (this.noLoop) {
+        this.typeLoop.stop()
+        this.resolveTyped?.()
+        this.resolveTyped = null
+        return
+      }
+      this.typePhase = 'gap'
+      this.phaseElapsed = 0
+      return
+    }
+    if (this.phaseElapsed >= this.typeLoopDelay) {
+      this.typePhase = 'delay'
+      this.phaseElapsed = 0
+      this.visibleChars = 0
+      this.typing = true
     }
   }
 
@@ -807,6 +884,18 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
     }, 1800)
   }
 
+  private copyIcon() {
+    if (this.copied) {
+      return svg`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="2 8 6 12 14 4"/>
+      </svg>`
+    }
+    return svg`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="5" width="9" height="9" rx="2"/>
+      <path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+    </svg>`
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   render() {
@@ -819,17 +908,29 @@ export class CodeWindow extends LitElement implements CodeWindowProps {
             <span class="dot dot-green"></span>
             <span class="filename">${this.filename}</span>
             ${this.copy
-              ? html` <button class="copy-btn" @click=${this.handleCopy}>
-                  ${this.copied ? 'Copied!' : 'Copy'}
+              ? html` <button
+                  class="copy-btn ${this.copyLabel ? 'has-label' : ''}"
+                  @click=${this.handleCopy}
+                  aria-label=${this.copied ? 'Copied' : 'Copy'}
+                >
+                  ${this.copyIcon()}
+                  ${this.copyLabel
+                    ? html`<span>${this.copied ? 'Copied!' : 'Copy'}</span>`
+                    : nothing}
                 </button>`
               : nothing}
           </div>`}
       <div class="body">
-        <pre>
+        <div class="code-area">
+          ${this.type
+            ? html`<pre class="sizer" aria-hidden="true">${unsafeHTML(this.highlighted)}</pre>`
+            : nothing}
+          <pre>
 ${unsafeHTML(this.renderPartial())}${this.typing
-            ? html`<span class="cursor"></span>`
-            : nothing}</pre
-        >
+              ? html`<span class="cursor"></span>`
+              : nothing}</pre
+          >
+        </div>
       </div>
     `
   }
@@ -837,6 +938,6 @@ ${unsafeHTML(this.renderPartial())}${this.typing
 
 declare global {
   interface HTMLElementTagNameMap {
-    'motion-code': CodeWindow
+    'motion-code': MotionCode
   }
 }

@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate } from 'motion'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionBlurInProps } from './motion-blur-in.types.js'
 
 export type { MotionBlurInProps } from './motion-blur-in.types.js'
@@ -22,7 +23,7 @@ export type { MotionBlurInProps } from './motion-blur-in.types.js'
  * ```
  */
 @customElement('motion-blur-in')
-export class MotionBlurIn extends LitElement implements MotionBlurInProps {
+export class MotionBlurIn extends Controllable(LitElement) implements MotionBlurInProps {
   /** Spring duration of the reveal animation, in seconds. */
   @property({ type: Number }) duration = 0.7
   /** Initial blur in pixels; animates to 0 on reveal. */
@@ -47,6 +48,31 @@ export class MotionBlurIn extends LitElement implements MotionBlurInProps {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () =>
+      controlsRun(
+        animate(
+          this,
+          {
+            opacity: [0, 1],
+            filter: [`blur(${this.amount}px)`, 'blur(0px)'],
+            y: [this.y, 0],
+          },
+          { duration: this.duration, type: 'spring', bounce: 0.1 },
+        ),
+      ),
+    applyFinalState: () => {
+      this.style.opacity = '1'
+      this.style.filter = ''
+      this.style.transform = ''
+    },
+    applyInitialState: () => {
+      this.style.opacity = '0'
+      this.style.filter = `blur(${this.amount}px)`
+      this.style.transform = ''
+    },
+  })
+
   connectedCallback() {
     super.connectedCallback()
     if (!this.reduced) {
@@ -70,8 +96,8 @@ export class MotionBlurIn extends LitElement implements MotionBlurInProps {
 
   private onIntersect = (entries: IntersectionObserverEntry[]) => {
     for (const entry of entries) {
-      if (entry.isIntersecting && !this.revealed) {
-        this.play()
+      if (entry.isIntersecting && !this.revealed && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.revealed = true
           this.observer?.disconnect()
@@ -80,29 +106,11 @@ export class MotionBlurIn extends LitElement implements MotionBlurInProps {
     }
   }
 
-  private play() {
-    if (this.reduced) {
-      this.style.opacity = '1'
-      this.style.filter = ''
-      return
-    }
-    animate(
-      this,
-      {
-        opacity: [0, 1],
-        filter: [`blur(${this.amount}px)`, 'blur(0px)'],
-        y: [this.y, 0],
-      },
-      { duration: this.duration, type: 'spring', bounce: 0.1 },
-    )
-  }
-
   /** Resets to the blurred initial state and re-runs the reveal. */
   replay() {
     this.revealed = false
-    this.style.opacity = '0'
-    this.style.filter = `blur(${this.amount}px)`
-    this.play()
+    this.cancel()
+    void this.play()
   }
 
   render() {

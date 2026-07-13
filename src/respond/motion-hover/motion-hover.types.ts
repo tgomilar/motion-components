@@ -6,4 +6,5 @@ export interface MotionHoverProps {
   skew: number
   duration: number
   bounce: number
+  disabled: boolean
 }

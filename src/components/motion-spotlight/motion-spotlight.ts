@@ -155,8 +155,7 @@ export class MotionSpotlight extends LitElement implements MotionSpotlightProps 
   }
 
   render() {
-    return html`<slot></slot>
-      <div class="spot" aria-hidden="true"></div>`
+    return html`<slot></slot> <div class="spot" aria-hidden="true"></div>`
   }
 }
 

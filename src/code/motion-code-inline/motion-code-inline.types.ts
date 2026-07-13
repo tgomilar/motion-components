@@ -1,4 +1,4 @@
-export interface CodeInlineProps {
+export interface MotionCodeInlineProps {
   copy: boolean
   copyVisible: boolean
 }

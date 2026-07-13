@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionCounterProps } from './motion-counter.types.js'
 
@@ -24,7 +25,7 @@ document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
  * ```
  */
 @customElement('motion-counter')
-export class MotionCounter extends LitElement implements MotionCounterProps {
+export class MotionCounter extends Controllable(LitElement) implements MotionCounterProps {
   /** Starting value of the counter. */
   @property({ type: Number }) from = 0
   /** Target value to count up (or down) to. */
@@ -52,16 +53,41 @@ export class MotionCounter extends LitElement implements MotionCounterProps {
   private disconnectIntersect: (() => void) | null = null
   private animated = false
 
-  private get reduced() {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  }
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => {
+      const counter = { value: this.from }
+      return controlsRun(
+        animate(
+          counter,
+          { value: this.to },
+          {
+            duration: this.duration,
+            type: 'spring',
+            bounce: 0.05,
+            onUpdate: () => {
+              this.value = counter.value
+            },
+            onComplete: () => {
+              this.value = this.to
+            },
+          },
+        ),
+      )
+    },
+    applyFinalState: () => {
+      this.value = this.to
+    },
+    applyInitialState: () => {
+      this.value = this.from
+    },
+  })
 
   connectedCallback() {
     super.connectedCallback()
     this.value = this.from
     this.disconnectIntersect = useIntersect(this, 0.2, () => {
-      if (!this.animated) {
-        this.play()
+      if (!this.animated && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.animated = true
           this.disconnectIntersect?.()
@@ -75,31 +101,11 @@ export class MotionCounter extends LitElement implements MotionCounterProps {
     this.disconnectIntersect?.()
   }
 
-  private play() {
-    if (this.reduced) {
-      this.value = this.to
-      return
-    }
-    const counter = { value: this.from }
-    animate(
-      counter,
-      { value: this.to },
-      {
-        duration: this.duration,
-        type: 'spring',
-        bounce: 0.05,
-        onUpdate: () => {
-          this.value = counter.value
-        },
-      },
-    )
-  }
-
   /** Resets the counter to `from` and re-runs the count animation. */
   replay() {
     this.animated = false
-    this.value = this.from
-    this.play()
+    this.cancel()
+    void this.play()
   }
 
   render() {

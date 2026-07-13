@@ -11,13 +11,14 @@ Add a new component to the motion-components library. Components live under `src
 
 Place the new component under one of these directories:
 
-- `src/primitives/` — interactive wrappers (hover, press, magnetic, tilt, blur, reveal, stagger). Compose around any slotted content.
-- `src/text/` — typography effects (split, headline, scramble, typewriter, counter, ticker, words, glitch, perspective, stretch, liquid, gravity, font, curve, circle, arc).
+- `src/reveal/` — entrance & transition effects (reveal, stagger, blur, blur-in).
+- `src/respond/` — input-driven wrappers (hover, press, magnetic, tilt). Compose around any slotted content.
+- `src/text/` — typography effects (split, headline, scramble, typewriter, counter, ticker, words, glitch, perspective, stretch, liquid, gravity, font, curve, circle, arc, swap, text-mask).
 - `src/scroll/` — scroll-driven (parallax, scene). Use Motion One's `scroll()` primitive.
-- `src/interaction/` — discrete interactive widgets (slider, gallery, countdown, spotlight, progress, image-compare, flip-card).
-- `src/code/` — code-rendering elements (code-window, code-inline). Rare; only for syntax-highlighted output.
+- `src/components/` — discrete interactive widgets (slider, gallery, dialog, countdown, spotlight, progress, image-compare, flip-card).
+- `src/code/` — code-rendering elements (motion-code, motion-code-inline). Rare; only for syntax-highlighted output.
 
-If the new component doesn't clearly fit, prefer `interaction/` over inventing a new directory.
+If the new component doesn't clearly fit, prefer `components/` over inventing a new directory.
 
 ## Conventions to follow
 

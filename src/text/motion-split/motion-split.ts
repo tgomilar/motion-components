@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit'
 import { customElement, property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { REVEAL_SPRING } from '../../utils/springs.js'
+import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { splitText } from '../utils/split-text.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionSplitProps, SplitBy } from './motion-split.types.js'
@@ -24,8 +25,9 @@ export type { MotionSplitProps, SplitBy } from './motion-split.types.js'
  * </motion-split>
  * ```
  */
+// @preload host — raw text is visible until upgrade hides the split spans for the entrance animation
 @customElement('motion-split')
-export class MotionSplit extends LitElement implements MotionSplitProps {
+export class MotionSplit extends Controllable(LitElement) implements MotionSplitProps {
   /** Split unit: `'words'`, `'chars'`, or `'lines'`. */
   @property({ type: String, reflect: true }) by: SplitBy = 'words'
   /** Stagger between units, in seconds. */
@@ -54,6 +56,29 @@ export class MotionSplit extends LitElement implements MotionSplitProps {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () =>
+      controlsRun(
+        animate(
+          this.spans,
+          { opacity: [0, 1], y: [this.y, 0] },
+          { delay: stagger(this.interval), ...REVEAL_SPRING, duration: this.duration },
+        ),
+      ),
+    applyFinalState: () => {
+      for (const s of this.spans) {
+        s.style.opacity = '1'
+        s.style.transform = ''
+      }
+    },
+    applyInitialState: () => {
+      for (const s of this.spans) {
+        s.style.opacity = '0'
+        s.style.transform = `translateY(${this.y}px)`
+      }
+    },
+  })
+
   firstUpdated() {
     const { spans } = splitText(this, this.by)
     if (!spans.length) {
@@ -72,8 +97,8 @@ export class MotionSplit extends LitElement implements MotionSplitProps {
     this.setAttribute('data-ready', '')
 
     this.disconnectIntersect = useIntersect(this.spans[0], 0.1, () => {
-      if (!this.animated) {
-        this.play()
+      if (!this.animated && this.playState === 'idle') {
+        void this.play()
         if (this.once) {
           this.animated = true
           this.disconnectIntersect?.()
@@ -87,25 +112,11 @@ export class MotionSplit extends LitElement implements MotionSplitProps {
     this.disconnectIntersect?.()
   }
 
-  private play() {
-    if (this.reduced) {
-      this.spans.forEach((s) => {
-        s.style.opacity = '1'
-        s.style.transform = ''
-      })
-      return
-    }
-    animate(
-      this.spans,
-      { opacity: [0, 1], y: [this.y, 0] },
-      { delay: stagger(this.interval), ...REVEAL_SPRING, duration: this.duration },
-    )
-  }
-
   /** Resets and re-runs the staggered reveal. */
   replay() {
     this.animated = false
-    animate(this.spans, { opacity: 0, y: this.y }, { duration: 0 }).then(() => this.play())
+    this.cancel()
+    void this.play()
   }
 
   render() {

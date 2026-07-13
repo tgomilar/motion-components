@@ -1,5 +1,6 @@
 import { LitElement, html, css, svg, nothing } from 'lit'
 import { customElement, property, query } from 'lit/decorators.js'
+import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionLiquidProps } from './motion-liquid.types.js'
 
 export type { MotionLiquidProps } from './motion-liquid.types.js'
@@ -24,7 +25,7 @@ export type { MotionLiquidProps } from './motion-liquid.types.js'
  * ```
  */
 @customElement('motion-liquid')
-export class MotionLiquid extends LitElement implements MotionLiquidProps {
+export class MotionLiquid extends Controllable(LitElement) implements MotionLiquidProps {
   /** Text to distort. */
   @property({ type: String }) text = ''
   /** Maximum displacement amount in pixels (peak of the noise pulse). */
@@ -59,15 +60,25 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
   @query('svg') private svgEl!: SVGSVGElement | null
   @query('text') private textEl!: SVGTextElement | null
 
-  private hovered = false
   private resizeObserver: ResizeObserver | null = null
+
+  playback: PlaybackController = new PlaybackController(this, {
+    start: () => ({
+      handle: {
+        pause: () => this.svgEl?.pauseAnimations(),
+        resume: () => this.svgEl?.unpauseAnimations(),
+        finish: () => this.svgEl?.unpauseAnimations(),
+        cancel: () => this.svgEl?.unpauseAnimations(),
+      },
+    }),
+    applyFinalState: () => {},
+    applyInitialState: () => {},
+  })
 
   connectedCallback() {
     super.connectedCallback()
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)
-    // Re-fit on zoom, container resize, or CSS-driven font-size changes — none
-    // of which fire a Lit update.
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.fit())
       this.resizeObserver.observe(this)
@@ -83,19 +94,13 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
   }
 
   firstUpdated() {
-    // Re-fit once web fonts settle, since metrics change after they load.
     if ('fonts' in document) document.fonts.ready.then(() => this.fit())
   }
 
   updated(changed: Map<string, unknown>) {
-    // Only the text (and font/size events handled elsewhere) changes geometry,
-    // so avoid a forced getBBox reflow on speed/intensity/pause-only updates.
     if (changed.has('text')) this.fit()
-    if (changed.has('pauseOnHover')) this.syncPause()
   }
 
-  /** Size the SVG viewport to the text's bounding box so layout reserves the
-   * right space; `overflow: visible` lets the displaced pixels draw outside. */
   private fit() {
     const svgEl = this.svgEl
     const textEl = this.textEl
@@ -106,8 +111,6 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
     try {
       box = textEl.getBBox()
     } catch {
-      // getBBox throws when an ancestor is display:none; keep the last good
-      // size rather than collapsing a temporarily-hidden element.
       return
     }
     if (!box.width || !box.height) return this.resetFit(svgEl)
@@ -115,15 +118,9 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
     svgEl.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`)
     svgEl.setAttribute('width', String(box.width))
     svgEl.setAttribute('height', String(box.height))
-
-    // Text is drawn on its alphabetic baseline at y=0, so the box bottom sits
-    // `box.y + box.height` px below the baseline (the descender depth). The
-    // inline SVG aligns its bottom edge to the parent baseline, so shift it
-    // down by that amount to land the text baseline on the parent baseline.
     svgEl.style.verticalAlign = `${-(box.y + box.height)}px`
   }
 
-  /** Collapse the SVG to nothing so empty text reserves no space. */
   private resetFit(svgEl: SVGSVGElement) {
     svgEl.removeAttribute('viewBox')
     svgEl.setAttribute('width', '0')
@@ -132,21 +129,11 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
   }
 
   private onEnter = () => {
-    this.hovered = true
-    this.syncPause()
-  }
-  private onLeave = () => {
-    this.hovered = false
-    this.syncPause()
+    if (this.pauseOnHover) this.pause()
   }
 
-  /** Pause the SMIL timeline only while hovered AND pause-on-hover is on, and
-   * resume otherwise — so toggling the prop off mid-hover doesn't strand it. */
-  private syncPause() {
-    const svgEl = this.svgEl
-    if (!svgEl) return
-    if (this.pauseOnHover && this.hovered) svgEl.pauseAnimations()
-    else svgEl.unpauseAnimations()
+  private onLeave = () => {
+    if (this.pauseOnHover && this.playState === 'paused') void this.play()
   }
 
   private get shouldAnimate() {
@@ -157,9 +144,6 @@ export class MotionLiquid extends LitElement implements MotionLiquidProps {
   render() {
     const animate = this.shouldAnimate
 
-    // Each primitive loops on its own period (derived from `speed`) so the
-    // turbulence wander and the displacement pulse stay decoupled — that
-    // mismatch is what reads as organic, flowing motion.
     const freqDur = `${(9 / this.speed).toFixed(3)}s`
     const scaleDur = `${(5.24 / this.speed).toFixed(3)}s`
     const min = (this.intensity * 0.3).toFixed(3)
