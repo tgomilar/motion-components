@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 — 2026-07-14
+
+### New
+
+- Text components that render from a `text` attribute — `motion-stretch`, `motion-liquid`, `motion-curve`, `motion-gravity`, and `motion-perspective` — now fall back to their child text when the attribute is unset: `<motion-stretch>Animate</motion-stretch>`. Child text doubles as a pre-upgrade fallback, so the page shows plain text instead of an empty gap until the element is defined. The `text` attribute still takes precedence when both are present and is the right choice for dynamic content since setting the property restarts the animation.
+- `text` property made optional (`text?: string`) on `motion-circle` and `motion-arc` for consistency.
+
 ## 0.3.0 — 2026-07-13
 
 ### New: JavaScript playback API
