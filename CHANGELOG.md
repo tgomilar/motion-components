@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-07-14
+
+### New
+
+- Editor metadata is now generated from the custom elements manifest on every build. The package ships `dist/web-types.json` (picked up automatically by JetBrains IDEs via the `web-types` field) and `dist/vscode.html-custom-data.json` / `dist/vscode.css-custom-data.json` (wire them up via `html.customData` / `css.customData` in VS Code settings). This gives tag completion, attribute completion, and hover docs for all `motion-*` elements in HTML and template files.
+
 ## 0.4.0 — 2026-07-14
 
 ### New
