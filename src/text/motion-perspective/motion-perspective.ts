@@ -11,18 +11,21 @@ export type { MotionPerspectiveProps, VanishDirection } from './motion-perspecti
  * vanish direction, simulating a 3D recession. Optionally animates the
  * recession back and forth like a depth oscillation.
  *
+ * Text can be set with the `text` attribute or as child text. Child text
+ * doubles as a pre-upgrade fallback: the browser shows it before the
+ * element is defined, so the page never paints an empty gap.
+ *
  * @element motion-perspective
  *
  * @example
  * ```html
- * <motion-perspective text="HORIZON" depth="0.7" vanish="right" animate>
- * </motion-perspective>
+ * <motion-perspective depth="0.7" vanish="right" animate>HORIZON</motion-perspective>
  * ```
  */
 @customElement('motion-perspective')
 export class MotionPerspective extends Controllable(LitElement) implements MotionPerspectiveProps {
-  /** Text to render with depth. */
-  @property({ type: String }) text = ''
+  /** Text to render with depth. Falls back to the element's child text when unset. */
+  @property({ type: String }) text?: string
   /** How far the far end recedes (0 = flat, 1 = full vanish). */
   @property({ type: Number }) depth = 0.65
   /** Direction the text recedes towards: `'left'` or `'right'`. */
@@ -88,6 +91,9 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   })
 
   connectedCallback() {
+    // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
+    if (!this.text) this.text = this.textContent?.trim() ?? ''
+    this.textContent = ''
     super.connectedCallback()
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)
@@ -169,7 +175,7 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   render() {
     return html`
       <span class="track">
-        ${[...this.text].map(
+        ${[...(this.text ?? '')].map(
           (char) => html`<span class="char">${char === ' ' ? ' ' : char}</span>`,
         )}
       </span>

@@ -1,5 +1,5 @@
 export interface MotionStretchProps {
-  text: string
+  text?: string
   spread: number
   stiffness: number
   damping: number
