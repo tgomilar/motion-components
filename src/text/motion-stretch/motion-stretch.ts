@@ -10,17 +10,21 @@ export type { MotionStretchProps } from './motion-stretch.types.js'
  * Springy character spread on hover. Each character springs outward from
  * the centre by `spread`, snapping back on mouse leave.
  *
+ * Text can be set with the `text` attribute or as child text. Child text
+ * doubles as a pre-upgrade fallback: the browser shows it before the
+ * element is defined, so the page never paints an empty gap.
+ *
  * @element motion-stretch
  *
  * @example
  * ```html
- * <motion-stretch text="STRETCH" spread="16"></motion-stretch>
+ * <motion-stretch spread="16">STRETCH</motion-stretch>
  * ```
  */
 @customElement('motion-stretch')
 export class MotionStretch extends LitElement implements MotionStretchProps {
-  /** Text to stretch. */
-  @property({ type: String }) text = ''
+  /** Text to stretch. Falls back to the element's child text when unset. */
+  @property({ type: String }) text?: string
   /** Maximum lateral displacement of edge characters, in pixels. */
   @property({ type: Number }) spread = 12
   /** Spring stiffness controlling reaction speed. */
@@ -69,6 +73,9 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
   }
 
   connectedCallback() {
+    // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
+    if (!this.text) this.text = this.textContent?.trim() ?? ''
+    this.textContent = ''
     super.connectedCallback()
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)
@@ -115,7 +122,7 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
     return html`
       <span class="sr-only">${this.text}</span>
       <span class="track" aria-hidden="true">
-        ${[...this.text].map(
+        ${[...(this.text ?? '')].map(
           (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
         )}
       </span>

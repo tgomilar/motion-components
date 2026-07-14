@@ -17,17 +17,21 @@ export type { MotionLiquidProps } from './motion-liquid.types.js'
  * while scrolling. SVG content re-renders its own filtered output on every
  * SMIL tick, which animates reliably across platforms.
  *
+ * Text can be set with the `text` attribute or as child text. Child text
+ * doubles as a pre-upgrade fallback: the browser shows it before the
+ * element is defined, so the page never paints an empty gap.
+ *
  * @element motion-liquid
  *
  * @example
  * ```html
- * <motion-liquid text="LIQUID" intensity="14" speed="2.5"></motion-liquid>
+ * <motion-liquid intensity="14" speed="2.5">LIQUID</motion-liquid>
  * ```
  */
 @customElement('motion-liquid')
 export class MotionLiquid extends Controllable(LitElement) implements MotionLiquidProps {
-  /** Text to distort. */
-  @property({ type: String }) text = ''
+  /** Text to distort. Falls back to the element's child text when unset. */
+  @property({ type: String }) text?: string
   /** Maximum displacement amount in pixels (peak of the noise pulse). */
   @property({ type: Number }) intensity = 10
   /** Animation speed of the noise / displacement loop. */
@@ -76,6 +80,9 @@ export class MotionLiquid extends Controllable(LitElement) implements MotionLiqu
   })
 
   connectedCallback() {
+    // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
+    if (!this.text) this.text = this.textContent?.trim() ?? ''
+    this.textContent = ''
     super.connectedCallback()
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)

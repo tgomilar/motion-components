@@ -1,5 +1,5 @@
 export interface MotionGravityProps {
-  text: string
+  text?: string
   height: number
   stagger: number
   duration: number

@@ -1,5 +1,5 @@
 export interface MotionCurveProps {
-  text: string
+  text?: string
   amplitude: number
   waveLength: number
   speed: number

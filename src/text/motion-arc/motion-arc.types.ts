@@ -2,7 +2,7 @@ export type ArcAlign = 'top' | 'bottom'
 export type ArcDirection = 'cw' | 'ccw'
 
 export interface MotionArcProps {
-  text: string
+  text?: string
   radius: number
   arc: number
   align: ArcAlign

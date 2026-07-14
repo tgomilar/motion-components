@@ -1,7 +1,7 @@
 export type CircleDirection = 'cw' | 'ccw'
 
 export interface MotionCircleProps {
-  text: string
+  text?: string
   radius: number
   speed: number
   direction: CircleDirection

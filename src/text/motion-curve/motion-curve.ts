@@ -13,18 +13,24 @@ export type { MotionCurveProps } from './motion-curve.types.js'
  * tangent-aligned rotation, producing a flowing serpent effect. With `loop`,
  * the text scrolls horizontally as a marquee while still riding the wave.
  *
+ * Text can be set with the `text` attribute or as child text. Child text
+ * doubles as a pre-upgrade fallback: the browser shows it before the
+ * element is defined, so the page never paints an empty gap. For long
+ * marquee strings prefer the `text` attribute so the fallback does not
+ * wrap across several lines.
+ *
  * @element motion-curve
  *
  * @example
  * ```html
- * <motion-curve text="Motion" amplitude="20" speed="0.5"></motion-curve>
+ * <motion-curve amplitude="20" speed="0.5">Motion</motion-curve>
  * <motion-curve text="endless" loop loop-speed="60"></motion-curve>
  * ```
  */
 @customElement('motion-curve')
 export class MotionCurve extends Controllable(LitElement) implements MotionCurveProps {
-  /** Text to render along the wave. */
-  @property({ type: String }) text = ''
+  /** Text to render along the wave. Falls back to the element's child text when unset. */
+  @property({ type: String }) text?: string
   /** Peak vertical offset of the wave, in pixels. */
   @property({ type: Number }) amplitude = 24
   /** Distance between wave crests, in pixels. */
@@ -120,6 +126,9 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
   private phase = 0
 
   connectedCallback() {
+    // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
+    if (!this.text) this.text = this.textContent?.trim() ?? ''
+    this.textContent = ''
     super.connectedCallback()
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)
@@ -226,7 +235,7 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
 
   render() {
     const chars = () =>
-      [...this.text].map(
+      [...(this.text ?? '')].map(
         (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
       )
 

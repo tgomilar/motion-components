@@ -25,7 +25,7 @@ export type { MotionCircleProps, CircleDirection } from './motion-circle.types.j
 @customElement('motion-circle')
 export class MotionCircle extends Controllable(LitElement) implements MotionCircleProps {
   /** Text to lay out around the circle. */
-  @property({ type: String }) text = ''
+  @property({ type: String }) text?: string
   /** Circle radius in pixels. */
   @property({ type: Number }) radius = 80
   /** Seconds per full rotation. Set to a small number for fast spin. */
@@ -148,7 +148,7 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
   }
 
   render() {
-    const chars = [...this.text]
+    const chars = [...(this.text ?? '')]
     const n = chars.length
     const size = this.radius * 2
 

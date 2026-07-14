@@ -10,17 +10,21 @@ export type { MotionGravityProps } from './motion-gravity.types.js'
  * Gravity-drop text. Each character falls in from above and bounces to rest
  * with a stagger across the line.
  *
+ * Text can be set with the `text` attribute or as child text. Child text
+ * doubles as a pre-upgrade fallback: the browser shows it before the
+ * element is defined, so the page never paints an empty gap.
+ *
  * @element motion-gravity
  *
  * @example
  * ```html
- * <motion-gravity text="GRAVITY" height="80" stagger="0.06"></motion-gravity>
+ * <motion-gravity height="80" stagger="0.06">GRAVITY</motion-gravity>
  * ```
  */
 @customElement('motion-gravity')
 export class MotionGravity extends Controllable(LitElement) implements MotionGravityProps {
-  /** Text to drop in. */
-  @property({ type: String }) text = ''
+  /** Text to drop in. Falls back to the element's child text when unset. */
+  @property({ type: String }) text?: string
   /** Drop distance in pixels (each char starts this far above its rest). */
   @property({ type: Number }) height = 60
   /** Delay between successive character drops, in seconds. */
@@ -86,6 +90,13 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
     },
   })
 
+  connectedCallback() {
+    // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
+    if (!this.text) this.text = this.textContent?.trim() ?? ''
+    this.textContent = ''
+    super.connectedCallback()
+  }
+
   updated(changed: Map<string, unknown>) {
     const needsPlay =
       changed.has('text') ||
@@ -107,7 +118,7 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
   }
 
   render() {
-    return html`${[...this.text].map(
+    return html`${[...(this.text ?? '')].map(
       (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
     )}`
   }

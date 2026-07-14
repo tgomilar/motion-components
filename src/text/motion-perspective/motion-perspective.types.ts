@@ -1,7 +1,7 @@
 export type VanishDirection = 'left' | 'right'
 
 export interface MotionPerspectiveProps {
-  text: string
+  text?: string
   depth: number
   vanish: VanishDirection
   oscillate: boolean

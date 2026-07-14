@@ -26,7 +26,7 @@ export type { MotionArcProps, ArcAlign, ArcDirection } from './motion-arc.types.
 @customElement('motion-arc')
 export class MotionArc extends Controllable(LitElement) implements MotionArcProps {
   /** Text to lay out along the arc. */
-  @property({ type: String }) text = ''
+  @property({ type: String }) text?: string
   /** Arc radius in pixels. */
   @property({ type: Number }) radius = 100
   /** Total angular span of the arc, in degrees. */
@@ -141,7 +141,7 @@ export class MotionArc extends Controllable(LitElement) implements MotionArcProp
   }
 
   render() {
-    const chars = [...this.text]
+    const chars = [...(this.text ?? '')]
     const n = chars.length
     const size = this.radius * 2
 
