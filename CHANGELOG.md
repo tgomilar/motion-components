@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2 — 2026-07-16
+
+### Fixed
+
+- Watch mode (`npm run dev`) no longer wipes CEM artifacts from `dist/` on rebuild.
+- Removed redundant CSSStyleSheet boilerplate from `motion-counter`, `motion-scramble`, `motion-swap`, `motion-ticker`, and `motion-typewriter`. FOUC prevention for these components is handled by `preload.css`.
+
 ## 0.4.1 — 2026-07-14
 
 ### New
