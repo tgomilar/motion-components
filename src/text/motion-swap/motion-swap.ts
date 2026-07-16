@@ -8,10 +8,6 @@ import type { AnimationPlaybackControls } from 'motion'
 
 export type { MotionSwapProps, TriggerMode } from './motion-swap.types.js'
 
-const sheet = new CSSStyleSheet()
-sheet.replaceSync('motion-swap:not(:defined) { opacity: 0 !important; }')
-document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
-
 interface CharPair {
   container: HTMLElement
   original: HTMLElement

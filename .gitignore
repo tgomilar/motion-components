@@ -7,3 +7,4 @@ dist-site
 !.prettierrc
 !.size-limit.json
 !.claude/
+.claude/worktrees/

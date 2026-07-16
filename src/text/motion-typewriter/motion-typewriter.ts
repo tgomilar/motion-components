@@ -5,10 +5,6 @@ import type { MotionTypewriterProps } from './motion-typewriter.types.js'
 
 export type { MotionTypewriterProps } from './motion-typewriter.types.js'
 
-const sheet = new CSSStyleSheet()
-sheet.replaceSync('motion-typewriter:not(:defined) { opacity: 0 !important; }')
-document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
-
 /**
  * Typewriter text effect. Reveals slotted text character-by-character,
  * with optional looping (type → pause → erase → retype) and a blinking caret.

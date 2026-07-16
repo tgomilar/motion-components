@@ -52,6 +52,10 @@ const entries: Record<string, string> = {
 
 export default defineConfig({
   build: {
+    // Watch mode (npm run dev) must not wipe the artifacts `cem analyze`
+    // writes to dist (custom-elements.json, web-types.json, vscode data);
+    // clean builds already start from `vite build` emptying the directory.
+    emptyOutDir: !process.argv.includes('--watch'),
     lib: {
       entry: entries,
       formats: ['es'],
