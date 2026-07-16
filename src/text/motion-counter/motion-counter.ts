@@ -7,10 +7,6 @@ import type { MotionCounterProps } from './motion-counter.types.js'
 
 export type { MotionCounterProps } from './motion-counter.types.js'
 
-const sheet = new CSSStyleSheet()
-sheet.replaceSync('motion-counter:not(:defined) { opacity: 0 !important; }')
-document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
-
 /**
  * Animated number counter. Springs from `from` to `to` once the element
  * scrolls into view. Use `prefix`/`suffix` for currency or units, `decimals`

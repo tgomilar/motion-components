@@ -5,10 +5,6 @@ import type { MotionScrambleProps } from './motion-scramble.types.js'
 
 export type { MotionScrambleProps } from './motion-scramble.types.js'
 
-const sheet = new CSSStyleSheet()
-sheet.replaceSync('motion-scramble:not(:defined) { opacity: 0 !important; }')
-document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
-
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&'
 
 /**

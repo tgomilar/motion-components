@@ -5,10 +5,6 @@ import type { MotionTickerProps, TickerDirection } from './motion-ticker.types.j
 
 export type { MotionTickerProps, TickerDirection } from './motion-ticker.types.js'
 
-const sheet = new CSSStyleSheet()
-sheet.replaceSync('motion-ticker:not(:defined) { opacity: 0 !important; }')
-document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet]
-
 /**
  * Horizontal auto-scrolling ticker / marquee. Duplicates children to create a
  * seamless infinite loop. Supports pause-on-hover, keyboard pause (Space/Enter),
