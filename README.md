@@ -1,6 +1,7 @@
 <p>
   <img src="https://img.shields.io/npm/v/motion-components" alt="npm">
   <img src="https://img.shields.io/bundlephobia/minzip/motion-components" alt="size">
+  <a href="https://github.com/tgomilar/motion-components/actions/workflows/test.yml"><img src="https://github.com/tgomilar/motion-components/actions/workflows/test.yml/badge.svg" alt="CI"></a>
 </p>
 
 # motion-components

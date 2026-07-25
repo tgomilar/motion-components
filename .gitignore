@@ -7,4 +7,8 @@ dist-site
 !.prettierrc
 !.size-limit.json
 !.claude/
+!.github/
 .claude/worktrees/
+
+# Vitest browser-mode failure screenshots
+__screenshots__/

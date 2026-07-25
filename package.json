@@ -192,8 +192,10 @@
     "generate-exports": "node scripts/generate-exports.mjs",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
-    "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run build && npm run check:exports && npm run size",
+    "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run test && npm run build && npm run check:exports && npm run size",
     "size": "size-limit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -213,20 +215,25 @@
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.11.0",
+    "@open-wc/testing-helpers": "^3.0.1",
     "@size-limit/preset-small-lib": "^12.1.0",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
     "custom-element-jet-brains-integration": "^1.7.0",
     "custom-element-vs-code-integration": "^1.5.0",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-lit": "^2.2.1",
     "eslint-plugin-wc": "^3.1.0",
+    "playwright": "^1.62.0",
     "prettier": "^3.8.3",
     "size-limit": "^12.1.0",
     "typescript": "^5.4.0",
     "vite": "^8.0.1",
-    "vite-plugin-dts": "^4.0.0"
+    "vite-plugin-dts": "^4.0.0",
+    "vitest": "^4.1.10"
   },
   "customElements": "dist/custom-elements.json",
   "web-types": "dist/web-types.json"
