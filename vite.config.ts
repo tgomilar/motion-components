@@ -69,7 +69,7 @@ export default defineConfig({
     },
   },
   plugins: [
-    dts({ entryRoot: 'src' }),
+    dts({ entryRoot: 'src', exclude: ['src/**/*.test.ts', 'src/test/**'] }),
     {
       name: 'emit-preload-css',
       generateBundle() {

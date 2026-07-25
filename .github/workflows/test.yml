@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      # Cache the downloaded browser binaries, keyed on the lockfile so the
+      # cache busts when the Playwright version changes.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      # On a cache miss, download the browser + its system libs. On a hit, the
+      # binaries are restored — only the (uncacheable) apt system libs remain.
+      - name: Install Playwright (browser + deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+      # size-limit measures the built dist/, so build before checking the budget.
+      - run: npm run build
+      - run: npm run size
