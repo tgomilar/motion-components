@@ -26,7 +26,7 @@ interface SceneRange {
  *
  * @example
  * ```html
- * <motion-scene height="300vh" pin>
+ * <motion-scene height="300vh">
  *   <div
  *     data-from='{"scale":0.8,"y":"40px"}'
  *     data-to='{"scale":1,"y":"0px"}'
@@ -40,7 +40,10 @@ interface SceneRange {
 export class MotionScene extends Controllable(LitElement) implements MotionSceneProps {
   /** Height of the scroll-driven scene (e.g. `"200vh"`, `"150%"`). */
   @property({ type: String }) height = '200vh'
-  /** Whether the inner stage is `position: sticky`. Set `false` for a floating layout. */
+  /**
+   * Whether the inner stage is `position: sticky`. Cannot be disabled from markup, as with any HTML
+   * boolean attribute. Set the property instead: `el.pin = false`.
+   */
   @property({ type: Boolean }) pin = true
   /** CSS selector for a custom scroll container element (defaults to the document). */
   @property({ type: String }) container = ''

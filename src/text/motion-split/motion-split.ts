@@ -36,7 +36,10 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
   @property({ type: Number }) duration = 0.6
   /** Initial vertical offset in pixels for each unit. */
   @property({ type: Number }) y = 20
-  /** When `true`, only animate the first time the element enters view. */
+  /**
+   * When `true`, only animate the first time the element enters view. Cannot be disabled from
+   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
+   */
   @property({ type: Boolean }) once = true
 
   static styles = css`

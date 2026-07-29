@@ -14,17 +14,20 @@ export type { MotionTickerProps, TickerDirection } from './motion-ticker.types.j
  *
  * @slot - Items to scroll. Each direct child is duplicated to fill the container.
  *
- * @property {number} speed - Scroll speed in pixels per second. Default `60`.
- * @property {number} gap - Gap between items in pixels. Default `32`.
- * @property {'left'|'right'} direction - Scroll direction. Default `"left"`.
- * @property {boolean} pause-on-hover - Pause on mouse enter / focus. Default `true`.
- * @property {boolean} wave - Enable sine-wave vertical oscillation.
- * @property {number} wave-amplitude - Wave amplitude in pixels. Default `10`.
- * @property {number} wave-length - Wave length in pixels. Default `300`.
+ * `speed`, `gap` and `direction` are live: changing them restarts the marquee.
+ * The remaining attributes are read once while the marquee is built.
+ *
+ * @attr {number} [speed=60] - Scroll speed in pixels per second.
+ * @attr {number} [gap=32] - Gap between items in pixels.
+ * @attr {'left'|'right'} [direction='left'] - Scroll direction.
+ * @attr {boolean} [pause-on-hover=true] - Pause on mouse enter / focus. Set `"false"` to keep scrolling. Read once on connect.
+ * @attr {boolean} [wave=false] - Enable sine-wave vertical oscillation. Read once on connect.
+ * @attr {number} [wave-amplitude=10] - Wave amplitude in pixels. Read once on connect.
+ * @attr {number} [wave-length=300] - Wave length in pixels. Read once on connect.
  *
  * @example
  * ```html
- * <motion-ticker speed="80" gap="48" direction="left" wave wave-amplitude="12" wave-length="200">
+ * <motion-ticker speed="80" gap="48" direction="right" wave wave-amplitude="12" wave-length="200">
  *   <span>Item one</span>
  *   <span>Item two</span>
  *   <span>Item three</span>

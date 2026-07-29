@@ -13,18 +13,69 @@ interface Token {
   cls?: string
 }
 
+/**
+ * Syntax-highlighted code block with macOS-style window chrome, an optional copy
+ * button, and an optional typewriter reveal. Highlighting is built in for HTML,
+ * JS/TS, CSS, JSON and Python, with no external tokenizer; token colours are
+ * overridable through CSS custom properties.
+ *
+ * Source is read from a `<script type="text/plain">` child, which is preferred
+ * because the browser will not parse it as markup, or from the concatenated text
+ * of child `<div>` elements. Either way the result is dedented.
+ *
+ * @element motion-code
+ *
+ * @cssprop [--cw-keyword] - Keyword token colour.
+ * @cssprop [--cw-string] - String token colour.
+ * @cssprop [--cw-tag] - Tag and selector token colour.
+ * @cssprop [--cw-attr] - Attribute and property token colour.
+ * @cssprop [--cw-num] - Numeric token colour.
+ * @cssprop [--cw-comment] - Comment token colour. Falls back to `--color-muted`.
+ *
+ * @example
+ * ```html
+ * <motion-code filename="app.ts" copy copy-label type type-speed="60" no-loop>
+ *   <script type="text/plain">
+ *     const greeting = 'hello'
+ *   </script>
+ * </motion-code>
+ * ```
+ */
 @customElement('motion-code')
 export class MotionCode extends Controllable(LitElement) implements MotionCodeProps {
+  /**
+   * Name shown in the window chrome. Doubles as the language hint: the file
+   * extension picks the tokenizer unless `code-lang` overrides it.
+   */
   @property({ type: String }) filename = 'app.html'
+  /**
+   * Explicit highlighting language, overriding the `filename` extension. One of
+   * `html`, `js`, `css`, `json` or `python`; anything else renders unhighlighted.
+   */
   @property({ type: String, attribute: 'code-lang' }) codeLang = ''
+  /**
+   * Hide the whole title bar: traffic-light dots, filename and copy button.
+   * Suppresses `copy` as a side effect, since the button lives in the chrome.
+   */
   @property({ type: Boolean, attribute: 'hide-chrome' }) hideChrome = false
+  /** Show a copy-to-clipboard button in the chrome. Copies the dedented source, not the highlighted markup. */
   @property({ type: Boolean }) copy = false
+  /** Label the copy button with "Copy" / "Copied!" text instead of showing the icon alone. */
   @property({ type: Boolean, attribute: 'copy-label' }) copyLabel = false
+  /** Denser layout: smaller radius, tighter padding and a smaller type scale. */
   @property({ type: Boolean, reflect: true }) compact = false
+  /** Reveal the code with a typewriter animation instead of rendering it at once. */
   @property({ type: Boolean }) type = false
+  /** Typing speed in characters per second. Total duration is derived from the character count. */
   @property({ type: Number, attribute: 'type-speed' }) typeSpeed = 80
+  /** Delay in milliseconds before the first character appears, applied on every pass. */
   @property({ type: Number, attribute: 'type-delay' }) typeDelay = 0
+  /**
+   * Type once instead of looping. Also changes the trigger: with `no-loop` the
+   * animation waits until the block scrolls into view, otherwise it starts on connect.
+   */
   @property({ type: Boolean, attribute: 'no-loop' }) noLoop = false
+  /** Milliseconds to hold the completed text before restarting. Ignored when `no-loop` is set. */
   @property({ type: Number, attribute: 'type-loop-delay' }) typeLoopDelay = 1500
 
   @state() private copied = false

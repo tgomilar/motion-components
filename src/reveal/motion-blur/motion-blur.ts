@@ -24,15 +24,14 @@ export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
  */
 @customElement('motion-blur')
 export class MotionBlur extends Controllable(LitElement) implements MotionBlurProps {
-  /** Reserved for future use; reveal speed is driven by scroll progress. */
-  @property({ type: Number }) duration = 0.7
   /** Maximum blur amount in pixels at the unfocused extreme. */
   @property({ type: Number, attribute: 'blur' }) amount = 10
   /** Vertical translation in pixels at the unfocused extreme. */
   @property({ type: Number }) y = 12
-  /** Reserved for future use; the scroll handler defines its own offsets. */
-  @property({ type: Number }) threshold = 0.1
-  /** When `true` (and `direction="in"`), latch focused state on first reveal. */
+  /**
+   * When `true` (and `direction="in"`), latch focused state on first reveal. Cannot be disabled
+   * from markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
+   */
   @property({ type: Boolean }) once = true
   /** `'in'` blurs on entry, `'out'` blurs on exit, `'both'` blur-focus-blur. */
   @property({ type: String, reflect: true }) direction: BlurDirection = 'in'

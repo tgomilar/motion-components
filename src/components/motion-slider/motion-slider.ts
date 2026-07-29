@@ -10,15 +10,17 @@ export type { MotionSliderProps } from './motion-slider.types.js'
  *
  * @slot - Slides. Each direct child becomes a slide in the carousel.
  *
- * @property {number} gap - Space between slides in pixels. Default `24`.
- * @property {boolean} arrows - Whether to show prev/next arrow buttons. Default `true`.
+ * Both attributes are read once while the slider is built.
+ *
+ * @attr {number} [gap=24] - Space between slides in pixels.
+ * @attr {boolean} [arrows=true] - Show prev/next arrow buttons. Set `"false"` to hide them.
  *
  * @fires slidechange - Dispatched when the active slide index changes.
  *   `event.detail.index` contains the new index.
  *
  * @example
  * ```html
- * <motion-slider gap="24" arrows>
+ * <motion-slider gap="32">
  *   <div>Slide 1</div>
  *   <div>Slide 2</div>
  *   <div>Slide 3</div>
@@ -26,8 +28,6 @@ export type { MotionSliderProps } from './motion-slider.types.js'
  * ```
  */
 export class MotionSlider extends HTMLElement {
-  static observedAttributes = ['gap', 'arrows']
-
   private track: HTMLElement | null = null
   private slides: HTMLElement[] = []
   private dots: HTMLElement[] = []

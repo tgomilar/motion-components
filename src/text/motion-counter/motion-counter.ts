@@ -34,7 +34,10 @@ export class MotionCounter extends Controllable(LitElement) implements MotionCou
   @property({ type: String }) prefix = ''
   /** Text rendered after the number (e.g. `"%"`). */
   @property({ type: String }) suffix = ''
-  /** When `true`, only count the first time the element enters view. */
+  /**
+   * When `true`, only count the first time the element enters view. Cannot be disabled from markup,
+   * as with any HTML boolean attribute. Set the property instead: `el.once = false`.
+   */
   @property({ type: Boolean }) once = true
 
   @state() private value = 0

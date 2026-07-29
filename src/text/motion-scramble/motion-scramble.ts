@@ -30,7 +30,10 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
   @property({ type: Number }) delay = 0
   /** Number of random-glyph frames per character before locking in. */
   @property({ type: Number }) iterations = 2
-  /** When `true`, only scramble the first time the element enters view. */
+  /**
+   * When `true`, only scramble the first time the element enters view. Cannot be disabled from
+   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
+   */
   @property({ type: Boolean }) once = true
   /** When `true`, trigger on hover instead of viewport entry. */
   @property({ type: Boolean, reflect: true }) hover = false

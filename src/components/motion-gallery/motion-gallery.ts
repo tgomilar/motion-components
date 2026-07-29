@@ -18,10 +18,13 @@ const SPRING_COLLAPSE = { type: 'spring', stiffness: 460, damping: 48, restDelta
  *   lightbox caption overlay (optional). Items are expected to be images or media
  *   elements.
  *
- * @property {string} columns - Number of grid columns. Default `"3"`.
- * @property {number} gap - Grid gap in pixels. Default `16`.
- * @property {string} aspect-ratio - CSS aspect-ratio for each item.
- * @property {boolean} stagger - Whether to stagger entrance. Set `"false"` to disable. Default `true`.
+ * `columns`, `gap` and `aspect-ratio` are live. `stagger` is read once, when the
+ * entrance animation runs.
+ *
+ * @attr {string} [columns='3'] - Number of grid columns.
+ * @attr {number} [gap=16] - Grid gap in pixels.
+ * @attr {string} [aspect-ratio] - CSS `aspect-ratio` for each item. Unset by default, so items keep their intrinsic ratio.
+ * @attr {boolean} [stagger=true] - Stagger the entrance animation. Set `"false"` to disable. Read once on connect.
  *
  * @example
  * ```html

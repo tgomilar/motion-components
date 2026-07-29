@@ -4,9 +4,26 @@ export type { MotionCodeInlineProps } from './motion-code-inline.types.js'
 import { LitElement, html, css, svg, nothing } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 
+/**
+ * Inline code snippet with an optional copy-to-clipboard button. Renders the
+ * slotted text inside a styled `<code>` element; the copy button fades in on
+ * hover, or stays visible with `copy-visible`.
+ *
+ * @element motion-code-inline
+ *
+ * @slot - The code text to render and copy.
+ *
+ * @example
+ * ```html
+ * <motion-code-inline copy>npm i motion-components</motion-code-inline>
+ * <motion-code-inline copy-visible>--color-accent</motion-code-inline>
+ * ```
+ */
 @customElement('motion-code-inline')
 export class MotionCodeInline extends LitElement implements MotionCodeInlineProps {
+  /** Show a copy-to-clipboard button that fades in on hover. */
   @property({ type: Boolean }) copy = false
+  /** Show the copy button and keep it permanently visible, without needing hover. Implies `copy`. */
   @property({ type: Boolean, attribute: 'copy-visible', reflect: true }) copyVisible = false
 
   @state() private copied = false

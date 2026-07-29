@@ -39,7 +39,10 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
   @property({ type: Number }) delay = 0
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.2
-  /** When `true`, only animate the first time the element enters view. */
+  /**
+   * When `true`, only animate the first time the element enters view. Cannot be disabled from
+   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
+   */
   @property({ type: Boolean }) once = true
 
   static styles = css`

@@ -1,6 +1,6 @@
 export interface MotionCodeProps {
   filename: string
-  lang: string
+  codeLang: string
   hideChrome: boolean
   copy: boolean
   copyLabel: boolean

@@ -31,8 +31,6 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
   @property({ type: String }) colors = ''
   /** Time each word stays visible, in milliseconds. */
   @property({ type: Number }) interval = 2000
-  /** Reserved; transitions are spring-based and not duration-driven. */
-  @property({ type: Number }) duration = 0.5
 
   @state() private index = 0
 
