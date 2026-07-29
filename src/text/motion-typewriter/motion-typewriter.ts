@@ -33,7 +33,10 @@ export class MotionTypewriter
   @property({ type: Number, attribute: 'pause' }) pauseTime = 1800
   /** When `true`, type → pause → erase → retype on repeat. */
   @property({ type: Boolean }) loop = false
-  /** When `true`, render a blinking caret after the typed text. */
+  /**
+   * When `true`, render a blinking caret after the typed text. Cannot be disabled from markup, as
+   * with any HTML boolean attribute. Set the property instead: `el.cursor = false`.
+   */
   @property({ type: Boolean }) cursor = true
 
   @state() private displayed = ''

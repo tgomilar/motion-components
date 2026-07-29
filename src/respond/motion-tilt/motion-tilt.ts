@@ -27,8 +27,6 @@ export type { MotionTiltProps } from './motion-tilt.types.js'
 export class MotionTilt extends LitElement implements MotionTiltProps {
   /** Maximum tilt angle in degrees on each axis. */
   @property({ type: Number }) max = 15
-  /** Reserved for future use; tilt is governed by spring stiffness/damping. */
-  @property({ type: Number }) duration = 0.6
   /** Scale factor while hovering. */
   @property({ type: Number }) scale = 1.04
   /** When `true`, render a moving radial-gradient gloss highlight overlay. */

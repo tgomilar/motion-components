@@ -58,7 +58,11 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   @property({ type: Number }) delay = 0
   /** Trigger source: `'auto'` (viewport), `'hover'`, or `'scroll'` (progress-mapped). */
   @property({ type: String, reflect: true }) trigger: FontTrigger = 'auto'
-  /** When `true` and `trigger="auto"`, only animate the first time it enters view. */
+  /**
+   * When `true` and `trigger="auto"`, only animate the first time it enters view. Cannot be
+   * disabled from markup, as with any HTML boolean attribute. Set the property instead: `el.once =
+   * false`.
+   */
   @property({ type: Boolean }) once = true
 
   static styles = css`

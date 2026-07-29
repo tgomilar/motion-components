@@ -30,7 +30,10 @@ export class MotionReveal extends Controllable(LitElement) implements MotionReve
   @property({ type: Number }) y = 24
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.1
-  /** When `true`, only animate the first time the element enters view. */
+  /**
+   * When `true`, only animate the first time the element enters view. Cannot be disabled from
+   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
+   */
   @property({ type: Boolean }) once = true
 
   static styles = css`

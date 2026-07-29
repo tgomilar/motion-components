@@ -35,14 +35,21 @@ export class PlaybackController implements MotionControllable {
     private delegate: PlaybackDelegate,
   ) {}
 
+  /** Current state: `'idle'`, `'running'`, `'paused'` or `'finished'`. */
   get playState(): PlaybackState {
     return this.state
   }
 
+  /** Resolves when the current run settles. A new run replaces the promise. */
   get finished(): Promise<void> {
     return this.done
   }
 
+  /**
+   * Starts the animation, or resumes it when paused. Resolves once the run
+   * settles. Under `prefers-reduced-motion: reduce` the final state is applied
+   * immediately and the promise resolves without animating.
+   */
   play(): Promise<void> {
     if (this.state === 'running') return this.done
     if (this.state === 'paused') {
@@ -71,12 +78,14 @@ export class PlaybackController implements MotionControllable {
     return this.done
   }
 
+  /** Holds the animation at its current position. No-op unless running. */
   pause(): void {
     if (this.state !== 'running') return
     this.handle?.pause()
     this.state = 'paused'
   }
 
+  /** Jumps to the final state and settles. Fires `motion-finish`. */
   finish(): void {
     if (this.state === 'finished') return
     this.runId++
@@ -85,6 +94,7 @@ export class PlaybackController implements MotionControllable {
     this.settle('finished', 'motion-finish')
   }
 
+  /** Reverts to the initial state and returns to idle. Fires `motion-cancel`. */
   cancel(): void {
     if (this.state === 'idle') return
     this.runId++
@@ -195,26 +205,36 @@ export function Controllable<T extends Constructor<HTMLElement & CustomElementLi
   class ControllableElement extends Base implements MotionControllable {
     playback!: PlaybackController
 
+    /**
+     * Starts the animation, or resumes it when paused. Resolves once the run
+     * settles. Under `prefers-reduced-motion: reduce` the final state is
+     * applied immediately without animating.
+     */
     play(): Promise<void> {
       return this.playback.play()
     }
 
+    /** Holds the animation at its current position. No-op unless running. */
     pause(): void {
       this.playback.pause()
     }
 
+    /** Jumps to the final state and settles. Fires `motion-finish`. */
     finish(): void {
       this.playback.finish()
     }
 
+    /** Reverts to the initial state and returns to idle. Fires `motion-cancel`. */
     cancel(): void {
       this.playback.cancel()
     }
 
+    /** Current state: `'idle'`, `'running'`, `'paused'` or `'finished'`. */
     get playState(): PlaybackState {
       return this.playback.playState
     }
 
+    /** Resolves when the current run settles. A new run replaces the promise. */
     get finished(): Promise<void> {
       return this.playback.finished
     }

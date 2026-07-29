@@ -32,9 +32,12 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
   @property({ type: Number }) duration = 0.5
   /** Initial vertical offset in pixels for each child; rises to 0. */
   @property({ type: Number }) y = 16
-  /** Stagger origin: `'first'`, `'last'`, `'center'`, or a numeric index. */
+  /** Stagger origin: `'first'`, `'last'` or `'center'`. */
   @property({ type: String }) from: StaggerFrom = 'first'
-  /** When `true`, only animate the first time the list enters view. */
+  /**
+   * When `true`, only animate the first time the list enters view. Cannot be disabled from markup,
+   * as with any HTML boolean attribute. Set the property instead: `el.once = false`.
+   */
   @property({ type: Boolean }) once = true
 
   @query('slot') private slotEl!: HTMLSlotElement

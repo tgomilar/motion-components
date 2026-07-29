@@ -37,7 +37,7 @@ const STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
  *
  * @example
  * ```html
- * <motion-countdown to="2026-12-31T23:59:59" format="days hours minutes seconds" labels roll></motion-countdown>
+ * <motion-countdown to="2026-12-31T23:59:59" format="days hours minutes seconds" roll></motion-countdown>
  * ```
  */
 @customElement('motion-countdown')
@@ -46,7 +46,10 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   @property({ type: String, reflect: true }) to = ''
   /** Space-separated list of units to display: `days`, `hours`, `minutes`, `seconds`. */
   @property({ type: String, reflect: true }) format = 'days hours minutes seconds'
-  /** Whether to show unit labels (Days, Hours, etc.) beneath each value. */
+  /**
+   * Whether to show unit labels (Days, Hours, etc.) beneath each value. Cannot be disabled from
+   * markup, as with any HTML boolean attribute. Set the property instead: `el.labels = false`.
+   */
   @property({ type: Boolean, reflect: true }) labels = true
   /** Enable slot-machine roll animation instead of the default flip. */
   @property({ type: Boolean, reflect: true }) roll = false

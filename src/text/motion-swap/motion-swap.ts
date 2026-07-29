@@ -33,19 +33,26 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
   /** Trigger mode: `'hover'` (swap on mouseenter/mouseleave) or `'reveal'` (one-shot on viewport entry). */
   @property({ type: String }) trigger: TriggerMode = 'hover'
 
-  /** When `true` (default), letters swap bottom-to-top. `false` swaps top-to-bottom. */
+  /**
+   * Letters swap bottom-to-top. Cannot be disabled from markup, as with any HTML boolean attribute.
+   * Set the property instead: `el.reverse = false` swaps top-to-bottom.
+   */
   @property({ type: Boolean, reflect: true }) reverse = true
 
   /** Delay in seconds between each character's animation start. */
   @property({ type: Number, attribute: 'stagger-duration' }) staggerDuration = 0.03
 
   /** Animation configuration for each character pair. */
-  @property({ type: Object, attribute: 'transition' }) transition: Record<string, unknown> = {
+  @property({ type: Object }) transition: Record<string, unknown> = {
     type: 'spring',
     duration: 0.7,
   }
 
-  /** When `true`, only animate the first time the element enters view (reveal mode). */
+  /**
+   * When `true`, only animate the first time the element enters view (reveal mode). Cannot be
+   * disabled from markup, as with any HTML boolean attribute. Set the property instead: `el.once =
+   * false`.
+   */
   @property({ type: Boolean }) once = true
 
   /** Delay in seconds before the animation starts. */

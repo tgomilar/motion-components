@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.5.0 — 2026-07-28
+
+### Removed
+
+- `duration` on `motion-tilt`, `motion-blur` and `motion-words`, and `threshold` on `motion-blur`. These were never read by their implementations, so setting them had no effect. Drop them from your markup. The same-named attributes on `motion-blur-in` are real and unaffected.
+
+### Fixed
+
+- `MotionCodeProps` declared `lang` where `motion-code` implements `codeLang`, so `<motion-code lang="js">` typechecked but was ignored at runtime.
+- Boolean attributes that default to `true`, meaning the `once` family plus `motion-countdown.labels`, `motion-scene.pin`, `motion-swap.reverse` and `motion-typewriter.cursor`, now document that they cannot be switched off from markup. `once="false"` reads as `true`, as with any HTML boolean attribute; use the property instead (`el.once = false`). The tristate attributes on `motion-gallery`, `motion-slider` and `motion-ticker` do accept `="false"`.
+- `motion-slider` no longer declares `observedAttributes` it never acted on. `gap` and `arrows` are read once while the slider is built.
+- `motion-stagger.from` no longer claims to accept a numeric index, and the `motion-countdown` / `motion-scene` examples no longer show bare no-op booleans.
+
+### Changed: editor and tooling metadata
+
+The custom elements manifest is now complete enough to drive editor tooling and codegen on its own.
+
+- `motion-ticker`, `motion-slider` and `motion-gallery` used class-level `@property`, which the analyzer treats as a member rather than an attribute, so their attributes shipped with no type, default or description. `motion-slider` shipped no documented API at all. They now use `@attr`.
+- `motion-code` and `motion-code-inline` had no JSDoc; both are now documented, including `motion-code`'s token-colour custom properties.
+- The `Controllable` playback API (`play`, `pause`, `finish`, `cancel`, `playState`, `finished`) is documented, covering every component that uses it.
+- Enum attributes report their literal values, so `motion-stagger.from` is now `'first' | 'last' | 'center'` rather than `StaggerFrom` and editors offer real completions.
+- `@example` blocks are preserved under `examples`; every component ships usage markup.
+
 ## 0.4.2 — 2026-07-16
 
 ### Fixed
