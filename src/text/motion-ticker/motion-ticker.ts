@@ -5,6 +5,8 @@ import type { MotionTickerProps, TickerDirection } from './motion-ticker.types.j
 
 export type { MotionTickerProps, TickerDirection } from './motion-ticker.types.js'
 
+const MIN_RATE = 0.05
+
 /**
  * Horizontal auto-scrolling ticker / marquee. Duplicates children to create a
  * seamless infinite loop. Supports pause-on-hover, keyboard pause (Space/Enter),
@@ -52,7 +54,6 @@ export class MotionTicker extends Controllable(HTMLElement) {
   private targetRate = 1
   private currentRate = 1
   private rateRaf: number | null = null
-  private paused = false
   private waveRaf: number | null = null
 
   private wavePhase = 0
@@ -73,7 +74,7 @@ export class MotionTicker extends Controllable(HTMLElement) {
             }
           },
           resume: () => {
-            this.ctrls?.play()
+            this.resumeCtrls()
             if (this.wave) this.startWave()
             if (this.currentRate < 1) this.lerpRate(1)
           },
@@ -234,7 +235,6 @@ export class MotionTicker extends Controllable(HTMLElement) {
     this.ctrls?.stop()
     this.currentRate = 1
     this.targetRate = 1
-    this.paused = false
 
     this.ctrls = animate(
       this.track,
@@ -288,22 +288,35 @@ export class MotionTicker extends Controllable(HTMLElement) {
     this.ctrls.speed = this.currentRate
   }
 
+  private resumeCtrls() {
+    if (!this.ctrls) return
+    const time = this.ctrls.time
+    this.currentRate = Math.max(this.currentRate, MIN_RATE)
+    this.ctrls.speed = this.currentRate
+    this.ctrls.play()
+    this.ctrls.time = time
+  }
+
   private lerpRate(target: number) {
     this.targetRate = target
     if (this.rateRaf !== null) return
 
     const step = () => {
-      if (!this.ctrls) return
+      if (!this.ctrls) {
+        this.rateRaf = null
+        return
+      }
       const diff = this.targetRate - this.currentRate
-      if (Math.abs(diff) < 0.003) {
-        this.currentRate = this.targetRate
-        if (this.currentRate === 0) {
-          this.ctrls.pause()
-          this.paused = true
+      const stopped = this.targetRate === 0 && this.currentRate <= MIN_RATE
+      if (stopped || Math.abs(diff) < 0.003) {
+        this.rateRaf = null
+        if (this.targetRate === 0) {
+          this.currentRate = 0
+          this.pause()
         } else {
+          this.currentRate = this.targetRate
           this.ctrls.speed = this.currentRate
         }
-        this.rateRaf = null
         return
       }
       this.currentRate += diff * 0.1
@@ -314,16 +327,11 @@ export class MotionTicker extends Controllable(HTMLElement) {
   }
 
   private onEnter = () => {
-    if (this.playState === 'running') this.pause()
     this.lerpRate(0)
   }
   private onLeave = () => {
-    if (this.paused) {
-      this.ctrls?.play()
-      this.paused = false
-    }
-    this.lerpRate(1)
     if (this.playState === 'paused') void this.play()
+    this.lerpRate(1)
   }
 
   private keyboardPaused = false
@@ -333,16 +341,11 @@ export class MotionTicker extends Controllable(HTMLElement) {
     e.preventDefault()
     if (this.keyboardPaused) {
       this.keyboardPaused = false
-      if (this.paused) {
-        this.ctrls?.play()
-        this.paused = false
-      }
-      this.lerpRate(1)
       if (this.playState === 'paused') void this.play()
+      this.lerpRate(1)
     } else {
       this.keyboardPaused = true
       this.lerpRate(0)
-      if (this.playState === 'running') this.pause()
     }
   }
 

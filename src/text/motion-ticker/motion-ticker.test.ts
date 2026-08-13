@@ -11,6 +11,37 @@ const ticker = (extra = '') =>
     >`,
   ) as Promise<MotionTicker>
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Long enough for the rate ramp to bottom out, so a resume happens from a
+ * fully stopped ticker rather than from one still coasting near full speed.
+ */
+const HOVER_DWELL = 900
+
+/** Track offset in px — negative and decreasing while scrolling left. */
+const trackX = (el: MotionTicker) => {
+  const track = el.querySelector('div')
+  if (!track) throw new Error('ticker has no track')
+  return new DOMMatrix(getComputedStyle(track).transform).m41
+}
+
+/** Poll until `predicate` holds, so tests never depend on a fixed ramp length. */
+async function until(predicate: () => boolean, timeout = 3000) {
+  const deadline = performance.now() + timeout
+  while (!predicate()) {
+    if (performance.now() > deadline) throw new Error('timed out waiting for condition')
+    await sleep(16)
+  }
+}
+
+/** A ticker that has been scrolling long enough to be well away from x: 0. */
+async function scrollingTicker() {
+  const el = await ticker()
+  await until(() => trackX(el) < -20)
+  return el
+}
+
 describe('motion-ticker', () => {
   beforeEach(() => {
     stubReducedMotion(false)
@@ -58,5 +89,66 @@ describe('motion-ticker', () => {
     const el = await ticker()
     el.finish()
     expect(el.playState).toBe('finished')
+  })
+
+  it('keeps scrolling while it decelerates on hover', async () => {
+    const el = await scrollingTicker()
+    const atHover = trackX(el)
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    await sleep(80)
+    expect(trackX(el)).toBeLessThan(atHover)
+  })
+
+  it('holds its position for as long as the pointer stays', async () => {
+    const el = await scrollingTicker()
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    await sleep(HOVER_DWELL)
+    expect(el.playState).toBe('paused')
+    const stopped = trackX(el)
+    await sleep(120)
+    expect(trackX(el)).toBe(stopped)
+  })
+
+  it('resumes from where it stopped when the pointer leaves', async () => {
+    const el = await scrollingTicker()
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    await sleep(HOVER_DWELL)
+    const stopped = trackX(el)
+
+    el.dispatchEvent(new MouseEvent('mouseleave'))
+    await sleep(120)
+
+    expect(el.playState).toBe('running')
+    expect(trackX(el)).toBeLessThanOrEqual(stopped)
+    expect(trackX(el)).toBeGreaterThan(stopped - 20)
+  })
+
+  it('decelerates and resumes in place when toggled by keyboard', async () => {
+    const el = await scrollingTicker()
+    const atPress = trackX(el)
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }))
+    await sleep(80)
+    expect(trackX(el)).toBeLessThan(atPress)
+
+    await sleep(HOVER_DWELL)
+    const stopped = trackX(el)
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }))
+    await sleep(120)
+
+    expect(el.playState).toBe('running')
+    expect(trackX(el)).toBeLessThanOrEqual(stopped)
+    expect(trackX(el)).toBeGreaterThan(stopped - 20)
+  })
+
+  it('does not pause on hover when pause-on-hover is false', async () => {
+    const el = (await fixture(
+      html`<motion-ticker style="width: 200px" pause-on-hover="false"
+        ><span>One</span><span>Two</span><span>Three</span></motion-ticker
+      >`,
+    )) as MotionTicker
+    await until(() => trackX(el) < -20)
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    await sleep(120)
+    expect(el.playState).toBe('running')
   })
 })
