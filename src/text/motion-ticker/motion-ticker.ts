@@ -158,7 +158,6 @@ export class MotionTicker extends Controllable(HTMLElement) {
     const items = Array.from(this.children) as HTMLElement[]
     if (!items.length) return
 
-    const gap = `${this.gap}px`
     const track = node('div', {
       display: 'flex',
       alignItems: 'center',
@@ -169,14 +168,11 @@ export class MotionTicker extends Controllable(HTMLElement) {
       display: 'flex',
       alignItems: 'center',
       flexShrink: '0',
-      columnGap: gap,
-      marginRight: gap,
     })
     const setB = node('div', {
       display: 'flex',
       alignItems: 'center',
       flexShrink: '0',
-      columnGap: gap,
     })
     setB.setAttribute('aria-hidden', 'true')
 
@@ -188,6 +184,7 @@ export class MotionTicker extends Controllable(HTMLElement) {
 
     this.track = track
     this.setA = setA
+    this.applyGap()
 
     requestAnimationFrame(() => {
       this.fillSet(items)
@@ -216,6 +213,7 @@ export class MotionTicker extends Controllable(HTMLElement) {
 
   private startMarquee() {
     if (!this.track || !this.setA) return
+    this.applyGap()
     const w = this.setA.offsetWidth + this.gap
     if (!w) {
       requestAnimationFrame(() => this.startMarquee())
@@ -270,9 +268,19 @@ export class MotionTicker extends Controllable(HTMLElement) {
    * at MIN_RATE like `resumeCtrls()`, since a running animation at speed 0
    * reads back `time` as 0 and would lose the position on the next resume.
    */
+  private applyGap() {
+    if (!this.setA) return
+    const gap = `${this.gap}px`
+    this.setA.style.columnGap = gap
+    this.setA.style.marginRight = gap
+    const setB = this.setA.nextElementSibling as HTMLElement | null
+    if (setB) setB.style.columnGap = gap
+  }
+
   private rebuildMarquee() {
     if (this.playState !== 'running' && this.playState !== 'paused') return
     if (!this.ctrls || !this.setA || !this.track) return
+    this.applyGap()
     const w = this.setA.offsetWidth + this.gap
     if (!w) return
     // Progress is a fraction of the *outgoing* animation's own duration, so
