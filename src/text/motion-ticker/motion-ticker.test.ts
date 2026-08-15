@@ -140,6 +140,40 @@ describe('motion-ticker', () => {
     expect(trackX(el)).toBeGreaterThan(stopped - 20)
   })
 
+  it('stays parked in place when a live attribute changes while hover-paused', async () => {
+    const el = await scrollingTicker()
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    await sleep(HOVER_DWELL)
+    expect(el.playState).toBe('paused')
+    const stopped = trackX(el)
+
+    el.setAttribute('speed', '30')
+    await sleep(120)
+
+    expect(el.playState).toBe('paused')
+    const parked = trackX(el)
+    expect(Math.abs(parked - stopped)).toBeLessThan(2)
+    await sleep(120)
+    expect(trackX(el)).toBe(parked)
+
+    el.dispatchEvent(new MouseEvent('mouseleave'))
+    await sleep(120)
+
+    expect(el.playState).toBe('running')
+    expect(trackX(el)).toBeLessThanOrEqual(parked)
+    expect(trackX(el)).toBeGreaterThan(parked - 20)
+  })
+
+  it('scrolls on without a jump across a live attribute change while running', async () => {
+    const el = await scrollingTicker()
+    const atChange = trackX(el)
+    el.setAttribute('speed', '30')
+    await sleep(120)
+    expect(el.playState).toBe('running')
+    expect(trackX(el)).toBeLessThan(atChange)
+    expect(trackX(el)).toBeGreaterThan(atChange - 20)
+  })
+
   it('does not pause on hover when pause-on-hover is false', async () => {
     const el = (await fixture(
       html`<motion-ticker style="width: 200px" pause-on-hover="false"

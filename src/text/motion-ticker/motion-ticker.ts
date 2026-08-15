@@ -151,17 +151,7 @@ export class MotionTicker extends Controllable(HTMLElement) {
   }
 
   attributeChangedCallback() {
-    if (!this.ctrls || !this.setA) return
-    const w = this.setA.offsetWidth + this.gap
-    if (!w) return
-    const progress = (this.ctrls.time / (w / this.speed)) % 1
-    this.ctrls.stop()
-    this.ctrls = animate(
-      this.track!,
-      { x: this.direction === 'left' ? [0, -w] : [-w, 0] },
-      { duration: w / this.speed, repeat: Infinity, ease: 'linear' },
-    )
-    this.ctrls.time = progress * (w / this.speed)
+    this.rebuildMarquee()
   }
 
   private build() {
@@ -271,21 +261,39 @@ export class MotionTicker extends Controllable(HTMLElement) {
   }
 
   private onResize() {
+    this.rebuildMarquee()
+  }
+
+  /**
+   * Rebuilds the animation against the current attribute values and geometry,
+   * carrying over loop progress, rate and the pause state. `speed` is floored
+   * at MIN_RATE like `resumeCtrls()`, since a running animation at speed 0
+   * reads back `time` as 0 and would lose the position on the next resume.
+   */
+  private rebuildMarquee() {
+    if (this.playState !== 'running' && this.playState !== 'paused') return
     if (!this.ctrls || !this.setA || !this.track) return
     const w = this.setA.offsetWidth + this.gap
     if (!w) return
-    const elapsed = this.ctrls.time
-    const oldDuration = w / this.speed
-    const progress = (elapsed / oldDuration) % 1
+    // Progress is a fraction of the *outgoing* animation's own duration, so
+    // the track keeps its visual position when speed changes the duration.
+    const progress = (this.ctrls.time / this.ctrls.duration) % 1
     this.ctrls.stop()
-    const newDuration = w / this.speed
+    const duration = w / this.speed
     this.ctrls = animate(
       this.track,
       { x: this.direction === 'left' ? [0, -w] : [-w, 0] },
-      { duration: newDuration, repeat: Infinity, ease: 'linear' },
+      { duration, repeat: Infinity, ease: 'linear' },
     )
-    this.ctrls.time = progress * newDuration
-    this.ctrls.speed = this.currentRate
+    // Reading `duration` flushes motion's async keyframe resolver; before
+    // that, assigning `time` cannot rebase the running animation and play()
+    // would restart it from 0 on the next frame.
+    void this.ctrls.duration
+    this.ctrls.speed = Math.max(this.currentRate, MIN_RATE)
+    // The playback controller already reports 'paused', so its pause() is a
+    // no-op here — the freshly built animation has to be held directly.
+    if (this.playState === 'paused') this.ctrls.pause()
+    this.ctrls.time = progress * duration
   }
 
   private resumeCtrls() {
