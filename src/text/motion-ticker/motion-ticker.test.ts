@@ -174,6 +174,19 @@ describe('motion-ticker', () => {
     expect(trackX(el)).toBeGreaterThan(atChange - 20)
   })
 
+  it('re-applies the gap to the track when the attribute changes', async () => {
+    const el = await scrollingTicker()
+    const setA = el.querySelector('div > div') as HTMLElement
+    const setB = setA.nextElementSibling as HTMLElement
+    expect(getComputedStyle(setA).columnGap).toBe('32px')
+
+    el.setAttribute('gap', '64')
+
+    expect(getComputedStyle(setA).columnGap).toBe('64px')
+    expect(getComputedStyle(setA).marginRight).toBe('64px')
+    expect(getComputedStyle(setB).columnGap).toBe('64px')
+  })
+
   it('does not pause on hover when pause-on-hover is false', async () => {
     const el = (await fixture(
       html`<motion-ticker style="width: 200px" pause-on-hover="false"
