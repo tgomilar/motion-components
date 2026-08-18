@@ -5,6 +5,8 @@ import type { MotionTickerProps, TickerDirection } from './motion-ticker.types.j
 
 export type { MotionTickerProps, TickerDirection } from './motion-ticker.types.js'
 
+const MIN_RATE = 0.05
+
 /**
  * Horizontal auto-scrolling ticker / marquee. Duplicates children to create a
  * seamless infinite loop. Supports pause-on-hover, keyboard pause (Space/Enter),
@@ -52,12 +54,12 @@ export class MotionTicker extends Controllable(HTMLElement) {
   private targetRate = 1
   private currentRate = 1
   private rateRaf: number | null = null
-  private paused = false
   private waveRaf: number | null = null
 
   private wavePhase = 0
   private itemLocalPositions: number[] = []
   private resizeObserver: ResizeObserver | null = null
+  private originalItems: HTMLElement[] = []
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
@@ -73,7 +75,7 @@ export class MotionTicker extends Controllable(HTMLElement) {
             }
           },
           resume: () => {
-            this.ctrls?.play()
+            this.resumeCtrls()
             if (this.wave) this.startWave()
             if (this.currentRate < 1) this.lerpRate(1)
           },
@@ -150,24 +152,14 @@ export class MotionTicker extends Controllable(HTMLElement) {
   }
 
   attributeChangedCallback() {
-    if (!this.ctrls || !this.setA) return
-    const w = this.setA.offsetWidth + this.gap
-    if (!w) return
-    const progress = (this.ctrls.time / (w / this.speed)) % 1
-    this.ctrls.stop()
-    this.ctrls = animate(
-      this.track!,
-      { x: this.direction === 'left' ? [0, -w] : [-w, 0] },
-      { duration: w / this.speed, repeat: Infinity, ease: 'linear' },
-    )
-    this.ctrls.time = progress * (w / this.speed)
+    this.rebuildMarquee()
   }
 
   private build() {
     const items = Array.from(this.children) as HTMLElement[]
     if (!items.length) return
+    this.originalItems = items
 
-    const gap = `${this.gap}px`
     const track = node('div', {
       display: 'flex',
       alignItems: 'center',
@@ -178,14 +170,11 @@ export class MotionTicker extends Controllable(HTMLElement) {
       display: 'flex',
       alignItems: 'center',
       flexShrink: '0',
-      columnGap: gap,
-      marginRight: gap,
     })
     const setB = node('div', {
       display: 'flex',
       alignItems: 'center',
       flexShrink: '0',
-      columnGap: gap,
     })
     setB.setAttribute('aria-hidden', 'true')
 
@@ -197,6 +186,7 @@ export class MotionTicker extends Controllable(HTMLElement) {
 
     this.track = track
     this.setA = setA
+    this.applyGap()
 
     requestAnimationFrame(() => {
       this.fillSet(items)
@@ -213,11 +203,13 @@ export class MotionTicker extends Controllable(HTMLElement) {
     const containerW = this.offsetWidth
     if (!containerW) return
     let safety = 50
+    let grown = false
     while (this.setA.offsetWidth < containerW && safety-- > 0) {
       originals.forEach((c) => this.setA!.appendChild(c.cloneNode(true)))
+      grown = true
     }
     const setB = this.setA.nextElementSibling as HTMLElement | null
-    if (setB) {
+    if (setB && (grown || setB.childElementCount !== this.setA.childElementCount)) {
       setB.replaceChildren()
       Array.from(this.setA.children).forEach((c) => setB.appendChild(c.cloneNode(true)))
     }
@@ -225,6 +217,7 @@ export class MotionTicker extends Controllable(HTMLElement) {
 
   private startMarquee() {
     if (!this.track || !this.setA) return
+    this.applyGap()
     const w = this.setA.offsetWidth + this.gap
     if (!w) {
       requestAnimationFrame(() => this.startMarquee())
@@ -234,7 +227,6 @@ export class MotionTicker extends Controllable(HTMLElement) {
     this.ctrls?.stop()
     this.currentRate = 1
     this.targetRate = 1
-    this.paused = false
 
     this.ctrls = animate(
       this.track,
@@ -257,35 +249,91 @@ export class MotionTicker extends Controllable(HTMLElement) {
     this.addEventListener('blur', this.onLeave)
     this.addEventListener('keydown', this.onKeyDown)
 
+    this.refreshWave()
+  }
+
+  private refreshWave() {
+    if (!this.setA) return
     this.style.overflow = this.wave ? 'visible' : 'hidden'
-    if (this.wave) {
-      const setALeft = this.setA.getBoundingClientRect().left
-      this.itemLocalPositions = (Array.from(this.setA.children) as HTMLElement[]).map((el) => {
-        const r = el.getBoundingClientRect()
-        return r.left + r.width / 2 - setALeft
-      })
-      this.startWave()
-    } else {
+    if (!this.wave) {
       this.stopWave()
+      return
     }
+    const setALeft = this.setA.getBoundingClientRect().left
+    this.itemLocalPositions = (Array.from(this.setA.children) as HTMLElement[]).map((el) => {
+      const r = el.getBoundingClientRect()
+      return r.left + r.width / 2 - setALeft
+    })
+    // While paused the wave loop stays down; resume restarts it and picks up
+    // the freshly measured positions.
+    if (this.playState === 'running') this.startWave()
   }
 
   private onResize() {
+    this.rebuildMarquee()
+  }
+
+  /**
+   * Rebuilds the animation against the current attribute values and geometry,
+   * carrying over the rendered position, rate and the pause state. `speed` is
+   * floored at MIN_RATE like `resumeCtrls()`, since a running animation at
+   * speed 0 reads back `time` as 0 and would lose the position on the next
+   * resume.
+   */
+  private applyGap() {
+    if (!this.setA) return
+    const gap = `${this.gap}px`
+    this.setA.style.columnGap = gap
+    this.setA.style.marginRight = gap
+    const setB = this.setA.nextElementSibling as HTMLElement | null
+    if (setB) setB.style.columnGap = gap
+  }
+
+  private rebuildMarquee() {
+    if (this.playState !== 'running' && this.playState !== 'paused') return
     if (!this.ctrls || !this.setA || !this.track) return
+    this.applyGap()
+    this.fillSet(this.originalItems)
     const w = this.setA.offsetWidth + this.gap
     if (!w) return
-    const elapsed = this.ctrls.time
-    const oldDuration = w / this.speed
-    const progress = (elapsed / oldDuration) % 1
+    // The new time is derived from the rendered offset rather than the old
+    // animation's clock, so the track holds its place even when the duration
+    // or direction it would be measured against has just changed.
+    const progress = this.renderedProgress(w)
     this.ctrls.stop()
-    const newDuration = w / this.speed
+    const duration = w / this.speed
     this.ctrls = animate(
       this.track,
       { x: this.direction === 'left' ? [0, -w] : [-w, 0] },
-      { duration: newDuration, repeat: Infinity, ease: 'linear' },
+      { duration, repeat: Infinity, ease: 'linear' },
     )
-    this.ctrls.time = progress * newDuration
+    // Reading `duration` flushes motion's async keyframe resolver; before
+    // that, assigning `time` cannot rebase the running animation and play()
+    // would restart it from 0 on the next frame.
+    void this.ctrls.duration
+    this.ctrls.speed = Math.max(this.currentRate, MIN_RATE)
+    // The playback controller already reports 'paused', so its pause() is a
+    // no-op here — the freshly built animation has to be held directly.
+    if (this.playState === 'paused') this.ctrls.pause()
+    this.ctrls.time = progress * duration
+    this.refreshWave()
+  }
+
+  private renderedProgress(w: number): number {
+    const transform = getComputedStyle(this.track!).transform
+    if (transform === 'none') return 0
+    const x = new DOMMatrix(transform).m41
+    const p = this.direction === 'left' ? -x / w : x / w + 1
+    return ((p % 1) + 1) % 1
+  }
+
+  private resumeCtrls() {
+    if (!this.ctrls) return
+    const time = this.ctrls.time
+    this.currentRate = Math.max(this.currentRate, MIN_RATE)
     this.ctrls.speed = this.currentRate
+    this.ctrls.play()
+    this.ctrls.time = time
   }
 
   private lerpRate(target: number) {
@@ -293,17 +341,21 @@ export class MotionTicker extends Controllable(HTMLElement) {
     if (this.rateRaf !== null) return
 
     const step = () => {
-      if (!this.ctrls) return
+      if (!this.ctrls) {
+        this.rateRaf = null
+        return
+      }
       const diff = this.targetRate - this.currentRate
-      if (Math.abs(diff) < 0.003) {
-        this.currentRate = this.targetRate
-        if (this.currentRate === 0) {
-          this.ctrls.pause()
-          this.paused = true
+      const stopped = this.targetRate === 0 && this.currentRate <= MIN_RATE
+      if (stopped || Math.abs(diff) < 0.003) {
+        this.rateRaf = null
+        if (this.targetRate === 0) {
+          this.currentRate = 0
+          this.pause()
         } else {
+          this.currentRate = this.targetRate
           this.ctrls.speed = this.currentRate
         }
-        this.rateRaf = null
         return
       }
       this.currentRate += diff * 0.1
@@ -314,16 +366,14 @@ export class MotionTicker extends Controllable(HTMLElement) {
   }
 
   private onEnter = () => {
-    if (this.playState === 'running') this.pause()
     this.lerpRate(0)
   }
   private onLeave = () => {
-    if (this.paused) {
-      this.ctrls?.play()
-      this.paused = false
-    }
-    this.lerpRate(1)
+    // A keyboard pause is an explicit request; the pointer or focus wandering
+    // off must not override it. Space lifts it again.
+    if (this.keyboardPaused) return
     if (this.playState === 'paused') void this.play()
+    this.lerpRate(1)
   }
 
   private keyboardPaused = false
@@ -333,16 +383,11 @@ export class MotionTicker extends Controllable(HTMLElement) {
     e.preventDefault()
     if (this.keyboardPaused) {
       this.keyboardPaused = false
-      if (this.paused) {
-        this.ctrls?.play()
-        this.paused = false
-      }
-      this.lerpRate(1)
       if (this.playState === 'paused') void this.play()
+      this.lerpRate(1)
     } else {
       this.keyboardPaused = true
       this.lerpRate(0)
-      if (this.playState === 'running') this.pause()
     }
   }
 
