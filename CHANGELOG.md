@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.0 — 2026-08-18
+
+### Fixed
+
+- `motion-ticker` hover pause/resume: decelerates on hover, holds position, resumes without jumping.
+- Keyboard pause (Space) now matches hover behavior.
+- Live attribute changes (`speed`, `gap`, `direction`) no longer cause position jumps.
+- `gap` attribute is now live.
+- Direction flips no longer teleport the track.
+- Keyboard pause is preserved across pointer visits.
+- Container resize tops up the track.
+- Wave geometry is re-measured on rebuild.
+
 ## 0.5.0 — 2026-07-28
 
 ### Removed
