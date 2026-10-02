@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.7.0 — 2026-10-02
+
+### Added
+
+- `motion-theme-toggle`: a light, dark and system theme control.
+  - Four appearances: `icon`, `toggle`, `switch` and `menu`.
+  - A circular view transition wipe built on Motion's `animateView`, tuned with `duration` and `bounce`. Set `transition="none"` to switch it off.
+  - API parity with `dark-mode-toggle`: the `mode`, `permanent`, `legend` and `remember` attributes, the `colorschemechange` and `permanentcolorschemechange` events, and `prefers-color-scheme` stylesheet switching.
+- `motion-theme-icon`: a reusable sun, moon and system glyph that morphs between states with a spring.
+
+### Changed
+
+- `motion` moves from `^11.11.0` to `^13.5.0`. The library targets the `AnimationPlaybackControlsWithThen` type, so animation handles that rely on `.then` now typecheck. `skipLibCheck` is enabled to keep the upgrade clean.
+
 ## 0.6.0 — 2026-08-18
 
 ### Fixed
