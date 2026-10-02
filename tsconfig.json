@@ -7,7 +7,8 @@
     "experimentalDecorators": true,
     "declaration": true,
     "strict": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"]
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true
   },
   "include": ["src"]
 }
