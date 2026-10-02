@@ -5,7 +5,6 @@ import '../../respond/motion-hover/motion-hover.js'
 import '../../respond/motion-press/motion-press.js'
 import '../motion-theme-icon/motion-theme-icon.js'
 import {
-  STORAGE_KEY,
   appliedScheme,
   applyScheme,
   darkQuery,
@@ -14,6 +13,7 @@ import {
   readStored,
   resolveScheme,
   resolveTarget,
+  storageKey,
   writeStored,
 } from './theme.js'
 import type {
@@ -80,7 +80,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   @property({ type: String, reflect: true }) appearance: ThemeAppearance = 'icon'
   /** Offers a third "system" option that follows the OS preference. Ignored by `switch`. */
   @property({ type: Boolean, reflect: true }) system = false
-  /** Remembers the choice in `localStorage` and restores it on load. */
+  /** Remembers the choice in `localStorage` (`motion-theme`, or `motion-theme:<target>` for other targets) and restores it on load. */
   @property({ type: Boolean, reflect: true }) permanent = false
   /** Group label. Used as the accessible name of `icon`, `switch` and `menu`. */
   @property({ type: String }) legend = ''
@@ -115,6 +115,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   private silent = false
   private emitted = ''
   private menuGeneration = 0
+  private layout = new ResizeObserver(() => this.animateSelection(false))
 
   static styles = css`
     :host {
@@ -294,7 +295,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
 
   connectedCallback() {
     super.connectedCallback()
-    const stored = readStored()
+    const stored = readStored(storageKey(this.target))
     if (stored) {
       this.mode = stored
       this.permanent = true
@@ -304,11 +305,13 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
     peers.add(this)
     darkQuery().addEventListener('change', this.onSystemChange)
     window.addEventListener('storage', this.onStorage)
+    if (this.hasUpdated) this.observeLayout()
     document.addEventListener('pointerdown', this.onOutside, true)
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
+    this.layout.disconnect()
     peers.delete(this)
     darkQuery().removeEventListener('change', this.onSystemChange)
     window.removeEventListener('storage', this.onStorage)
@@ -326,28 +329,34 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   }
 
   updated(changed: Map<string, unknown>) {
+    if (changed.has('appearance') || changed.has('system')) this.observeLayout()
     if (changed.has('mode') || changed.has('scheme') || changed.has('target')) this.commit()
     if (changed.has('permanent') && changed.get('permanent') !== undefined) this.persist()
     if (changed.has('open')) this.animateMenu()
     this.animateSelection(!changed.has('appearance') || changed.get('appearance') !== undefined)
   }
 
+  private observeLayout() {
+    for (const el of this.renderRoot.querySelectorAll('.segments, .track')) this.layout.observe(el)
+  }
+
   private commit() {
-    if (this.committed && this.permanent) writeStored(this.mode)
     if (this.silent) {
       this.silent = false
     } else {
+      if (this.committed && this.permanent) writeStored(storageKey(this.target), this.mode)
       const target = resolveTarget(this.target)
       const apply = () => applyScheme(target, this.scheme)
       if (this.committed && appliedScheme(target) !== this.scheme && this.canWipe())
         this.wipe(apply)
       else apply()
-      for (const peer of peers) {
-        if (peer === this || peer.mode === this.mode || resolveTarget(peer.target) !== target)
-          continue
-        peer.silent = true
-        peer.mode = this.mode
-      }
+      if (this.committed)
+        for (const peer of peers) {
+          if (peer === this || peer.mode === this.mode || resolveTarget(peer.target) !== target)
+            continue
+          peer.silent = true
+          peer.mode = this.mode
+        }
     }
     this.committed = true
     const key = `${this.mode}:${this.scheme}`
@@ -363,7 +372,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   }
 
   private persist() {
-    writeStored(this.permanent ? this.mode : null)
+    writeStored(storageKey(this.target), this.permanent ? this.mode : null)
     this.dispatchEvent(
       new CustomEvent<PermanentColorSchemeChangeDetail>('permanentcolorschemechange', {
         detail: { permanent: this.permanent },
@@ -431,7 +440,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   }
 
   private onStorage = (e: StorageEvent) => {
-    if (e.key !== STORAGE_KEY) return
+    if (e.key !== storageKey(this.target)) return
     if (isMode(e.newValue)) {
       this.permanent = true
       this.mode = e.newValue

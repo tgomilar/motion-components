@@ -16,19 +16,26 @@ export const isMode = (value: unknown): value is ThemeMode =>
 export const resolveScheme = (mode: ThemeMode): ColorScheme =>
   mode === 'system' ? osScheme() : mode
 
-export function readStored(): ThemeMode | null {
+export const storageKey = (target: string) => {
+  const selector = target.trim()
+  return !selector || selector === 'html' || selector === ':root'
+    ? STORAGE_KEY
+    : `${STORAGE_KEY}:${selector}`
+}
+
+export function readStored(key: string): ThemeMode | null {
   try {
-    const value = localStorage.getItem(STORAGE_KEY)
+    const value = localStorage.getItem(key)
     return isMode(value) ? value : null
   } catch {
     return null
   }
 }
 
-export function writeStored(mode: ThemeMode | null) {
+export function writeStored(key: string, mode: ThemeMode | null) {
   try {
-    if (mode) localStorage.setItem(STORAGE_KEY, mode)
-    else localStorage.removeItem(STORAGE_KEY)
+    if (mode) localStorage.setItem(key, mode)
+    else localStorage.removeItem(key)
   } catch {
     return
   }
