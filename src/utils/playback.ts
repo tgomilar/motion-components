@@ -1,4 +1,4 @@
-import type { AnimationPlaybackControls } from 'motion'
+import type { AnimationPlaybackControls, AnimationPlaybackControlsWithThen } from 'motion'
 import type {
   MotionControllable,
   PlaybackDelegate,
@@ -135,7 +135,7 @@ export function controlsHandle(controls: AnimationPlaybackControls): PlaybackHan
   }
 }
 
-export function controlsRun(controls: AnimationPlaybackControls): PlaybackRun {
+export function controlsRun(controls: AnimationPlaybackControlsWithThen): PlaybackRun {
   return { handle: controlsHandle(controls), done: controls }
 }
 

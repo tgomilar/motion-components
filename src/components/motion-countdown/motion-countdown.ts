@@ -2,7 +2,7 @@ import { LitElement, html, css, type PropertyValues } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { ref } from 'lit/directives/ref.js'
 import { animate } from 'motion'
-import type { AnimationPlaybackControls } from 'motion'
+import type { AnimationPlaybackControlsWithThen } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 
 const FLIP_SPRING = { type: 'spring', stiffness: 160, damping: 22 } as const
@@ -61,7 +61,7 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   private refCache = new Map<string, (el: Element | undefined) => void>()
   private interval: ReturnType<typeof setInterval> | null = null
   private ready = false
-  private flips = new Set<AnimationPlaybackControls>()
+  private flips = new Set<AnimationPlaybackControlsWithThen>()
   private flipEpoch = 0
 
   private get reduced() {
@@ -285,7 +285,7 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
     }
   }
 
-  private retain(controls: AnimationPlaybackControls) {
+  private retain(controls: AnimationPlaybackControlsWithThen) {
     this.flips.add(controls)
     void controls.then(() => this.flips.delete(controls))
   }

@@ -42,6 +42,8 @@ const entries: Record<string, string> = {
   'motion-image-compare': 'src/components/motion-image-compare/motion-image-compare.ts',
   'motion-flip-card': 'src/components/motion-flip-card/motion-flip-card.ts',
   'motion-dialog': 'src/components/motion-dialog/motion-dialog.ts',
+  'motion-theme-icon': 'src/components/motion-theme-icon/motion-theme-icon.ts',
+  'motion-theme-toggle': 'src/components/motion-theme-toggle/motion-theme-toggle.ts',
 
   'motion-parallax': 'src/scroll/motion-parallax/motion-parallax.ts',
   'motion-scene': 'src/scroll/motion-scene/motion-scene.ts',

@@ -4,7 +4,7 @@ import { animate, scroll } from 'motion'
 import { useIntersect } from '../utils/use-intersect.js'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionFontProps, FontTrigger } from './motion-font.types.js'
-import type { AnimationPlaybackControls } from 'motion'
+import type { AnimationPlaybackControls, AnimationPlaybackControlsWithThen } from 'motion'
 
 export type { MotionFontProps, FontTrigger } from './motion-font.types.js'
 
@@ -105,7 +105,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
 
   private autoStart() {
     const targets = this.axesDef.map((ax) => ax.to)
-    const controls: AnimationPlaybackControls[] = []
+    const controls: AnimationPlaybackControlsWithThen[] = []
     for (let i = 0; i < this.axesDef.length; i++) {
       const ax = this.axesDef[i]
       const obj = { value: ax.from }
