@@ -178,6 +178,42 @@ describe('motion-theme-toggle', () => {
     scope.remove()
   })
 
+  it('does not overwrite a saved system choice when another toggle lacks system', async () => {
+    localStorage.setItem('motion-theme', 'system')
+    stubMedia({ dark: true })
+    const wrap = (await fixture(
+      html`<div>
+        <motion-theme-toggle appearance="menu" system permanent></motion-theme-toggle>
+        <motion-theme-toggle></motion-theme-toggle>
+      </div>`,
+    )) as HTMLElement
+    const [nav, demo] = [...wrap.querySelectorAll('motion-theme-toggle')]
+    await elementUpdated(nav)
+    await elementUpdated(demo)
+    expect(nav.mode).toBe('system')
+    expect(demo.mode).toBe('dark')
+    expect(localStorage.getItem('motion-theme')).toBe('system')
+  })
+
+  it('keeps storage separate per target', async () => {
+    localStorage.setItem('motion-theme', 'dark')
+    const scope = document.createElement('div')
+    scope.id = 'card'
+    document.body.append(scope)
+    const card = await mount(
+      html`<motion-theme-toggle target="#card" permanent mode="light"></motion-theme-toggle>`,
+    )
+    expect(card.mode).toBe('light')
+    card.mode = 'dark'
+    await elementUpdated(card)
+    expect(localStorage.getItem('motion-theme:#card')).toBe('dark')
+    card.mode = 'light'
+    await elementUpdated(card)
+    expect(localStorage.getItem('motion-theme:#card')).toBe('light')
+    expect(localStorage.getItem('motion-theme')).toBe('dark')
+    scope.remove()
+  })
+
   it('reveals with a circular view-transition wipe when motion is allowed', async () => {
     const el = await mount(html`<motion-theme-toggle></motion-theme-toggle>`)
     expect(animateViewMock).not.toHaveBeenCalled()
