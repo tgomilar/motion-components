@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 — 2026-10-02
+
+### Fixed
+
+- `motion-theme-toggle` storage is scoped per `target`. A toggle for `<html>` (or `:root`) keeps using `motion-theme`; any other target uses `motion-theme:<target>`. Previously every toggle shared one key, so a scoped toggle read and overwrote the page-level choice.
+- `motion-theme-toggle` peer sync no longer clobbers a saved choice. Only user-driven changes propagate to peer toggles, and a peer that was updated by sync does not write to storage. A toggle rendered without `system` used to replace a saved `system` choice on load.
+- `motion-theme-toggle` re-measures the segmented pill and the switch thumb with a `ResizeObserver`, so the selection indicator is positioned correctly on first render.
+
 ## 0.7.0 — 2026-10-02
 
 ### Added
