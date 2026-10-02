@@ -23,7 +23,6 @@ import type {
   PermanentColorSchemeChangeDetail,
   ThemeAppearance,
   ThemeMode,
-  ThemeTransition,
 } from './motion-theme-toggle.types.js'
 
 export type {
@@ -33,7 +32,6 @@ export type {
   PermanentColorSchemeChangeDetail,
   ThemeAppearance,
   ThemeMode,
-  ThemeTransition,
 } from './motion-theme-toggle.types.js'
 
 const MODES: ThemeMode[] = ['light', 'dark', 'system']
@@ -43,8 +41,8 @@ let uid = 0
 /**
  * Light / dark mode control with an optional third "system" option. Applies
  * `data-theme` and `color-scheme` to a target element, follows the OS
- * preference, optionally remembers the choice, and reveals the new theme with
- * a circular view-transition wipe from the control. API-compatible with
+ * preference, optionally remembers the choice, and can reveal the new theme
+ * with a circular view-transition wipe from the control. API-compatible with
  * Google Chrome Labs' `dark-mode-toggle`.
  *
  * @element motion-theme-toggle
@@ -70,6 +68,7 @@ let uid = 0
  * ```html
  * <motion-theme-toggle permanent></motion-theme-toggle>
  * <motion-theme-toggle appearance="menu" system></motion-theme-toggle>
+ * <motion-theme-toggle wipe></motion-theme-toggle>
  * ```
  */
 @customElement('motion-theme-toggle')
@@ -94,8 +93,8 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   @property({ type: String }) remember = ''
   /** CSS selector of the element that receives `data-theme` and `color-scheme`. */
   @property({ type: String }) target = 'html'
-  /** Page transition on change: `'wipe'` (circular reveal) or `'none'`. */
-  @property({ type: String }) transition: ThemeTransition = 'wipe'
+  /** Reveals the new theme with a circular view-transition wipe from the control. Off by default. */
+  @property({ type: Boolean, reflect: true }) wipe = false
   /** Spring duration of the icon morph and wipe, in seconds. */
   @property({ type: Number }) duration = 0.5
   /** Spring bounciness of the icon morph and controls. */
@@ -206,6 +205,13 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       display: inline-flex;
       align-items: center;
       gap: 0.6em;
+    }
+    .switch .label {
+      margin: 0;
+      font-weight: 600;
+    }
+    .side {
+      font-size: 0.875em;
     }
     .track {
       position: relative;
@@ -348,7 +354,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       const target = resolveTarget(this.target)
       const apply = () => applyScheme(target, this.scheme)
       if (this.committed && appliedScheme(target) !== this.scheme && this.canWipe())
-        this.wipe(apply)
+        this.reveal(apply)
       else apply()
       if (this.committed)
         for (const peer of peers) {
@@ -384,14 +390,14 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
 
   private canWipe() {
     return (
-      this.transition === 'wipe' &&
+      this.wipe &&
       !this.reduced &&
       'startViewTransition' in document &&
       document.visibilityState === 'visible'
     )
   }
 
-  private wipe(apply: () => void) {
+  private reveal(apply: () => void) {
     const rect = this.getBoundingClientRect()
     const x = rect.left + rect.width / 2
     const y = rect.top + rect.height / 2
@@ -576,7 +582,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
         ${this.legend
           ? html`<span class="label" id="${this.uid}-label">${this.legend}</span>`
           : nothing}
-        <span aria-hidden="true">${this.light}</span>
+        <span class="side" aria-hidden="true">${this.light}</span>
         <motion-press>
           <button
             class="track"
@@ -590,7 +596,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
             <span class="thumb" part="thumb">${this.icon(this.scheme)}</span>
           </button>
         </motion-press>
-        <span aria-hidden="true">${this.dark}</span>
+        <span class="side" aria-hidden="true">${this.dark}</span>
       </div>
     `
   }

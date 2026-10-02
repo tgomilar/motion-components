@@ -214,8 +214,16 @@ describe('motion-theme-toggle', () => {
     scope.remove()
   })
 
-  it('reveals with a circular view-transition wipe when motion is allowed', async () => {
+  it('changes the theme without a page wipe by default', async () => {
     const el = await mount(html`<motion-theme-toggle></motion-theme-toggle>`)
+    button(el).click()
+    await elementUpdated(el)
+    expect(root.dataset.theme).toBe('dark')
+    expect(animateViewMock).not.toHaveBeenCalled()
+  })
+
+  it('reveals with a circular view-transition wipe when wipe is set', async () => {
+    const el = await mount(html`<motion-theme-toggle wipe></motion-theme-toggle>`)
     expect(animateViewMock).not.toHaveBeenCalled()
     button(el).click()
     await elementUpdated(el)
@@ -226,16 +234,12 @@ describe('motion-theme-toggle', () => {
     expect(options).toMatchObject({ type: 'spring', bounce: 0 })
   })
 
-  it('skips the wipe under reduced motion or transition="none"', async () => {
+  it('skips the wipe under reduced motion even when wipe is set', async () => {
     stubMedia({ reduce: true })
-    const el = await mount(html`<motion-theme-toggle></motion-theme-toggle>`)
+    const el = await mount(html`<motion-theme-toggle wipe></motion-theme-toggle>`)
     button(el).click()
     await elementUpdated(el)
     expect(root.dataset.theme).toBe('dark')
-    stubMedia()
-    el.transition = 'none'
-    button(el).click()
-    await elementUpdated(el)
     expect(animateViewMock).not.toHaveBeenCalled()
   })
 
@@ -310,7 +314,7 @@ describe('motion-theme-toggle', () => {
   it('keeps several toggles on the same target in sync', async () => {
     const wrap = (await fixture(
       html`<div>
-        <motion-theme-toggle></motion-theme-toggle>
+        <motion-theme-toggle wipe></motion-theme-toggle>
         <motion-theme-toggle appearance="switch"></motion-theme-toggle>
       </div>`,
     )) as HTMLElement

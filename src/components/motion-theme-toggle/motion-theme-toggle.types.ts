@@ -1,7 +1,6 @@
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ColorScheme = 'light' | 'dark'
 export type ThemeAppearance = 'icon' | 'toggle' | 'switch' | 'menu'
-export type ThemeTransition = 'wipe' | 'none'
 
 export interface ColorSchemeChangeDetail {
   colorScheme: ColorScheme
@@ -23,7 +22,7 @@ export interface MotionThemeToggleProps {
   systemLabel: string
   remember: string
   target: string
-  transition: ThemeTransition
+  wipe: boolean
   duration: number
   bounce: number
 }
