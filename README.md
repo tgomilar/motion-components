@@ -136,6 +136,12 @@ Typography & character effects
 [`motion-liquid`](https://www.motion-components.dev/docs/text/motion-liquid/) [`motion-perspective`](https://www.motion-components.dev/docs/text/motion-perspective/) [`motion-stretch`](https://www.motion-components.dev/docs/text/motion-stretch/) [`motion-swap`](https://www.motion-components.dev/docs/text/motion-swap/)
 [`motion-text-mask`](https://www.motion-components.dev/docs/text/motion-text-mask/) [`motion-font`](https://www.motion-components.dev/docs/text/motion-font/)
 
+### Icons [🔗](https://www.motion-components.dev/docs/icons/motion-icon/)
+
+Animated and state-morphing icons
+
+[`motion-icon`](https://www.motion-components.dev/docs/icons/motion-icon/) [`motion-state-icon`](https://www.motion-components.dev/docs/icons/motion-state-icon/)
+
 ### Scroll [🔗](https://www.motion-components.dev/docs/scroll/motion-parallax/)
 
 Scroll-driven animation
@@ -150,11 +156,11 @@ Ready-made interactive components
 [`motion-spotlight`](https://www.motion-components.dev/docs/components/motion-spotlight/) [`motion-progress`](https://www.motion-components.dev/docs/components/motion-progress/) [`motion-image-compare`](https://www.motion-components.dev/docs/components/motion-image-compare/) [`motion-flip-card`](https://www.motion-components.dev/docs/components/motion-flip-card/)
 [`motion-theme-toggle`](https://www.motion-components.dev/docs/components/motion-theme-toggle/) [`motion-theme-icon`](https://www.motion-components.dev/docs/components/motion-theme-toggle/#motion-theme-icon)
 
-### Icons [🔗](https://www.motion-components.dev/docs/icons/motion-icon/)
+### Charts [🔗](https://www.motion-components.dev/docs/charts/motion-chart/)
 
-Animated and state-morphing icons
+Bar, line, pie and donut charts from HTML attributes or a table
 
-[`motion-icon`](https://www.motion-components.dev/docs/icons/motion-icon/) [`motion-state-icon`](https://www.motion-components.dev/docs/icons/motion-state-icon/)
+[`motion-chart`](https://www.motion-components.dev/docs/charts/motion-chart/) [`motion-pie`](https://www.motion-components.dev/docs/charts/motion-pie/) [`motion-sparkline`](https://www.motion-components.dev/docs/charts/motion-sparkline/)
 
 ### Code [🔗](https://www.motion-components.dev/docs/code/motion-code/)
 

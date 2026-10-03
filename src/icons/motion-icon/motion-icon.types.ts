@@ -2,6 +2,7 @@ export type IconAnimation = 'draw' | 'pop' | 'bounce' | 'rotate' | 'wiggle' | 'p
 export type IconTrigger = 'hover' | 'click' | 'view' | 'mount' | 'loop'
 
 export interface MotionIconProps {
+  src: string
   icon: string
   animation: IconAnimation
   trigger: IconTrigger

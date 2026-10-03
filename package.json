@@ -37,6 +37,10 @@
       "types": "./dist/reveal/motion-blur-in/motion-blur-in.d.ts",
       "import": "./dist/motion-blur-in.js"
     },
+    "./motion-chart": {
+      "types": "./dist/charts/motion-chart/motion-chart.d.ts",
+      "import": "./dist/motion-chart.js"
+    },
     "./motion-circle": {
       "types": "./dist/text/motion-circle/motion-circle.d.ts",
       "import": "./dist/motion-circle.js"
@@ -117,6 +121,10 @@
       "types": "./dist/text/motion-perspective/motion-perspective.d.ts",
       "import": "./dist/motion-perspective.js"
     },
+    "./motion-pie": {
+      "types": "./dist/charts/motion-pie/motion-pie.d.ts",
+      "import": "./dist/motion-pie.js"
+    },
     "./motion-press": {
       "types": "./dist/respond/motion-press/motion-press.d.ts",
       "import": "./dist/motion-press.js"
@@ -140,6 +148,10 @@
     "./motion-slider": {
       "types": "./dist/components/motion-slider/motion-slider.d.ts",
       "import": "./dist/motion-slider.js"
+    },
+    "./motion-sparkline": {
+      "types": "./dist/charts/motion-sparkline/motion-sparkline.d.ts",
+      "import": "./dist/motion-sparkline.js"
     },
     "./motion-split": {
       "types": "./dist/text/motion-split/motion-split.d.ts",

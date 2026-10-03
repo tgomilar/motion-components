@@ -114,6 +114,7 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
     super.connectedCallback()
     this.addEventListener('click', this.onClick)
     this.addEventListener('keydown', this.onKey)
+    if (this.hasUpdated) this.updateSpin()
   }
 
   disconnectedCallback() {

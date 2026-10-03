@@ -25,3 +25,17 @@ motion-dialog:not(:defined) {
 motion-stagger:not(:defined) > * {
   opacity: 0;
 }
+
+motion-chart:not(:defined) {
+  display: block;
+  height: var(--chart-height, 16rem);
+  overflow: hidden;
+  visibility: hidden;
+}
+
+motion-pie:not(:defined) {
+  display: block;
+  height: var(--chart-height, 16rem);
+  overflow: hidden;
+  visibility: hidden;
+}

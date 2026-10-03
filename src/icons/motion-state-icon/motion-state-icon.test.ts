@@ -115,4 +115,17 @@ describe('motion-state-icon', () => {
     await new Promise((resolve) => setTimeout(resolve, 50))
     expect(Number(getComputedStyle(part(el, 'slash')).strokeDashoffset.replace('px', ''))).toBe(0)
   })
+
+  it('keeps the loading spinner turning after it is removed and added back', async () => {
+    const el = (await fixture(
+      html`<motion-state-icon name="loading"></motion-state-icon>`,
+    )) as MotionStateIcon
+    const spinning = () => (el as unknown as { spin: unknown }).spin !== null
+    expect(spinning()).toBe(true)
+    const parent = el.parentElement!
+    el.remove()
+    expect(spinning()).toBe(false)
+    parent.append(el)
+    expect(spinning()).toBe(true)
+  })
 })

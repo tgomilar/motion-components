@@ -15,6 +15,10 @@ const RULES: Record<string, string> = {
   'motion-flip-card': 'motion-flip-card:not(:defined){opacity:0}',
   'motion-swap': 'motion-swap:not(:defined){opacity:0}',
   'motion-dialog': 'motion-dialog:not(:defined){display:none}',
+  'motion-chart':
+    'motion-chart:not(:defined){display:block;height:var(--chart-height,16rem);overflow:hidden;visibility:hidden}',
+  'motion-pie':
+    'motion-pie:not(:defined){display:block;height:var(--chart-height,16rem);overflow:hidden;visibility:hidden}',
 }
 
 export const preloadCSS: string = Object.values(RULES).join('')

@@ -46,6 +46,9 @@ const entries: Record<string, string> = {
   'motion-theme-toggle': 'src/components/motion-theme-toggle/motion-theme-toggle.ts',
   'motion-icon': 'src/icons/motion-icon/motion-icon.ts',
   'motion-state-icon': 'src/icons/motion-state-icon/motion-state-icon.ts',
+  'motion-chart': 'src/charts/motion-chart/motion-chart.ts',
+  'motion-pie': 'src/charts/motion-pie/motion-pie.ts',
+  'motion-sparkline': 'src/charts/motion-sparkline/motion-sparkline.ts',
 
   'motion-parallax': 'src/scroll/motion-parallax/motion-parallax.ts',
   'motion-scene': 'src/scroll/motion-scene/motion-scene.ts',

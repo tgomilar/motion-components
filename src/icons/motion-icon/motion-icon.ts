@@ -12,7 +12,19 @@ export type { IconAnimation, IconTrigger, MotionIconProps } from './motion-icon.
 
 const SHAPES = 'path, line, polyline, polygon, circle, rect, ellipse'
 
-/** Parses SVG markup and drops anything that could run script. */
+const ELEMENTS = new Set(
+  'svg g path line polyline polygon circle rect ellipse defs use symbol clippath mask lineargradient radialgradient stop title desc'.split(
+    ' ',
+  ),
+)
+
+function unsafe(name: string, value: string) {
+  if (/^on/i.test(name) || /javascript:/i.test(value)) return true
+  if (/(^|:)href$/i.test(name)) return !value.trim().startsWith('#')
+  return /url\(\s*['"]?\s*[^'"\s#]/i.test(value)
+}
+
+/** Parses SVG markup, keeping only drawing elements and local references. */
 function parseSvg(markup: string): SVGSVGElement | null {
   const source = /<svg[^>]*\sxmlns=/.test(markup)
     ? markup.trim()
@@ -20,45 +32,67 @@ function parseSvg(markup: string): SVGSVGElement | null {
   const doc = new DOMParser().parseFromString(source, 'image/svg+xml')
   const svg = doc.documentElement
   if (svg.localName !== 'svg' || doc.querySelector('parsererror')) return null
-  svg.querySelectorAll('script, foreignObject').forEach((el) => el.remove())
+  for (const el of [...svg.querySelectorAll('*')]) {
+    if (!ELEMENTS.has(el.localName.toLowerCase())) el.remove()
+  }
   for (const el of [svg, ...svg.querySelectorAll('*')]) {
     for (const attr of [...el.attributes]) {
-      if (/^on/i.test(attr.name) || /^\s*javascript:/i.test(attr.value))
-        el.removeAttribute(attr.name)
+      if (unsafe(attr.name, attr.value)) el.removeAttribute(attr.name)
     }
   }
+  if (!svg.hasAttribute('fill')) svg.setAttribute('fill', 'currentColor')
+  svg.removeAttribute('width')
+  svg.removeAttribute('height')
   return document.importNode(svg, true) as unknown as SVGSVGElement
+}
+
+const requests = new Map<string, Promise<string>>()
+
+function fetchIcon(url: string) {
+  let request = requests.get(url)
+  if (!request) {
+    request = fetch(url).then((res) => {
+      if (!res.ok) throw new Error(`${res.status} ${url}`)
+      return res.text()
+    })
+    request.catch(() => requests.delete(url))
+    requests.set(url, request)
+  }
+  return request
 }
 
 /**
  * Animates any SVG icon: draws its strokes in, or pops, bounces, rotates,
  * wiggles or pulses it on a spring. Works with stroke sets such as Lucide,
  * Tabler, Heroicons and Iconoir; filled icons (Phosphor, Bootstrap) fall back
- * from `draw` to `pop`. Pass the icon as child `<svg>` or as an SVG string in
- * `icon`. The icon inherits `currentColor`.
+ * from `draw` to `pop`. Pass the icon as a URL in `src`, as an SVG string in
+ * `icon`, or as a child `<svg>`. The icon inherits `currentColor`. Inside a
+ * button or link, `hover` and `click` follow that button or link.
  *
  * @element motion-icon
  *
- * @slot - An inline `<svg>` icon. Ignored when `icon` is set.
+ * @slot - An inline `<svg>` icon. Shown while `src` loads and ignored once `icon` or `src` renders.
  *
  * @fires motion-start - When an animation run starts.
  * @fires motion-finish - When an animation run finishes.
+ * @fires error - When `src` cannot be loaded.
  *
  * @cssprop --icon-size - Width and height of the icon. Default `1.5em`.
  * @cssprop --icon-color - Icon color. Default `currentColor`.
+ * @cssprop --icon-fill - Fills the inside of an outline icon. Default `none`.
  *
  * @csspart icon - The wrapper around the rendered `icon` SVG.
  *
  * @example
  * ```html
- * <motion-icon animation="draw" trigger="hover">
- *   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">…</svg>
- * </motion-icon>
+ * <motion-icon src="https://cdn.jsdelivr.net/npm/lucide-static@1/icons/heart.svg"></motion-icon>
  * ```
  */
 @customElement('motion-icon')
 export class MotionIcon extends Controllable(LitElement) implements MotionIconProps {
-  /** SVG markup to render, for example `import { Heart } from 'lucide-static'`. Script and event handlers are removed. */
+  /** URL of an SVG file, for example from a CDN or your own `/icons` folder. Responses are cached per URL. */
+  @property({ type: String }) src = ''
+  /** SVG markup to render, for example `import { Heart } from 'lucide-static'`. Takes precedence over `src`. */
   @property({ type: String }) icon = ''
   /** `'draw'`, `'pop'`, `'bounce'`, `'rotate'`, `'wiggle'` or `'pulse'`. `draw` needs a stroke icon and falls back to `pop`. */
   @property({ type: String, reflect: true }) animation: IconAnimation = 'draw'
@@ -91,6 +125,9 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
       width: 100%;
       height: 100%;
     }
+    .icon:not(:empty) + slot {
+      display: none;
+    }
     .icon svg,
     ::slotted(svg) {
       width: 100%;
@@ -100,6 +137,8 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     }
   `
 
+  private markup = ''
+  private target: HTMLElement = this
   private svg: SVGSVGElement | null = null
   private strokes: SVGElement[] = []
   private disconnectIntersect: (() => void) | null = null
@@ -131,15 +170,17 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
 
   connectedCallback() {
     super.connectedCallback()
-    this.addEventListener('pointerenter', this.onHover)
-    this.addEventListener('click', this.onClick)
+    this.target = this.closest<HTMLElement>('button, a, [role="button"]') ?? this
+    this.target.addEventListener('pointerenter', this.onHover)
+    this.target.addEventListener('click', this.onClick)
     this.addEventListener('motion-finish', this.onFinish)
+    if (this.hasUpdated) this.setup()
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.removeEventListener('pointerenter', this.onHover)
-    this.removeEventListener('click', this.onClick)
+    this.target.removeEventListener('pointerenter', this.onHover)
+    this.target.removeEventListener('click', this.onClick)
     this.removeEventListener('motion-finish', this.onFinish)
     this.disconnectIntersect?.()
     this.stopLoop()
@@ -147,7 +188,18 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
 
   updated(changed: Map<string, unknown>) {
     if (changed.has('label')) this.applyLabel()
-    if (changed.has('icon') || changed.has('animation') || changed.has('trigger')) this.setup()
+    if (changed.has('icon') || changed.has('src')) void this.load()
+    else if (changed.has('animation') || changed.has('trigger')) this.setup()
+  }
+
+  private async load() {
+    const { icon, src } = this
+    if (icon || !src) return this.setup(icon)
+    const markup = await fetchIcon(src).catch(() => {
+      this.dispatchEvent(new Event('error'))
+      return ''
+    })
+    if (this.icon === icon && this.src === src) this.setup(markup)
   }
 
   private applyLabel() {
@@ -163,22 +215,24 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   }
 
   private onSlotChange = () => {
-    if (!this.icon) this.setup()
+    if (!this.markup) this.setup()
   }
 
-  private setup() {
+  private setup(markup = this.markup) {
+    this.markup = markup
     this.disconnectIntersect?.()
     this.disconnectIntersect = null
     this.stopLoop()
     const container = this.renderRoot.querySelector<HTMLElement>('.icon')
-    if (this.icon && container) {
-      const svg = parseSvg(this.icon)
+    if (markup && container) {
+      const svg = parseSvg(markup)
       container.replaceChildren(...(svg ? [svg] : []))
       this.svg = svg
     } else {
       container?.replaceChildren()
       this.svg = this.querySelector('svg')
     }
+    if (this.svg?.getAttribute('fill') === 'none') this.svg.style.fill = 'var(--icon-fill, none)'
     this.strokes = this.svg ? this.findStrokes(this.svg) : []
     for (const el of this.strokes) {
       el.setAttribute('pathLength', '1')
@@ -225,8 +279,8 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     const keys = { duration: this.duration, ease: 'easeInOut' as const, delay: this.delay }
     switch (this.mode) {
       case 'draw':
-        return new GroupAnimationWithThen(
-          this.strokes.map((el, i) =>
+        return new GroupAnimationWithThen([
+          ...this.strokes.map((el, i) =>
             animate(
               el,
               { strokeDashoffset: [1, 0] },
@@ -238,7 +292,12 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
               },
             ),
           ),
-        )
+          animate(
+            svg,
+            { fillOpacity: [0, 1] },
+            { duration: this.duration * 0.6, delay: this.delay + this.duration * 0.5 },
+          ),
+        ])
       case 'pop':
         return animate(svg, { scale: [0.6, 1] }, spring)
       case 'bounce':
@@ -254,11 +313,15 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
 
   private hide() {
     for (const el of this.strokes) el.style.strokeDashoffset = '1'
+    if (this.svg) this.svg.style.fillOpacity = '0'
   }
 
   private settle() {
     for (const el of this.strokes) el.style.strokeDashoffset = '0'
-    if (this.svg) this.svg.style.transform = ''
+    if (this.svg) {
+      this.svg.style.transform = ''
+      this.svg.style.fillOpacity = ''
+    }
   }
 
   private onHover = () => {
