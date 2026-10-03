@@ -1,5 +1,7 @@
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
+import { BaseElement, defineElement } from '../../utils/define.js'
+import { readFlag } from '../../utils/attributes.js'
 export type { MotionSliderProps } from './motion-slider.types.js'
 
 /**
@@ -15,7 +17,7 @@ export type { MotionSliderProps } from './motion-slider.types.js'
  * @attr {number} [gap=24] - Space between slides in pixels.
  * @attr {boolean} [arrows=true] - Show prev/next arrow buttons. Set `"false"` to hide them.
  *
- * @fires slidechange - Dispatched when the active slide index changes.
+ * @fires motion-change - Dispatched when the active slide index changes. `detail: { index }`.
  *   `event.detail.index` contains the new index.
  *
  * @example
@@ -27,7 +29,7 @@ export type { MotionSliderProps } from './motion-slider.types.js'
  * </motion-slider>
  * ```
  */
-export class MotionSlider extends HTMLElement {
+export class MotionSlider extends BaseElement {
   private track: HTMLElement | null = null
   private slides: HTMLElement[] = []
   private dots: HTMLElement[] = []
@@ -47,7 +49,7 @@ export class MotionSlider extends HTMLElement {
     return Number(this.getAttribute('gap') ?? 24)
   }
   private get showArrows(): boolean {
-    return this.getAttribute('arrows') !== 'false'
+    return readFlag(this, 'arrows', true)
   }
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -302,7 +304,11 @@ export class MotionSlider extends HTMLElement {
     this.updateDots()
     this.updateArrows()
     this.dispatchEvent(
-      new CustomEvent('slidechange', { detail: { index: this.index }, bubbles: true }),
+      new CustomEvent('motion-change', {
+        detail: { index: this.index },
+        bubbles: true,
+        composed: true,
+      }),
     )
   }
 
@@ -335,7 +341,7 @@ function chevron(dir: 'left' | 'right'): string {
   return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="${pts}"></polyline></svg>`
 }
 
-customElements.define('motion-slider', MotionSlider)
+defineElement('motion-slider', MotionSlider)
 
 declare global {
   interface HTMLElementTagNameMap {

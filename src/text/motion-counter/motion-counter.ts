@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionCounterProps } from './motion-counter.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionCounterProps } from './motion-counter.types.js'
 
@@ -34,11 +36,8 @@ export class MotionCounter extends Controllable(LitElement) implements MotionCou
   @property({ type: String }) prefix = ''
   /** Text rendered after the number (e.g. `"%"`). */
   @property({ type: String }) suffix = ''
-  /**
-   * When `true`, only count the first time the element enters view. Cannot be disabled from markup,
-   * as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only count the first time the element enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   @state() private value = 0
 

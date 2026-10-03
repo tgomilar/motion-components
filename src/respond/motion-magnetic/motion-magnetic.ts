@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 import type { MotionMagneticProps } from './motion-magnetic.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionMagneticProps } from './motion-magnetic.types.js'
 
@@ -28,8 +30,10 @@ export class MotionMagnetic extends LitElement implements MotionMagneticProps {
   @property({ type: Number }) strength = 0.4
   /** Spring duration of the pull and release transitions, in seconds. */
   @property({ type: Number }) duration = 0.5
+  /** Spring bounciness of the pull and release (0 = no overshoot). */
+  @property({ type: Number }) bounce = 0.4
   /** When `true`, ignores pointer input and settles to the rest state. */
-  @property({ type: Boolean, reflect: true }) disabled = false
+  @property({ type: Boolean, converter: flag, reflect: true }) disabled = false
 
   static styles = css`
     :host {
@@ -66,7 +70,11 @@ export class MotionMagnetic extends LitElement implements MotionMagneticProps {
     const cy = rect.top + rect.height / 2
     const dx = (e.clientX - cx) * this.strength
     const dy = (e.clientY - cy) * this.strength
-    animate(this, { x: dx, y: dy }, { type: 'spring', bounce: 0.3, duration: this.duration })
+    animate(
+      this,
+      { x: dx, y: dy },
+      { type: 'spring', bounce: this.bounce, duration: this.duration },
+    )
   }
 
   private onLeave = () => {
@@ -75,7 +83,7 @@ export class MotionMagnetic extends LitElement implements MotionMagneticProps {
   }
 
   private settle() {
-    animate(this, { x: 0, y: 0 }, { type: 'spring', bounce: 0.4, duration: this.duration })
+    animate(this, { x: 0, y: 0 }, { type: 'spring', bounce: this.bounce, duration: this.duration })
   }
 
   render() {

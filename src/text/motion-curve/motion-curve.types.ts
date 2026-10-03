@@ -2,7 +2,7 @@ export interface MotionCurveProps {
   text?: string
   amplitude: number
   waveLength: number
-  speed: number
+  waveDuration: number
   loop: boolean
   loopSpeed: number
   loopGap: number

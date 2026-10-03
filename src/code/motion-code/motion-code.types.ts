@@ -5,9 +5,9 @@ export interface MotionCodeProps {
   copy: boolean
   copyLabel: boolean
   compact: boolean
-  type: boolean
-  typeSpeed: number
-  typeDelay: number
-  noLoop: boolean
-  typeLoopDelay: number
+  typing: boolean
+  typingSpeed: number
+  typingDelay: number
+  typingLoop: boolean
+  typingHold: number
 }

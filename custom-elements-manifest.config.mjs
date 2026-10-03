@@ -96,7 +96,7 @@ function preserveExamples() {
 
 export default {
   globs: ['src/**/*.ts'],
-  exclude: ['src/**/*.types.ts', 'src/**/*.d.ts'],
+  exclude: ['src/**/*.types.ts', 'src/**/*.d.ts', 'src/**/*.test.ts', 'src/test/**'],
   outdir: 'dist',
   litelement: true,
   packagejson: true,

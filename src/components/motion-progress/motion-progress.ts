@@ -1,9 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate, scroll } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionProgressProps, ProgressPosition } from './motion-progress.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionProgressProps, ProgressPosition } from './motion-progress.types.js'
 
@@ -13,9 +14,11 @@ export type { MotionProgressProps, ProgressPosition } from './motion-progress.ty
  *
  * @element motion-progress
  *
+ * @cssprop --progress-color - Bar color. Default `var(--color-accent, #2563eb)`.
+ *
  * @example
  * ```html
- * <motion-progress color="#60a5fa" thickness="3"></motion-progress>
+ * <motion-progress thickness="3" style="--progress-color: #60a5fa"></motion-progress>
  * <motion-progress target="#article" position="bottom"></motion-progress>
  * ```
  */
@@ -23,8 +26,6 @@ export type { MotionProgressProps, ProgressPosition } from './motion-progress.ty
 export class MotionProgress extends Controllable(LitElement) implements MotionProgressProps {
   /** `'top'` or `'bottom'` of the viewport. */
   @property({ type: String, reflect: true }) position: ProgressPosition = 'top'
-  /** Bar color (any valid CSS color). */
-  @property({ type: String, reflect: true }) color = 'var(--color-accent, #2563eb)'
   /** Bar thickness in pixels. */
   @property({ type: Number, reflect: true }) thickness = 3
   /** CSS selector of the scroll target. Defaults to the document. */
@@ -89,7 +90,7 @@ export class MotionProgress extends Controllable(LitElement) implements MotionPr
 
   private apply() {
     if (!this.bar) return
-    this.bar.style.background = this.color
+    this.bar.style.background = 'var(--progress-color, var(--color-accent, #2563eb))'
     this.bar.style.height = `${this.thickness}px`
     this.bar.style.top = this.position === 'top' ? '0' : 'auto'
     this.bar.style.bottom = this.position === 'bottom' ? '0' : 'auto'

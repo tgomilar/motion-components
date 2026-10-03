@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.0.0 — 2026-10-03
+
+The first stable release. Attribute names, units and spring settings are now consistent across all 40 components, and from here on they only change in a major version. Every rename, with how to convert it, is in the migration guide: https://www.motion-components.dev/docs/migration/
+
+### Breaking changes
+
+- **Time is always in seconds.** `motion-glitch` and `motion-words` `interval`, `motion-typewriter` and `motion-scramble` `delay`, and the `motion-code` typing delays were milliseconds. Divide old values by 1000.
+- **`speed` only means a rate per second** (`motion-ticker`, `motion-curve` `loop-speed`, `motion-code` `typing-speed`). Other `speed` attributes are renamed by what they do:
+  - `motion-circle`, `motion-arc`: `speed` → `duration` (seconds per rotation).
+  - `motion-perspective`: `speed` → `duration` (seconds per cycle, `1 / speed`); `animate` → `oscillate`.
+  - `motion-liquid`: `speed` → `duration` (seconds per cycle, `9 / speed`).
+  - `motion-curve`: `speed` → `wave-duration` (seconds per wave, `1 / speed`).
+  - `motion-parallax`: `speed` → `depth`.
+  - `motion-typewriter`: `speed` → `interval`, `pause` → `hold`. `motion-scramble`: `speed` → `interval`.
+- **Springs use `duration` and `bounce`.** `motion-stretch` drops `stiffness`/`damping`; `motion-swap` drops the `transition` object; `motion-spotlight` drops `smoothing` and `fade-duration` and now follows the cursor on a spring; `motion-gravity` drops its fixed spring (so `duration` now works) and gains `bounce`.
+- **Renamed attributes:** `motion-blur`/`motion-blur-in` `blur` → `intensity`; `motion-swap` `stagger-duration` → `interval`; `motion-gravity` `stagger` → `interval`; `motion-code` `type`, `type-speed`, `type-delay`, `type-loop-delay`, `no-loop` → `typing`, `typing-speed`, `typing-delay`, `typing-hold`, `typing-loop` (default on).
+- **Triggers:** `'view'` means when scrolled into view and `'mount'` means once on load. `motion-font` `auto` → `view`, `motion-swap` `reveal` → `view`, `motion-glitch` `auto` → `mount`, and `motion-scramble` boolean `hover` → `trigger="hover"`.
+- **Colors move to CSS custom properties:** `motion-progress` `color` → `--progress-color`, `motion-spotlight` `color` → `--spotlight-color`. `motion-code` token colors `--cw-*` → `--code-*`.
+- **Events:** `motion-slider` fires `motion-change` instead of `slidechange`.
+- **`motion-theme-toggle`:** the page wipe is off by default. The boolean `wipe` replaces `transition="wipe" | "none"`.
+
+### Added
+
+- Every boolean attribute accepts `"false"`, so flags that default to on (`once`, `pin`, `labels`, `arrows`, `cursor` and others) can be turned off in HTML.
+- `bounce` on `motion-press`, `motion-magnetic` and `motion-gravity`; `duration` and `bounce` on `motion-tilt`.
+- `icon-only` on the `motion-theme-toggle` `toggle` appearance.
+- `@cssprop` documentation for `motion-countdown`, `motion-dialog` and `motion-progress`.
+- Tests for every component (472 in total) and a `check:ssr` step in the release checks.
+
+### Fixed
+
+- **Security:** `motion-split`, `motion-headline` and `motion-glitch` inserted their text as HTML without escaping, so markup in the text could run. Text is now escaped.
+- Registering a component twice (for example from two bundles) no longer throws.
+- Importing the library during server-side rendering no longer throws.
+- `once="false"` replays every time the element scrolls into view in `motion-reveal`, `motion-blur-in`, `motion-stagger`, `motion-split`, `motion-headline`, `motion-text-mask` and `motion-font`.
+- With reduced motion, `motion-split` and `motion-headline` show their text at once instead of waiting to scroll into view.
+- Screen readers read the whole text once in `motion-arc`, `motion-circle`, `motion-curve`, `motion-gravity` and `motion-perspective`.
+- `motion-font`: playback and hover control every axis, not just the first; hover respects reduced motion.
+- `motion-curve`: the wave speed no longer depends on the screen's refresh rate.
+- `motion-liquid`: `pause-on-hover` and the playback methods work without calling `play()` first.
+- `motion-stagger` shows children added after the reveal; `motion-blur`'s `once` latch fires `motion-finish`.
+- `motion-words` keeps commas inside `rgb()` and `hsl()` colors and picks up new `words`/`colors`.
+- `motion-dialog` stays open when reopened during its closing animation.
+- `motion-perspective` with a single letter, `motion-circle` `finish()`, and a still `motion-arc` playback state.
+
 ## 0.7.1 — 2026-10-02
 
 ### Fixed

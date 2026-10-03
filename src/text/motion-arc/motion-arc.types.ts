@@ -6,7 +6,7 @@ export interface MotionArcProps {
   radius: number
   arc: number
   align: ArcAlign
-  speed: number
+  duration: number
   direction: ArcDirection
   upright: boolean
   pauseOnHover: boolean

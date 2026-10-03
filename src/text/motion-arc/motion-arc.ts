@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { PlaybackHandle } from '../../utils/playback.types.js'
 import type { MotionArcProps, ArcAlign, ArcDirection } from './motion-arc.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 const noopHandle: PlaybackHandle = { pause() {}, resume() {}, finish() {}, cancel() {} }
 
@@ -34,15 +36,23 @@ export class MotionArc extends Controllable(LitElement) implements MotionArcProp
   /** Where the arc opens: `'top'` (apex up) or `'bottom'` (apex down). */
   @property({ type: String }) align: ArcAlign = 'top'
   /** Seconds per full rotation. `0` disables rotation. */
-  @property({ type: Number }) speed = 0
+  @property({ type: Number }) duration = 0
   /** Rotation direction: `'cw'` or `'ccw'`. */
   @property({ type: String }) direction: ArcDirection = 'cw'
   /** When `true`, counter-rotate each glyph so it stays visually upright. */
-  @property({ type: Boolean }) upright = false
+  @property({ type: Boolean, converter: flag }) upright = false
   /** When `true`, pause the rotation while the cursor is over the element. */
-  @property({ type: Boolean, attribute: 'pause-on-hover' }) pauseOnHover = false
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   static styles = css`
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
     :host {
       display: inline-block;
       font-size: inherit;
@@ -83,7 +93,7 @@ export class MotionArc extends Controllable(LitElement) implements MotionArcProp
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
-      if (this.speed === 0) return { handle: noopHandle }
+      if (this.duration <= 0) return { handle: noopHandle, done: Promise.resolve() }
       const ring = this.shadowRoot?.querySelector<HTMLElement>('.ring')
       if (!ring) return { handle: noopHandle }
       const to = this.direction === 'ccw' ? -360 : 360
@@ -91,7 +101,7 @@ export class MotionArc extends Controllable(LitElement) implements MotionArcProp
         animate(
           ring,
           { rotate: [0, to] },
-          { duration: this.speed, repeat: Infinity, ease: 'linear' },
+          { duration: this.duration, repeat: Infinity, ease: 'linear' },
         ),
       )
     },
@@ -123,7 +133,7 @@ export class MotionArc extends Controllable(LitElement) implements MotionArcProp
       changed.has('radius') ||
       changed.has('arc') ||
       changed.has('align') ||
-      changed.has('speed') ||
+      changed.has('duration') ||
       changed.has('direction') ||
       changed.has('upright')
 
@@ -152,8 +162,9 @@ export class MotionArc extends Controllable(LitElement) implements MotionArcProp
     const startAngle = centerAngle - halfArc
 
     return html`
+      <span class="sr-only">${this.text}</span>
       <div class="container" style="width:${size}px;height:${size}px">
-        <div class="ring">
+        <div class="ring" aria-hidden="true">
           ${chars.map((char, i) => {
             const angle = n > 1 ? startAngle + (i / (n - 1)) * this.arc : centerAngle
             const counterRotate = this.upright ? ` rotate(${-angle}deg)` : ''

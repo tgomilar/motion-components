@@ -1,13 +1,15 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionTypewriterProps } from './motion-typewriter.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionTypewriterProps } from './motion-typewriter.types.js'
 
 /**
  * Typewriter text effect. Reveals slotted text character-by-character,
- * with optional looping (type → pause → erase → retype) and a blinking caret.
+ * with optional looping (type → hold → erase → retype) and a blinking caret.
  *
  * @element motion-typewriter
  *
@@ -15,29 +17,23 @@ export type { MotionTypewriterProps } from './motion-typewriter.types.js'
  *
  * @example
  * ```html
- * <motion-typewriter speed="40" loop pause="2000">
+ * <motion-typewriter interval="0.04" loop hold="2">
  *   Hello, world.
  * </motion-typewriter>
  * ```
  */
 @customElement('motion-typewriter')
-export class MotionTypewriter
-  extends Controllable(LitElement)
-  implements Omit<MotionTypewriterProps, 'pause'>
-{
-  /** Time between characters while typing, in milliseconds. */
-  @property({ type: Number }) speed = 50
-  /** Delay before typing starts after viewport entry, in milliseconds. */
+export class MotionTypewriter extends Controllable(LitElement) implements MotionTypewriterProps {
+  /** Time between characters while typing, in seconds. */
+  @property({ type: Number }) interval = 0.05
+  /** Delay before typing starts after viewport entry, in seconds. */
   @property({ type: Number }) delay = 0
-  /** Pause at the end of the line before erasing (loop mode), in milliseconds. */
-  @property({ type: Number, attribute: 'pause' }) pauseTime = 1800
-  /** When `true`, type → pause → erase → retype on repeat. */
-  @property({ type: Boolean }) loop = false
-  /**
-   * When `true`, render a blinking caret after the typed text. Cannot be disabled from markup, as
-   * with any HTML boolean attribute. Set the property instead: `el.cursor = false`.
-   */
-  @property({ type: Boolean }) cursor = true
+  /** Time to hold the finished line before erasing (loop mode), in seconds. */
+  @property({ type: Number }) hold = 1.8
+  /** When `true`, type → hold → erase → retype on repeat. */
+  @property({ type: Boolean, converter: flag }) loop = false
+  /** When `true`, render a blinking caret after the typed text. Set `cursor="false"` to hide it. */
+  @property({ type: Boolean, converter: flag }) cursor = true
 
   @state() private displayed = ''
 
@@ -89,7 +85,7 @@ export class MotionTypewriter
         : new Promise<void>((resolve) => {
             this.resolveRun = resolve
           })
-      this.schedule(() => this.type(), this.delay)
+      this.schedule(() => this.type(), this.delay * 1000)
       return {
         handle: {
           pause: () => {
@@ -164,7 +160,7 @@ export class MotionTypewriter
   private type() {
     if (this.index > this.full.length) {
       if (this.loop) {
-        this.schedule(() => this.erase(), this.pauseTime)
+        this.schedule(() => this.erase(), this.hold * 1000)
       } else {
         this.stopTimer()
         this.resolveRun?.()
@@ -174,17 +170,17 @@ export class MotionTypewriter
     }
     this.displayed = this.full.slice(0, this.index)
     this.index++
-    this.schedule(() => this.type(), this.speed)
+    this.schedule(() => this.type(), this.interval * 1000)
   }
 
   private erase() {
     if (this.index <= 0) {
-      this.schedule(() => this.type(), this.speed * 4)
+      this.schedule(() => this.type(), this.interval * 4000)
       return
     }
     this.index--
     this.displayed = this.full.slice(0, this.index)
-    this.schedule(() => this.erase(), this.speed * 0.5)
+    this.schedule(() => this.erase(), this.interval * 500)
   }
 
   /** Resets and re-runs the typing animation from the start. */

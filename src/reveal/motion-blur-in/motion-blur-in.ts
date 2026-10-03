@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionBlurInProps } from './motion-blur-in.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionBlurInProps } from './motion-blur-in.types.js'
 
@@ -17,7 +19,7 @@ export type { MotionBlurInProps } from './motion-blur-in.types.js'
  *
  * @example
  * ```html
- * <motion-blur-in blur="12" y="8" duration="0.7">
+ * <motion-blur-in intensity="12" y="8" duration="0.7">
  *   <h1>Headline</h1>
  * </motion-blur-in>
  * ```
@@ -27,16 +29,13 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
   /** Spring duration of the reveal animation, in seconds. */
   @property({ type: Number }) duration = 0.7
   /** Initial blur in pixels; animates to 0 on reveal. */
-  @property({ type: Number, attribute: 'blur' }) amount = 10
+  @property({ type: Number }) intensity = 10
   /** Initial vertical offset in pixels; animates to 0 on reveal. */
   @property({ type: Number }) y = 12
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.1
-  /**
-   * When `true`, only animate the first time the element enters view. Cannot be disabled from
-   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   static styles = css`
     :host {
@@ -58,7 +57,7 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
           this,
           {
             opacity: [0, 1],
-            filter: [`blur(${this.amount}px)`, 'blur(0px)'],
+            filter: [`blur(${this.intensity}px)`, 'blur(0px)'],
             y: [this.y, 0],
           },
           { duration: this.duration, type: 'spring', bounce: 0.1 },
@@ -71,7 +70,7 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
     },
     applyInitialState: () => {
       this.style.opacity = '0'
-      this.style.filter = `blur(${this.amount}px)`
+      this.style.filter = `blur(${this.intensity}px)`
       this.style.transform = ''
     },
   })
@@ -85,7 +84,7 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
 
   firstUpdated() {
     if (!this.reduced) {
-      this.style.filter = `blur(${this.amount}px)`
+      this.style.filter = `blur(${this.intensity}px)`
     }
 
     this.observer = new IntersectionObserver(this.onIntersect, { threshold: this.threshold })
@@ -105,6 +104,8 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
           this.revealed = true
           this.observer?.disconnect()
         }
+      } else if (!entry.isIntersecting) {
+        if (!this.once && this.playState !== 'idle') this.cancel()
       }
     }
   }

@@ -1,7 +1,9 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, query } from 'lit/decorators.js'
+import { property, query } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { MotionDialogProps } from './motion-dialog.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionDialogProps } from './motion-dialog.types.js'
 
@@ -16,6 +18,16 @@ export type { MotionDialogProps } from './motion-dialog.types.js'
  * @slot - Content rendered inside the dialog panel.
  *
  * @fires motion-close - Dispatched after the close animation completes.
+ *
+ * @cssprop --dialog-bg - Panel background. Default `Canvas`.
+ * @cssprop --dialog-color - Panel text color. Default `CanvasText`.
+ * @cssprop --dialog-radius - Panel corner radius. Default `16px`.
+ * @cssprop --dialog-padding - Panel padding. Default `2rem`.
+ * @cssprop --dialog-max-width - Maximum panel width. Default `min(560px, 100vw - 2rem)`.
+ * @cssprop --dialog-max-height - Maximum panel height. Default `100dvh - 4rem`.
+ * @cssprop --dialog-shadow - Panel box shadow.
+ * @cssprop --dialog-backdrop-color - Backdrop overlay color. Default `rgba(0, 0, 0, 0.48)`.
+ * @cssprop --dialog-backdrop-blur - Backdrop `backdrop-filter`. Default `blur(6px)`.
  *
  * @example
  * ```html
@@ -32,7 +44,7 @@ export type { MotionDialogProps } from './motion-dialog.types.js'
 @customElement('motion-dialog')
 export class MotionDialog extends LitElement implements MotionDialogProps {
   /** Whether the dialog is open. Set this attribute to open declaratively. */
-  @property({ type: Boolean, reflect: true }) open = false
+  @property({ type: Boolean, converter: flag, reflect: true }) open = false
   /** Spring duration for enter/exit animations, in seconds. */
   @property({ type: Number }) duration = 0.5
   /** Spring bounciness (0 = critically damped, higher = more elastic). */
@@ -40,9 +52,10 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
   /** Initial vertical offset for the slide-up entrance, in pixels. */
   @property({ type: Number }) y = 40
   /** When present, the dimmed/blurred overlay is hidden. The dialog floats without a backdrop. */
-  @property({ type: Boolean, attribute: 'no-backdrop', reflect: true }) noBackdrop = false
+  @property({ type: Boolean, converter: flag, attribute: 'no-backdrop', reflect: true })
+  noBackdrop = false
   /** When present, clicking the backdrop outside the panel closes the dialog. */
-  @property({ type: Boolean, attribute: 'light-dismiss' }) lightDismiss = false
+  @property({ type: Boolean, converter: flag, attribute: 'light-dismiss' }) lightDismiss = false
 
   @query('dialog') private dialogEl!: HTMLDialogElement
   @query('.backdrop') private backdropEl!: HTMLElement

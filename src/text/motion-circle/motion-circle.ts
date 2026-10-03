@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { PlaybackRun } from '../../utils/playback.js'
 import type { MotionCircleProps, CircleDirection } from './motion-circle.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionCircleProps, CircleDirection } from './motion-circle.types.js'
 
@@ -17,7 +19,7 @@ export type { MotionCircleProps, CircleDirection } from './motion-circle.types.j
  *
  * @example
  * ```html
- * <motion-circle text="ROTATING • TEXT • " radius="100" speed="12">
+ * <motion-circle text="ROTATING • TEXT • " radius="100" duration="12">
  *   <img src="logo.svg" alt="" width="40" />
  * </motion-circle>
  * ```
@@ -28,16 +30,24 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
   @property({ type: String }) text?: string
   /** Circle radius in pixels. */
   @property({ type: Number }) radius = 80
-  /** Seconds per full rotation. Set to a small number for fast spin. */
-  @property({ type: Number }) speed = 8
+  /** Seconds per full rotation. Lower is faster. */
+  @property({ type: Number }) duration = 8
   /** Rotation direction: `'cw'` (clockwise) or `'ccw'` (counter-clockwise). */
   @property({ type: String }) direction: CircleDirection = 'cw'
   /** When `true`, counter-rotate each glyph so it stays visually upright. */
-  @property({ type: Boolean }) upright = false
+  @property({ type: Boolean, converter: flag }) upright = false
   /** When `true`, pause the rotation while the cursor is over the element. */
-  @property({ type: Boolean, attribute: 'pause-on-hover' }) pauseOnHover = false
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   static styles = css`
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
     :host {
       display: inline-block;
       font-size: inherit;
@@ -98,7 +108,7 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
     const needsRestart =
       changed.has('text') ||
       changed.has('radius') ||
-      changed.has('speed') ||
+      changed.has('duration') ||
       changed.has('direction') ||
       changed.has('upright')
 
@@ -130,13 +140,13 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
     const controls = animate(
       ring,
       { rotate: [0, to] },
-      { duration: this.speed, repeat: Infinity, ease: 'linear' },
+      { duration: this.duration, repeat: Infinity, ease: 'linear' },
     )
     return {
       handle: {
         pause: () => controls.pause(),
         resume: () => controls.play(),
-        finish: () => controls.cancel(),
+        finish: () => controls.complete(),
         cancel: () => controls.cancel(),
       },
     }
@@ -153,8 +163,9 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
     const size = this.radius * 2
 
     return html`
+      <span class="sr-only">${this.text}</span>
       <div class="container" style="width:${size}px;height:${size}px">
-        <div class="ring">
+        <div class="ring" aria-hidden="true">
           ${chars.map((char, i) => {
             const angle = (360 / n) * i - 90
             const counterRotate = this.upright ? ` rotate(${-angle}deg)` : ''

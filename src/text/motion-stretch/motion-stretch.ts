@@ -1,8 +1,9 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import type { MotionStretchProps } from './motion-stretch.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionStretchProps } from './motion-stretch.types.js'
 
@@ -27,10 +28,10 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
   @property({ type: String }) text?: string
   /** Maximum lateral displacement of edge characters, in pixels. */
   @property({ type: Number }) spread = 12
-  /** Spring stiffness controlling reaction speed. */
-  @property({ type: Number }) stiffness = 320
-  /** Spring damping controlling overshoot (lower = more bouncy). */
-  @property({ type: Number }) damping = 16
+  /** Spring duration of the spread and release, in seconds. */
+  @property({ type: Number }) duration = 0.45
+  /** Spring bounciness (0 = critically damped, higher = more elastic). */
+  @property({ type: Number }) bounce = 0.55
 
   static styles = css`
     :host {
@@ -98,7 +99,7 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
     this.stopAll()
     const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
     const n = chars.length
-    const spring = { type: 'spring' as const, stiffness: this.stiffness, damping: this.damping }
+    const spring = { type: 'spring' as const, duration: this.duration, bounce: this.bounce }
 
     this.controls = chars.map((char, i) => {
       const t = n > 1 ? i / (n - 1) - 0.5 : 0 // -0.5 to 0.5
@@ -114,7 +115,7 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
       chars.forEach((char) => animate(char, { x: 0 }, { duration: 0 }))
       return
     }
-    const spring = { type: 'spring' as const, stiffness: this.stiffness, damping: this.damping }
+    const spring = { type: 'spring' as const, duration: this.duration, bounce: this.bounce }
     this.controls = chars.map((char) => animate(char, { x: 0 }, spring))
   }
 

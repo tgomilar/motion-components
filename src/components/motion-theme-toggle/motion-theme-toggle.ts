@@ -1,9 +1,11 @@
 import { LitElement, html, css, nothing } from 'lit'
-import { customElement, property, query, state } from 'lit/decorators.js'
+import { property, query, state } from 'lit/decorators.js'
 import { animate, animateView } from 'motion'
 import '../../respond/motion-hover/motion-hover.js'
 import '../../respond/motion-press/motion-press.js'
 import '../motion-theme-icon/motion-theme-icon.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 import {
   appliedScheme,
   applyScheme,
@@ -78,9 +80,9 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   /** Visual style: `'icon'`, `'toggle'` (segmented), `'switch'`, or `'menu'` (drop-down). */
   @property({ type: String, reflect: true }) appearance: ThemeAppearance = 'icon'
   /** Offers a third "system" option that follows the OS preference. Ignored by `switch`. */
-  @property({ type: Boolean, reflect: true }) system = false
+  @property({ type: Boolean, converter: flag, reflect: true }) system = false
   /** Remembers the choice in `localStorage` (`motion-theme`, or `motion-theme:<target>` for other targets) and restores it on load. */
-  @property({ type: Boolean, reflect: true }) permanent = false
+  @property({ type: Boolean, converter: flag, reflect: true }) permanent = false
   /** Group label. Used as the accessible name of `icon`, `switch` and `menu`. */
   @property({ type: String }) legend = ''
   /** Label of the light option. */
@@ -94,9 +96,10 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   /** CSS selector of the element that receives `data-theme` and `color-scheme`. */
   @property({ type: String }) target = 'html'
   /** Reveals the new theme with a circular view-transition wipe from the control. Off by default. */
-  @property({ type: Boolean, reflect: true }) wipe = false
+  @property({ type: Boolean, converter: flag, reflect: true }) wipe = false
   /** Hides the option labels of the `toggle` appearance and shows icons only. Labels stay available to screen readers and as tooltips. */
-  @property({ type: Boolean, attribute: 'icon-only', reflect: true }) iconOnly = false
+  @property({ type: Boolean, converter: flag, attribute: 'icon-only', reflect: true }) iconOnly =
+    false
   /** Spring duration of the icon morph and wipe, in seconds. */
   @property({ type: Number }) duration = 0.5
   /** Spring bounciness of the icon morph and controls. */
@@ -116,7 +119,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   private silent = false
   private emitted = ''
   private menuGeneration = 0
-  private layout = new ResizeObserver(() => this.animateSelection(false))
+  private layout: ResizeObserver | null = null
 
   static styles = css`
     :host {
@@ -330,7 +333,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.layout.disconnect()
+    this.layout?.disconnect()
     peers.delete(this)
     darkQuery().removeEventListener('change', this.onSystemChange)
     window.removeEventListener('storage', this.onStorage)
@@ -356,6 +359,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   }
 
   private observeLayout() {
+    this.layout ??= new ResizeObserver(() => this.animateSelection(false))
     for (const el of this.renderRoot.querySelectorAll('.segments, .track')) this.layout.observe(el)
   }
 

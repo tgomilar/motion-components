@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, query } from 'lit/decorators.js'
+import { property, query } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionTextMaskProps } from './motion-text-mask.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionTextMaskProps } from './motion-text-mask.types.js'
 
@@ -29,11 +31,8 @@ export class MotionTextMask extends Controllable(LitElement) implements MotionTe
   @property({ type: Number }) delay = 0
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.2
-  /**
-   * When `true`, only animate the first time the element enters view. Cannot be disabled from
-   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   static styles = css`
     :host {
@@ -82,15 +81,22 @@ export class MotionTextMask extends Controllable(LitElement) implements MotionTe
       this.inner.style.transform = 'translateY(110%)'
     }
 
-    this.disconnectIntersect = useIntersect(this, this.threshold, () => {
-      if (!this.revealed && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.revealed = true
-          this.disconnectIntersect?.()
+    this.disconnectIntersect = useIntersect(
+      this,
+      this.threshold,
+      () => {
+        if (!this.revealed && this.playState === 'idle') {
+          void this.play()
+          if (this.once) {
+            this.revealed = true
+            this.disconnectIntersect?.()
+          }
         }
-      }
-    })
+      },
+      () => {
+        if (!this.once && this.playState !== 'idle') this.cancel()
+      },
+    )
   }
 
   disconnectedCallback() {

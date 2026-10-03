@@ -1,15 +1,16 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate, scroll } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionParallaxProps } from './motion-parallax.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionParallaxProps } from './motion-parallax.types.js'
 
 /**
  * Lightweight parallax scroll primitive. Moves the slotted content along the
- * chosen axis at a configurable speed relative to the scroll position.
+ * chosen axis by a configurable depth relative to the scroll position.
  *
  * @element motion-parallax
  *
@@ -17,7 +18,7 @@ export type { MotionParallaxProps } from './motion-parallax.types.js'
  *
  * @example
  * ```html
- * <motion-parallax speed="0.3" axis="y">
+ * <motion-parallax depth="0.3" axis="y">
  *   <img src="background.jpg" alt="" />
  * </motion-parallax>
  * ```
@@ -25,7 +26,7 @@ export type { MotionParallaxProps } from './motion-parallax.types.js'
 @customElement('motion-parallax')
 export class MotionParallax extends Controllable(LitElement) implements MotionParallaxProps {
   /** Parallax intensity. `0` = no movement (scrolls with page), `1` = strong drift. */
-  @property({ type: Number }) speed = 0.5
+  @property({ type: Number }) depth = 0.5
   /** Scroll axis: `'x'` for horizontal, `'y'` for vertical. */
   @property({ type: String }) axis: 'x' | 'y' = 'y'
   /** CSS selector for a custom scroll container element (defaults to the document). */
@@ -73,7 +74,7 @@ export class MotionParallax extends Controllable(LitElement) implements MotionPa
 
   updated(changed: Map<string, unknown>) {
     if (
-      (changed.has('speed') || changed.has('axis') || changed.has('container')) &&
+      (changed.has('depth') || changed.has('axis') || changed.has('container')) &&
       this.playState === 'running'
     ) {
       this.unbind()
@@ -88,7 +89,7 @@ export class MotionParallax extends Controllable(LitElement) implements MotionPa
 
   private bind() {
     this.release()
-    const factor = this.speed
+    const factor = this.depth
     const range = 80 // px
 
     const keyframes =
@@ -118,7 +119,7 @@ export class MotionParallax extends Controllable(LitElement) implements MotionPa
   }
 
   private applyEnd() {
-    const offset = -(this.speed * 80)
+    const offset = -(this.depth * 80)
     this.style.transform = this.axis === 'x' ? `translateX(${offset}px)` : `translateY(${offset}px)`
   }
 

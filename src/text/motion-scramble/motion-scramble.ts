@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
-import type { MotionScrambleProps } from './motion-scramble.types.js'
+import type { MotionScrambleProps, ScrambleTrigger } from './motion-scramble.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
-export type { MotionScrambleProps } from './motion-scramble.types.js'
+export type { MotionScrambleProps, ScrambleTrigger } from './motion-scramble.types.js'
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&'
 
@@ -17,26 +19,23 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
  *
  * @example
  * ```html
- * <motion-scramble speed="35" iterations="3" hover>
+ * <motion-scramble interval="0.035" iterations="3" trigger="hover">
  *   DECODE_ME
  * </motion-scramble>
  * ```
  */
 @customElement('motion-scramble')
 export class MotionScramble extends Controllable(LitElement) implements MotionScrambleProps {
-  /** Time between glyph swaps, in milliseconds. */
-  @property({ type: Number }) speed = 40
-  /** Delay before scrambling starts, in milliseconds. */
+  /** Time between glyph swaps, in seconds. */
+  @property({ type: Number }) interval = 0.04
+  /** Delay before scrambling starts, in seconds. */
   @property({ type: Number }) delay = 0
   /** Number of random-glyph frames per character before locking in. */
   @property({ type: Number }) iterations = 2
-  /**
-   * When `true`, only scramble the first time the element enters view. Cannot be disabled from
-   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
-  /** When `true`, trigger on hover instead of viewport entry. */
-  @property({ type: Boolean, reflect: true }) hover = false
+  /** When `true`, only scramble the first time the element enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
+  /** What starts the scramble: `'view'` (when scrolled into view) or `'hover'`. */
+  @property({ type: String, reflect: true }) trigger: ScrambleTrigger = 'view'
 
   @state() private displayed = ''
 
@@ -57,7 +56,7 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
 
   private loop = frameLoop((dt) => {
     this.elapsed += dt
-    if (this.elapsed < this.speed) return
+    if (this.elapsed < this.interval * 1000) return
     this.elapsed = 0
     this.scramble()
   })
@@ -101,16 +100,16 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    if (this.hover) {
-      this.addEventListener('mouseenter', this.trigger)
+    if (this.trigger === 'hover') {
+      this.addEventListener('mouseenter', this.begin)
     } else {
       this.observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting && !this.triggered) {
             if (this.delay) {
-              setTimeout(() => this.trigger(), this.delay)
+              setTimeout(() => this.begin(), this.delay * 1000)
             } else {
-              this.trigger()
+              this.begin()
             }
             if (this.once) {
               this.triggered = true
@@ -127,10 +126,10 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
   disconnectedCallback() {
     super.disconnectedCallback()
     this.observer?.disconnect()
-    this.removeEventListener('mouseenter', this.trigger)
+    this.removeEventListener('mouseenter', this.begin)
   }
 
-  private trigger = () => {
+  private begin = () => {
     this.cancel()
     void this.play()
   }
@@ -167,7 +166,7 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
   /** Re-runs the scramble animation. */
   replay() {
     this.triggered = false
-    this.trigger()
+    this.begin()
   }
 
   render() {

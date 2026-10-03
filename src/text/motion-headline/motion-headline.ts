@@ -1,10 +1,13 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { splitText } from '../utils/split-text.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-headline.types.js'
+import { customElement } from '../../utils/define.js'
+import { escapeHtml } from '../utils/split-text.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-headline.types.js'
 
@@ -39,11 +42,8 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
   @property({ type: Number }) delay = 0
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.2
-  /**
-   * When `true`, only animate the first time the element enters view. Cannot be disabled from
-   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   static styles = css`
     :host {
@@ -103,6 +103,10 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
     },
   })
 
+  private get reduced() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }
+
   firstUpdated() {
     const isFlip = this.variant === 'flip'
 
@@ -120,15 +124,27 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
 
     this.setAttribute('data-ready', '')
 
-    this.disconnectIntersect = useIntersect(this, this.threshold, () => {
-      if (!this.revealed && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.revealed = true
-          this.disconnectIntersect?.()
+    if (this.reduced) {
+      this.finish()
+      return
+    }
+
+    this.disconnectIntersect = useIntersect(
+      this,
+      this.threshold,
+      () => {
+        if (!this.revealed && this.playState === 'idle') {
+          void this.play()
+          if (this.once) {
+            this.revealed = true
+            this.disconnectIntersect?.()
+          }
         }
-      }
-    })
+      },
+      () => {
+        if (!this.once && this.playState !== 'idle') this.cancel()
+      },
+    )
   }
 
   private buildFlip() {
@@ -148,7 +164,7 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
           [...w]
             .map(
               (c) =>
-                `<span style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${c}</span>`,
+                `<span style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${escapeHtml(c)}</span>`,
             )
             .join(''),
         )
@@ -162,7 +178,7 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
     this.innerHTML = units
       .map(
         (u) =>
-          `<span style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${u}</span>`,
+          `<span style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${escapeHtml(u)}</span>`,
       )
       .join(' ')
 

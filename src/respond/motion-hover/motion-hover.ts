@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 import type { MotionHoverProps } from './motion-hover.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionHoverProps } from './motion-hover.types.js'
 
@@ -38,7 +40,7 @@ export class MotionHover extends LitElement implements MotionHoverProps {
   /** Spring bounciness (0 = critically damped, higher = more elastic). */
   @property({ type: Number }) bounce = 0.3
   /** When `true`, ignores pointer input and settles to the rest state. */
-  @property({ type: Boolean, reflect: true }) disabled = false
+  @property({ type: Boolean, converter: flag, reflect: true }) disabled = false
 
   static styles = css`
     :host {

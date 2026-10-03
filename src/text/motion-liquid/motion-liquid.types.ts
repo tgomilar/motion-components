@@ -1,6 +1,6 @@
 export interface MotionLiquidProps {
   text?: string
   intensity: number
-  speed: number
+  duration: number
   pauseOnHover: boolean
 }

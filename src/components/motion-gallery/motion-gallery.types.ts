@@ -1,5 +1,5 @@
 export interface MotionGalleryProps {
-  columns: string
+  columns: number
   gap: number
   aspectRatio: string
   stagger: boolean

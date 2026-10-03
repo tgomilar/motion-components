@@ -56,7 +56,7 @@ describe('motion-code', () => {
   it('type mode with reduced motion shows the full code immediately', async () => {
     stubReducedMotion(true)
     const el = (await fixture(html`
-      <motion-code type no-loop filename="a.js"><div>let y = 2</div></motion-code>
+      <motion-code typing typing-loop="false" filename="a.js"><div>let y = 2</div></motion-code>
     `)) as MotionCode
     el.setCode('let y = 2')
     el.finish()

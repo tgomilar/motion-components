@@ -20,7 +20,7 @@ function walk(dir) {
 }
 
 const TAG_RE_DECORATOR = /@customElement\(\s*['"`]([^'"`]+)['"`]\s*\)/
-const TAG_RE_DEFINE = /customElements\.define\(\s*['"`]([^'"`]+)['"`]/
+const TAG_RE_DEFINE = /(?:customElements\.define|defineElement)\(\s*['"`]([^'"`]+)['"`]/
 function getTag(src) {
   return src.match(TAG_RE_DECORATOR)?.[1] ?? src.match(TAG_RE_DEFINE)?.[1] ?? null
 }
