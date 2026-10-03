@@ -39,5 +39,7 @@ export { MotionFlipCard } from './components/motion-flip-card/motion-flip-card.j
 export { MotionDialog } from './components/motion-dialog/motion-dialog.js'
 export { MotionThemeIcon } from './components/motion-theme-icon/motion-theme-icon.js'
 export { MotionThemeToggle } from './components/motion-theme-toggle/motion-theme-toggle.js'
+export { MotionIcon } from './icons/motion-icon/motion-icon.js'
+export { MotionStateIcon } from './icons/motion-state-icon/motion-state-icon.js'
 export { MotionParallax } from './scroll/motion-parallax/motion-parallax.js'
 export { MotionScene } from './scroll/motion-scene/motion-scene.js'

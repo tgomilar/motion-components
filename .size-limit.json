@@ -34,6 +34,8 @@
   { "name": "motion-countdown",         "path": "dist/motion-countdown.js", "limit": "3 kB",   "ignore": ["lit", "motion"] },
   { "name": "motion-theme-icon",        "path": "dist/motion-theme-icon.js", "limit": "1.5 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-theme-toggle",      "path": "dist/motion-theme-toggle.js", "limit": "6 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-icon",              "path": "dist/motion-icon.js",       "limit": "3 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-state-icon",        "path": "dist/motion-state-icon.js", "limit": "2.5 kB", "ignore": ["lit", "motion"] },
 
   { "name": "motion-parallax",          "path": "dist/motion-parallax.js",  "limit": "1.5 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-scene",             "path": "dist/motion-scene.js",     "limit": "2.3 kB", "ignore": ["lit", "motion"] },

@@ -150,6 +150,12 @@ Ready-made interactive components
 [`motion-spotlight`](https://www.motion-components.dev/docs/components/motion-spotlight/) [`motion-progress`](https://www.motion-components.dev/docs/components/motion-progress/) [`motion-image-compare`](https://www.motion-components.dev/docs/components/motion-image-compare/) [`motion-flip-card`](https://www.motion-components.dev/docs/components/motion-flip-card/)
 [`motion-theme-toggle`](https://www.motion-components.dev/docs/components/motion-theme-toggle/) [`motion-theme-icon`](https://www.motion-components.dev/docs/components/motion-theme-toggle/#motion-theme-icon)
 
+### Icons [🔗](https://www.motion-components.dev/docs/icons/motion-icon/)
+
+Animated and state-morphing icons
+
+[`motion-icon`](https://www.motion-components.dev/docs/icons/motion-icon/) [`motion-state-icon`](https://www.motion-components.dev/docs/icons/motion-state-icon/)
+
 ### Code [🔗](https://www.motion-components.dev/docs/code/motion-code/)
 
 Syntax-highlighted code display
