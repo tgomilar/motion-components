@@ -44,6 +44,21 @@ describe('motion-dialog', () => {
     expect(nativeDialog(el).open).toBe(false)
   })
 
+  it('stays open when reopened during the exit animation', async () => {
+    const el = await mount()
+    el.show()
+    await elementUpdated(el)
+    el.close()
+    await elementUpdated(el)
+    expect(nativeDialog(el).open).toBe(true)
+    el.show()
+    await elementUpdated(el)
+    await new Promise((r) => setTimeout(r, 900))
+    expect(el.open).toBe(true)
+    expect(nativeDialog(el).open).toBe(true)
+    expect(Number(getComputedStyle(nativeDialog(el)).opacity)).toBeGreaterThan(0.9)
+  })
+
   it('no-backdrop hides the overlay and reflects the attribute', async () => {
     const el = await mount()
     el.noBackdrop = true

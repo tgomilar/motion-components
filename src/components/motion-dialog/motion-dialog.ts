@@ -126,9 +126,11 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
   private animateIn() {
     const dialog = this.dialogEl
     const backdropEl = this.backdropEl
-    if (!dialog || dialog.open) return
+    if (!dialog) return
 
-    dialog.showModal()
+    this.generation++
+    const reopening = dialog.open
+    if (!reopening) dialog.showModal()
 
     if (this.reduced) {
       if (!this.noBackdrop) backdropEl.style.opacity = '1'
@@ -139,15 +141,15 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
     if (!this.noBackdrop) {
       animate(
         backdropEl,
-        { opacity: [0, 1] },
+        { opacity: reopening ? 1 : [0, 1] },
         { type: 'spring', bounce: 0, duration: this.duration },
       )
     }
-    animate(
-      dialog,
-      { opacity: [0, 1], y: [this.y, 0] },
-      { type: 'spring', bounce: this.bounce, duration: this.duration },
-    )
+    animate(dialog, reopening ? { opacity: 1, y: 0 } : { opacity: [0, 1], y: [this.y, 0] }, {
+      type: 'spring',
+      bounce: this.bounce,
+      duration: this.duration,
+    })
   }
 
   private async animateOut() {
