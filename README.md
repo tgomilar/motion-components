@@ -23,7 +23,7 @@ Built with [Motion](https://motion.dev/) and [Lit](https://lit.dev/). Full TypeS
 **1. Install**
 
 ```sh
-npm install motion-components
+npm install motion-components@^1
 ```
 
 **2. Import & use**
@@ -60,8 +60,8 @@ import 'motion-components/preload.css'
 ### CDN - no build step
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/motion-components/dist/index.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/motion-components/dist/preload.css" />
+<script type="module" src="https://cdn.jsdelivr.net/npm/motion-components@1/dist/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/motion-components@1/dist/preload.css" />
 
 <motion-reveal>
   <h1>Animates in when scrolled into view</h1>
@@ -211,7 +211,7 @@ import 'motion-components/preload.css'
 ### CDN link
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/motion-components/dist/preload.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/motion-components@1/dist/preload.css" />
 ```
 
 ### Programmatic
@@ -248,14 +248,17 @@ import { preloadCSS } from 'motion-components'
 ## Development
 
 ```sh
-npm install          # install dependencies
-npm run build        # build library to ./dist
-npm run dev          # rebuild on file change
-npm run typecheck    # tsc --noEmit
-npm run lint         # ESLint
-npm run format       # Prettier
+npm install           # install dependencies
+npm run build         # build library to ./dist
+npm run dev           # rebuild on file change
+npm test              # browser tests
+npm run typecheck     # tsc --noEmit
+npm run lint          # ESLint
+npm run format        # Prettier
 npm run check:preload # validate FOUC preload rules
-npm run size         # bundle size budget check
+npm run check:exports # validate subpath exports
+npm run check:ssr     # import every entry in Node
+npm run size          # bundle size budget check
 ```
 
 ### Repo layout
@@ -267,7 +270,9 @@ src/
 ├── text/        typography effects
 ├── scroll/      scroll-driven components
 ├── components/  ready-made widgets
-└── code/        code-display components
+├── code/        code-display components
+├── utils/       shared helpers
+└── test/        shared test helpers
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for component authoring conventions.
