@@ -41,5 +41,9 @@ export { MotionThemeIcon } from './components/motion-theme-icon/motion-theme-ico
 export { MotionThemeToggle } from './components/motion-theme-toggle/motion-theme-toggle.js'
 export { MotionIcon } from './icons/motion-icon/motion-icon.js'
 export { MotionStateIcon } from './icons/motion-state-icon/motion-state-icon.js'
+
+export { MotionChart } from './charts/motion-chart/motion-chart.js'
+export { MotionPie } from './charts/motion-pie/motion-pie.js'
+export { MotionSparkline } from './charts/motion-sparkline/motion-sparkline.js'
 export { MotionParallax } from './scroll/motion-parallax/motion-parallax.js'
 export { MotionScene } from './scroll/motion-scene/motion-scene.js'

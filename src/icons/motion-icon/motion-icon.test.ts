@@ -92,4 +92,97 @@ describe('motion-icon', () => {
     expect(el.playState).toBe('finished')
     expect(strokes(el)[0].style.strokeDashoffset).toBe('0')
   })
+
+  it('keeps only drawing elements and local references', async () => {
+    const el = await mount('', '')
+    el.icon = `<svg viewBox="0 0 24 24"><style>@import url(https://x.test/a.css)</style><image href="https://x.test/a.png"/><a href="https://x.test"><path d="M1 1"/></a><animate attributeName="d"/><defs><linearGradient id="g"/></defs><path d="M4 12h16" fill="url(#g)" style="fill: url(https://x.test/b)"/><use href="#g"/></svg>`
+    await elementUpdated(el)
+    const svg = el.shadowRoot!.querySelector('.icon svg')!
+    expect(svg.querySelector('style, image, a, animate')).toBeNull()
+    const path = svg.querySelector('path')!
+    expect(path.getAttribute('fill')).toBe('url(#g)')
+    expect(path.hasAttribute('style')).toBe(false)
+    expect(svg.querySelector('use')!.getAttribute('href')).toBe('#g')
+  })
+
+  it('fills icons without a fill with currentColor', async () => {
+    const el = await mount('', '')
+    el.icon = `<svg viewBox="0 0 24 24" width="48" height="48"><path d="M4 4h16v16H4z"/></svg>`
+    await elementUpdated(el)
+    const svg = el.shadowRoot!.querySelector('.icon svg')!
+    expect(svg.getAttribute('fill')).toBe('currentColor')
+    expect(svg.hasAttribute('width')).toBe(false)
+  })
+
+  it('hides the child svg once icon renders', async () => {
+    const el = await mount()
+    el.icon = FILLED
+    await elementUpdated(el)
+    const slot = el.shadowRoot!.querySelector('slot')!
+    expect(getComputedStyle(slot).display).toBe('none')
+  })
+
+  it('loads src once per URL and renders it', async () => {
+    const fetch = vi.fn(async () => new Response(STROKE))
+    vi.stubGlobal('fetch', fetch)
+    const a = await mount('src="/icons/plus.svg"', '')
+    const b = await mount('src="/icons/plus.svg"', '')
+    await vi.waitFor(() => expect(a.shadowRoot!.querySelector('.icon svg')).not.toBeNull())
+    await vi.waitFor(() => expect(b.shadowRoot!.querySelector('.icon svg')).not.toBeNull())
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(a.shadowRoot!.querySelector('path')!.getAttribute('pathLength')).toBe('1')
+    vi.unstubAllGlobals()
+  })
+
+  it('fires error when src fails', async () => {
+    vi.stubGlobal('fetch', async () => new Response('', { status: 404 }))
+    const el = await mount('', '')
+    const error = new Promise((resolve) => el.addEventListener('error', resolve))
+    el.src = '/icons/missing.svg'
+    await error
+    expect(el.shadowRoot!.querySelector('.icon svg')).toBeNull()
+    vi.unstubAllGlobals()
+  })
+
+  it('follows hover and click on the surrounding button', async () => {
+    const host = document.createElement('div')
+    host.innerHTML = `<button><motion-icon trigger="click">${STROKE}</motion-icon> Save</button>`
+    const button = (await fixture(host.firstElementChild!)) as HTMLButtonElement
+    const el = button.querySelector('motion-icon') as MotionIcon
+    await elementUpdated(el)
+    button.click()
+    expect(el.playState).toBe('running')
+    el.cancel()
+    el.trigger = 'hover'
+    await elementUpdated(el)
+    button.dispatchEvent(new PointerEvent('pointerenter'))
+    expect(el.playState).toBe('running')
+  })
+
+  it('fills outline icons with --icon-fill and fades the fill in when drawing', async () => {
+    const io = stubIntersectionObserver()
+    const el = await mount('trigger="view" style="--icon-fill: rgb(255, 0, 0)"')
+    const svg = el.querySelector('svg')!
+    expect(getComputedStyle(svg).fill).toBe('rgb(255, 0, 0)')
+    expect(svg.style.fillOpacity).toBe('0')
+    io.enter()
+    await el.finished
+    expect(getComputedStyle(svg).fillOpacity).toBe('1')
+  })
+
+  it('keeps outline icons hollow without --icon-fill', async () => {
+    const el = await mount()
+    expect(getComputedStyle(el.querySelector('svg')!).fill).toBe('none')
+  })
+
+  it('draws in when scrolled into view after it is removed and added back', async () => {
+    const io = stubIntersectionObserver()
+    const el = await mount('trigger="view"')
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    await elementUpdated(el)
+    io.enter()
+    expect(el.playState).toBe('running')
+  })
 })
