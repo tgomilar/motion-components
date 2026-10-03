@@ -60,13 +60,17 @@ import 'motion-components/preload.css'
 ### CDN - no build step
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/motion-components@1/dist/index.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/motion-components@1/+esm"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/motion-components@1/dist/preload.css" />
 
 <motion-reveal>
   <h1>Animates in when scrolled into view</h1>
 </motion-reveal>
 ```
+
+### CommonJS
+
+`require('motion-components')` works on Node 20.19+, 22.12+ and 23+. Jest needs ES module support turned on.
 
 ---
 
@@ -158,7 +162,7 @@ Ready-made interactive components
 
 ### Charts [🔗](https://www.motion-components.dev/docs/charts/motion-chart/)
 
-Bar, line, pie and donut charts from HTML attributes or a table
+Animated bar, line, pie and donut charts
 
 [`motion-chart`](https://www.motion-components.dev/docs/charts/motion-chart/) [`motion-pie`](https://www.motion-components.dev/docs/charts/motion-pie/) [`motion-sparkline`](https://www.motion-components.dev/docs/charts/motion-sparkline/)
 

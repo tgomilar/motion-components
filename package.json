@@ -18,192 +18,239 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./preload": {
       "types": "./dist/preload.d.ts",
-      "import": "./dist/preload.js"
+      "import": "./dist/preload.js",
+      "default": "./dist/preload.js"
     },
     "./preload.css": "./dist/preload.css",
     "./motion-arc": {
       "types": "./dist/text/motion-arc/motion-arc.d.ts",
-      "import": "./dist/motion-arc.js"
+      "import": "./dist/motion-arc.js",
+      "default": "./dist/motion-arc.js"
     },
     "./motion-blur": {
       "types": "./dist/reveal/motion-blur/motion-blur.d.ts",
-      "import": "./dist/motion-blur.js"
+      "import": "./dist/motion-blur.js",
+      "default": "./dist/motion-blur.js"
     },
     "./motion-blur-in": {
       "types": "./dist/reveal/motion-blur-in/motion-blur-in.d.ts",
-      "import": "./dist/motion-blur-in.js"
+      "import": "./dist/motion-blur-in.js",
+      "default": "./dist/motion-blur-in.js"
     },
     "./motion-chart": {
       "types": "./dist/charts/motion-chart/motion-chart.d.ts",
-      "import": "./dist/motion-chart.js"
+      "import": "./dist/motion-chart.js",
+      "default": "./dist/motion-chart.js"
     },
     "./motion-circle": {
       "types": "./dist/text/motion-circle/motion-circle.d.ts",
-      "import": "./dist/motion-circle.js"
+      "import": "./dist/motion-circle.js",
+      "default": "./dist/motion-circle.js"
     },
     "./motion-code": {
       "types": "./dist/code/motion-code/motion-code.d.ts",
-      "import": "./dist/motion-code.js"
+      "import": "./dist/motion-code.js",
+      "default": "./dist/motion-code.js"
     },
     "./motion-code-inline": {
       "types": "./dist/code/motion-code-inline/motion-code-inline.d.ts",
-      "import": "./dist/motion-code-inline.js"
+      "import": "./dist/motion-code-inline.js",
+      "default": "./dist/motion-code-inline.js"
     },
     "./motion-countdown": {
       "types": "./dist/components/motion-countdown/motion-countdown.d.ts",
-      "import": "./dist/motion-countdown.js"
+      "import": "./dist/motion-countdown.js",
+      "default": "./dist/motion-countdown.js"
     },
     "./motion-counter": {
       "types": "./dist/text/motion-counter/motion-counter.d.ts",
-      "import": "./dist/motion-counter.js"
+      "import": "./dist/motion-counter.js",
+      "default": "./dist/motion-counter.js"
     },
     "./motion-curve": {
       "types": "./dist/text/motion-curve/motion-curve.d.ts",
-      "import": "./dist/motion-curve.js"
+      "import": "./dist/motion-curve.js",
+      "default": "./dist/motion-curve.js"
     },
     "./motion-dialog": {
       "types": "./dist/components/motion-dialog/motion-dialog.d.ts",
-      "import": "./dist/motion-dialog.js"
+      "import": "./dist/motion-dialog.js",
+      "default": "./dist/motion-dialog.js"
     },
     "./motion-flip-card": {
       "types": "./dist/components/motion-flip-card/motion-flip-card.d.ts",
-      "import": "./dist/motion-flip-card.js"
+      "import": "./dist/motion-flip-card.js",
+      "default": "./dist/motion-flip-card.js"
     },
     "./motion-font": {
       "types": "./dist/text/motion-font/motion-font.d.ts",
-      "import": "./dist/motion-font.js"
+      "import": "./dist/motion-font.js",
+      "default": "./dist/motion-font.js"
     },
     "./motion-gallery": {
       "types": "./dist/components/motion-gallery/motion-gallery.d.ts",
-      "import": "./dist/motion-gallery.js"
+      "import": "./dist/motion-gallery.js",
+      "default": "./dist/motion-gallery.js"
     },
     "./motion-glitch": {
       "types": "./dist/text/motion-glitch/motion-glitch.d.ts",
-      "import": "./dist/motion-glitch.js"
+      "import": "./dist/motion-glitch.js",
+      "default": "./dist/motion-glitch.js"
     },
     "./motion-gravity": {
       "types": "./dist/text/motion-gravity/motion-gravity.d.ts",
-      "import": "./dist/motion-gravity.js"
+      "import": "./dist/motion-gravity.js",
+      "default": "./dist/motion-gravity.js"
     },
     "./motion-headline": {
       "types": "./dist/text/motion-headline/motion-headline.d.ts",
-      "import": "./dist/motion-headline.js"
+      "import": "./dist/motion-headline.js",
+      "default": "./dist/motion-headline.js"
     },
     "./motion-hover": {
       "types": "./dist/respond/motion-hover/motion-hover.d.ts",
-      "import": "./dist/motion-hover.js"
+      "import": "./dist/motion-hover.js",
+      "default": "./dist/motion-hover.js"
     },
     "./motion-icon": {
       "types": "./dist/icons/motion-icon/motion-icon.d.ts",
-      "import": "./dist/motion-icon.js"
+      "import": "./dist/motion-icon.js",
+      "default": "./dist/motion-icon.js"
     },
     "./motion-image-compare": {
       "types": "./dist/components/motion-image-compare/motion-image-compare.d.ts",
-      "import": "./dist/motion-image-compare.js"
+      "import": "./dist/motion-image-compare.js",
+      "default": "./dist/motion-image-compare.js"
     },
     "./motion-liquid": {
       "types": "./dist/text/motion-liquid/motion-liquid.d.ts",
-      "import": "./dist/motion-liquid.js"
+      "import": "./dist/motion-liquid.js",
+      "default": "./dist/motion-liquid.js"
     },
     "./motion-magnetic": {
       "types": "./dist/respond/motion-magnetic/motion-magnetic.d.ts",
-      "import": "./dist/motion-magnetic.js"
+      "import": "./dist/motion-magnetic.js",
+      "default": "./dist/motion-magnetic.js"
     },
     "./motion-parallax": {
       "types": "./dist/scroll/motion-parallax/motion-parallax.d.ts",
-      "import": "./dist/motion-parallax.js"
+      "import": "./dist/motion-parallax.js",
+      "default": "./dist/motion-parallax.js"
     },
     "./motion-perspective": {
       "types": "./dist/text/motion-perspective/motion-perspective.d.ts",
-      "import": "./dist/motion-perspective.js"
+      "import": "./dist/motion-perspective.js",
+      "default": "./dist/motion-perspective.js"
     },
     "./motion-pie": {
       "types": "./dist/charts/motion-pie/motion-pie.d.ts",
-      "import": "./dist/motion-pie.js"
+      "import": "./dist/motion-pie.js",
+      "default": "./dist/motion-pie.js"
     },
     "./motion-press": {
       "types": "./dist/respond/motion-press/motion-press.d.ts",
-      "import": "./dist/motion-press.js"
+      "import": "./dist/motion-press.js",
+      "default": "./dist/motion-press.js"
     },
     "./motion-progress": {
       "types": "./dist/components/motion-progress/motion-progress.d.ts",
-      "import": "./dist/motion-progress.js"
+      "import": "./dist/motion-progress.js",
+      "default": "./dist/motion-progress.js"
     },
     "./motion-reveal": {
       "types": "./dist/reveal/motion-reveal/motion-reveal.d.ts",
-      "import": "./dist/motion-reveal.js"
+      "import": "./dist/motion-reveal.js",
+      "default": "./dist/motion-reveal.js"
     },
     "./motion-scene": {
       "types": "./dist/scroll/motion-scene/motion-scene.d.ts",
-      "import": "./dist/motion-scene.js"
+      "import": "./dist/motion-scene.js",
+      "default": "./dist/motion-scene.js"
     },
     "./motion-scramble": {
       "types": "./dist/text/motion-scramble/motion-scramble.d.ts",
-      "import": "./dist/motion-scramble.js"
+      "import": "./dist/motion-scramble.js",
+      "default": "./dist/motion-scramble.js"
     },
     "./motion-slider": {
       "types": "./dist/components/motion-slider/motion-slider.d.ts",
-      "import": "./dist/motion-slider.js"
+      "import": "./dist/motion-slider.js",
+      "default": "./dist/motion-slider.js"
     },
     "./motion-sparkline": {
       "types": "./dist/charts/motion-sparkline/motion-sparkline.d.ts",
-      "import": "./dist/motion-sparkline.js"
+      "import": "./dist/motion-sparkline.js",
+      "default": "./dist/motion-sparkline.js"
     },
     "./motion-split": {
       "types": "./dist/text/motion-split/motion-split.d.ts",
-      "import": "./dist/motion-split.js"
+      "import": "./dist/motion-split.js",
+      "default": "./dist/motion-split.js"
     },
     "./motion-spotlight": {
       "types": "./dist/components/motion-spotlight/motion-spotlight.d.ts",
-      "import": "./dist/motion-spotlight.js"
+      "import": "./dist/motion-spotlight.js",
+      "default": "./dist/motion-spotlight.js"
     },
     "./motion-stagger": {
       "types": "./dist/reveal/motion-stagger/motion-stagger.d.ts",
-      "import": "./dist/motion-stagger.js"
+      "import": "./dist/motion-stagger.js",
+      "default": "./dist/motion-stagger.js"
     },
     "./motion-state-icon": {
       "types": "./dist/icons/motion-state-icon/motion-state-icon.d.ts",
-      "import": "./dist/motion-state-icon.js"
+      "import": "./dist/motion-state-icon.js",
+      "default": "./dist/motion-state-icon.js"
     },
     "./motion-stretch": {
       "types": "./dist/text/motion-stretch/motion-stretch.d.ts",
-      "import": "./dist/motion-stretch.js"
+      "import": "./dist/motion-stretch.js",
+      "default": "./dist/motion-stretch.js"
     },
     "./motion-swap": {
       "types": "./dist/text/motion-swap/motion-swap.d.ts",
-      "import": "./dist/motion-swap.js"
+      "import": "./dist/motion-swap.js",
+      "default": "./dist/motion-swap.js"
     },
     "./motion-text-mask": {
       "types": "./dist/text/motion-text-mask/motion-text-mask.d.ts",
-      "import": "./dist/motion-text-mask.js"
+      "import": "./dist/motion-text-mask.js",
+      "default": "./dist/motion-text-mask.js"
     },
     "./motion-theme-icon": {
       "types": "./dist/components/motion-theme-icon/motion-theme-icon.d.ts",
-      "import": "./dist/motion-theme-icon.js"
+      "import": "./dist/motion-theme-icon.js",
+      "default": "./dist/motion-theme-icon.js"
     },
     "./motion-theme-toggle": {
       "types": "./dist/components/motion-theme-toggle/motion-theme-toggle.d.ts",
-      "import": "./dist/motion-theme-toggle.js"
+      "import": "./dist/motion-theme-toggle.js",
+      "default": "./dist/motion-theme-toggle.js"
     },
     "./motion-ticker": {
       "types": "./dist/text/motion-ticker/motion-ticker.d.ts",
-      "import": "./dist/motion-ticker.js"
+      "import": "./dist/motion-ticker.js",
+      "default": "./dist/motion-ticker.js"
     },
     "./motion-tilt": {
       "types": "./dist/respond/motion-tilt/motion-tilt.d.ts",
-      "import": "./dist/motion-tilt.js"
+      "import": "./dist/motion-tilt.js",
+      "default": "./dist/motion-tilt.js"
     },
     "./motion-typewriter": {
       "types": "./dist/text/motion-typewriter/motion-typewriter.d.ts",
-      "import": "./dist/motion-typewriter.js"
+      "import": "./dist/motion-typewriter.js",
+      "default": "./dist/motion-typewriter.js"
     },
     "./motion-words": {
       "types": "./dist/text/motion-words/motion-words.d.ts",
-      "import": "./dist/motion-words.js"
+      "import": "./dist/motion-words.js",
+      "default": "./dist/motion-words.js"
     }
   },
   "files": [
