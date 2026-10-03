@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 — 2026-10-03
+
+### Added
+
+- New **Icons** category.
+- `motion-icon`: animates any SVG icon. `animation` is `draw` (strokes draw in), `pop`, `bounce`, `rotate`, `wiggle` or `pulse`; `trigger` is `hover`, `click`, `view`, `mount` or `loop`. Pass the icon as a child `<svg>` or as markup in `icon` (for example `import { Heart } from "lucide-static"`); script and event handlers are removed. Works with Lucide, Tabler, Heroicons, Iconoir and Feather; filled sets such as Phosphor and Bootstrap fall back from `draw` to `pop`. Color and size with `--icon-color` and `--icon-size`.
+- `motion-state-icon`: eight icons that morph between two states on a spring: `menu`, `play`, `copy`, `plus`, `chevron`, `heart`, `loading` and `eye`. Set `active` for the second state, or `toggle` to make it a button that switches itself and fires `motion-change`. `--icon-accent` colors the filled heart (red by default) and the checks (green by default).
+
 ## 1.0.0 — 2026-10-03
 
 The first stable release. Attribute names, units and spring settings are now consistent across all 40 components, and from here on they only change in a major version. Every rename, with how to convert it, is in the migration guide: https://www.motion-components.dev/docs/migration/

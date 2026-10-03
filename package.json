@@ -93,6 +93,10 @@
       "types": "./dist/respond/motion-hover/motion-hover.d.ts",
       "import": "./dist/motion-hover.js"
     },
+    "./motion-icon": {
+      "types": "./dist/icons/motion-icon/motion-icon.d.ts",
+      "import": "./dist/motion-icon.js"
+    },
     "./motion-image-compare": {
       "types": "./dist/components/motion-image-compare/motion-image-compare.d.ts",
       "import": "./dist/motion-image-compare.js"
@@ -148,6 +152,10 @@
     "./motion-stagger": {
       "types": "./dist/reveal/motion-stagger/motion-stagger.d.ts",
       "import": "./dist/motion-stagger.js"
+    },
+    "./motion-state-icon": {
+      "types": "./dist/icons/motion-state-icon/motion-state-icon.d.ts",
+      "import": "./dist/motion-state-icon.js"
     },
     "./motion-stretch": {
       "types": "./dist/text/motion-stretch/motion-stretch.d.ts",
