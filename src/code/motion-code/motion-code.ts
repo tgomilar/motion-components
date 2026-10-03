@@ -33,6 +33,11 @@ interface Token {
  * @cssprop [--code-attr] - Attribute and property token colour.
  * @cssprop [--code-num] - Numeric token colour.
  * @cssprop [--code-comment] - Comment token colour. Falls back to `--color-muted`.
+ * @cssprop [--color-surface=#ffffff] - Background of the code area.
+ * @cssprop [--color-surface-2=#f0f0f8] - Background of the window and its title bar.
+ * @cssprop [--color-border=#dddde8] - Window border, title bar divider and copy button border.
+ * @cssprop [--color-muted=#60608a] - File name, copy button and typing cursor color.
+ * @cssprop [--color-accent=#2563eb] - Copy button color on hover.
  *
  * @example
  * ```html

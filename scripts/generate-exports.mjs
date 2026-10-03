@@ -18,10 +18,12 @@ const rootExports = {
   '.': {
     types: './dist/index.d.ts',
     import: './dist/index.js',
+    default: './dist/index.js',
   },
   './preload': {
     types: './dist/preload.d.ts',
     import: './dist/preload.js',
+    default: './dist/preload.js',
   },
   './preload.css': './dist/preload.css',
 }
@@ -36,6 +38,7 @@ for (const { name, source } of entries) {
     componentExports[`./${name}`] = {
       types: `./dist/${cat}/${name}/${name}.d.ts`,
       import: `./dist/${name}.js`,
+      default: `./dist/${name}.js`,
     }
   }
 }

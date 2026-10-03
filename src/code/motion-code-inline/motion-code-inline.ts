@@ -15,6 +15,10 @@ import { property, state } from 'lit/decorators.js'
  *
  * @slot - The code text to render and copy.
  *
+ * @cssprop [--color-accent=#2563eb] - Code text color, and the copy button color on hover.
+ * @cssprop [--color-accent-dim=#2563eb18] - Background behind the code.
+ * @cssprop [--color-muted=#60608a] - Copy button color.
+ *
  * @example
  * ```html
  * <motion-code-inline copy>npm i motion-components</motion-code-inline>
