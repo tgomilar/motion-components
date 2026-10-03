@@ -1,7 +1,8 @@
 import { LitElement, html, css, svg } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { MotionThemeIconProps, ThemeIconMode } from './motion-theme-icon.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionThemeIconProps, ThemeIconMode } from './motion-theme-icon.types.js'
 

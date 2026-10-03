@@ -5,6 +5,6 @@ export interface MotionPerspectiveProps {
   depth: number
   vanish: VanishDirection
   oscillate: boolean
-  speed: number
+  duration: number
   pauseOnHover: boolean
 }

@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
 import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionPerspectiveProps, VanishDirection } from './motion-perspective.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionPerspectiveProps, VanishDirection } from './motion-perspective.types.js'
 
@@ -19,7 +21,7 @@ export type { MotionPerspectiveProps, VanishDirection } from './motion-perspecti
  *
  * @example
  * ```html
- * <motion-perspective depth="0.7" vanish="right" animate>HORIZON</motion-perspective>
+ * <motion-perspective depth="0.7" vanish="right" oscillate>HORIZON</motion-perspective>
  * ```
  */
 @customElement('motion-perspective')
@@ -31,13 +33,21 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   /** Direction the text recedes towards: `'left'` or `'right'`. */
   @property({ type: String }) vanish: VanishDirection = 'left'
   /** When `true`, animate a back-and-forth depth oscillation. */
-  @property({ type: Boolean, attribute: 'animate' }) oscillate = false
-  /** Oscillation speed in cycles per second when `animate` is true. */
-  @property({ type: Number }) speed = 1.5
+  @property({ type: Boolean, converter: flag }) oscillate = false
+  /** Seconds per oscillation cycle when `oscillate` is set. Lower is faster. */
+  @property({ type: Number }) duration = 0.667
   /** When `true`, pause the oscillation while the cursor is over the element. */
-  @property({ type: Boolean, attribute: 'pause-on-hover' }) pauseOnHover = false
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   static styles = css`
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
     :host {
       display: inline-block;
       font-size: inherit;
@@ -118,7 +128,7 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
       changed.has('depth') ||
       changed.has('vanish') ||
       changed.has('oscillate') ||
-      changed.has('speed')
+      changed.has('duration')
 
     if (needsRestart) this.setup()
   }
@@ -143,7 +153,8 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
     const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
     const n = chars.length
     chars.forEach((char, i) => {
-      const t = this.vanish === 'left' ? i / (n - 1) : 1 - i / (n - 1)
+      const p = i / Math.max(n - 1, 1)
+      const t = this.vanish === 'left' ? p : 1 - p
       char.style.fontSize = `${1 - this.depth * (1 - t)}em`
       char.style.opacity = String(1 - (1 - t) * this.depth * 0.45)
     })
@@ -157,7 +168,7 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   }
 
   private tick(dt: number) {
-    this.phase += this.speed * dt
+    if (this.duration > 0) this.phase += dt / this.duration
 
     const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
     const n = chars.length
@@ -174,7 +185,8 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
 
   render() {
     return html`
-      <span class="track">
+      <span class="sr-only">${this.text}</span>
+      <span class="track" aria-hidden="true">
         ${[...(this.text ?? '')].map(
           (char) => html`<span class="char">${char === ' ' ? ' ' : char}</span>`,
         )}

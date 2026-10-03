@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 import type { MotionPressProps } from './motion-press.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionPressProps } from './motion-press.types.js'
 
@@ -27,8 +29,10 @@ export class MotionPress extends LitElement implements MotionPressProps {
   @property({ type: Number }) scale = 0.95
   /** Duration of press and release transitions, in seconds. */
   @property({ type: Number }) duration = 0.15
+  /** Spring bounciness of the release (0 = no overshoot). */
+  @property({ type: Number }) bounce = 0.4
   /** When `true`, ignores pointer input and settles to the rest state. */
-  @property({ type: Boolean, reflect: true }) disabled = false
+  @property({ type: Boolean, converter: flag, reflect: true }) disabled = false
 
   static styles = css`
     :host {
@@ -71,7 +75,7 @@ export class MotionPress extends LitElement implements MotionPressProps {
   }
 
   private settle() {
-    animate(this, { scale: 1 }, { type: 'spring', bounce: 0.4, duration: this.duration })
+    animate(this, { scale: 1 }, { type: 'spring', bounce: this.bounce, duration: this.duration })
   }
 
   render() {

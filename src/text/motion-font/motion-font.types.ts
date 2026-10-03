@@ -1,4 +1,4 @@
-export type FontTrigger = 'auto' | 'hover' | 'scroll'
+export type FontTrigger = 'view' | 'hover' | 'scroll'
 
 export interface MotionFontProps {
   axis: string

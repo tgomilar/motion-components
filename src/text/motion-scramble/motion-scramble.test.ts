@@ -45,12 +45,12 @@ describe('motion-scramble', () => {
     expect(el.playState).toBe('idle')
   })
 
-  it('reflects the hover attribute', async () => {
+  it('reflects the hover trigger', async () => {
     const el = (await fixture(
-      html`<motion-scramble hover>DECODE_ME</motion-scramble>`,
+      html`<motion-scramble trigger="hover">DECODE_ME</motion-scramble>`,
     )) as MotionScramble
-    expect(el.hover).toBe(true)
-    expect(el.hasAttribute('hover')).toBe(true)
+    expect(el.trigger).toBe('hover')
+    expect(el.getAttribute('trigger')).toBe('hover')
     // Hover mode does not observe the viewport, so entering does not start it.
     io.enter()
     expect(el.playState).toBe('idle')

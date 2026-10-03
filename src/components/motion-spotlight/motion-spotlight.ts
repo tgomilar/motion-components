@@ -1,23 +1,26 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
-import { animate } from 'motion'
+import { property } from 'lit/decorators.js'
+import { animate, motionValue } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import type { MotionSpotlightProps } from './motion-spotlight.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionSpotlightProps } from './motion-spotlight.types.js'
 
 /**
  * Mouse-tracked radial-gradient spotlight overlay. Wrap any content; the
- * spotlight fades in on hover and lerps toward the cursor for a smooth,
+ * spotlight fades in on hover and springs toward the cursor for a smooth,
  * weightful feel rather than locking 1:1 to the pointer.
  *
  * @element motion-spotlight
  *
  * @slot - The content the spotlight overlays.
  *
+ * @cssprop --spotlight-color - Center color of the radial gradient. Default `rgba(255,255,255,0.18)`.
+ *
  * @example
  * ```html
- * <motion-spotlight size="500" color="rgba(96,165,250,0.25)">
+ * <motion-spotlight size="500" style="--spotlight-color: rgba(96,165,250,0.25)">
  *   <div class="card">…</div>
  * </motion-spotlight>
  * ```
@@ -26,12 +29,10 @@ export type { MotionSpotlightProps } from './motion-spotlight.types.js'
 export class MotionSpotlight extends LitElement implements MotionSpotlightProps {
   /** Diameter of the spotlight in pixels. */
   @property({ type: Number, reflect: true }) size = 400
-  /** Center color of the radial gradient. */
-  @property({ type: String, reflect: true }) color = 'rgba(255,255,255,0.18)'
-  /** Lerp factor (0–1). Lower = smoother lag, higher = snappier follow. */
-  @property({ type: Number }) smoothing = 0.18
-  /** Fade in/out duration in seconds. */
-  @property({ type: Number, attribute: 'fade-duration' }) fadeDuration = 0.3
+  /** Spring duration of the follow and the fade, in seconds. Higher trails the cursor more. */
+  @property({ type: Number }) duration = 0.35
+  /** Spring bounciness of the follow (0 = no overshoot). */
+  @property({ type: Number }) bounce = 0
 
   static styles = css`
     :host {
@@ -52,25 +53,28 @@ export class MotionSpotlight extends LitElement implements MotionSpotlightProps 
   `
 
   private spot: HTMLDivElement | null = null
-  private tx = 0
-  private ty = 0
-  private x = 0
-  private y = 0
-  private raf: number | null = null
+  private x = motionValue(0)
+  private y = motionValue(0)
   private seeded = false
   private fadeControls: AnimationPlaybackControls | null = null
+  private stopPaint: (() => void)[] = []
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  private get spring() {
+    return { type: 'spring' as const, duration: this.duration, bounce: this.bounce }
+  }
+
   firstUpdated() {
     this.spot = this.renderRoot.querySelector('.spot')
+    this.stopPaint = [this.x.on('change', this.paint), this.y.on('change', this.paint)]
     this.addEventListener('pointerenter', this.onEnter)
     this.addEventListener('pointermove', this.onMove)
     this.addEventListener('pointerleave', this.onLeave)
-    this.addEventListener('focusin', this.onFocusIn)
-    this.addEventListener('focusout', this.onFocusOut)
+    this.addEventListener('focusin', this.onEnter)
+    this.addEventListener('focusout', this.onLeave)
   }
 
   disconnectedCallback() {
@@ -78,80 +82,50 @@ export class MotionSpotlight extends LitElement implements MotionSpotlightProps 
     this.removeEventListener('pointerenter', this.onEnter)
     this.removeEventListener('pointermove', this.onMove)
     this.removeEventListener('pointerleave', this.onLeave)
-    this.removeEventListener('focusin', this.onFocusIn)
-    this.removeEventListener('focusout', this.onFocusOut)
+    this.removeEventListener('focusin', this.onEnter)
+    this.removeEventListener('focusout', this.onLeave)
     this.fadeControls?.stop()
-    if (this.raf !== null) cancelAnimationFrame(this.raf)
+    this.x.stop()
+    this.y.stop()
+    this.stopPaint.forEach((stop) => stop())
   }
 
-  private onEnter = () => {
+  private fade(to: number) {
     if (this.reduced || !this.spot) return
     this.fadeControls?.stop()
     this.fadeControls = animate(
       this.spot,
-      { opacity: [0, 1] },
-      { type: 'spring', bounce: 0, duration: this.fadeDuration },
+      { opacity: to },
+      { type: 'spring', bounce: 0, duration: this.duration },
     )
   }
 
-  private onFocusIn = () => {
-    if (this.reduced || !this.spot) return
-    this.fadeControls?.stop()
-    this.fadeControls = animate(
-      this.spot,
-      { opacity: [0, 1] },
-      { type: 'spring', bounce: 0, duration: this.fadeDuration },
-    )
-  }
+  private onEnter = () => this.fade(1)
 
-  private onFocusOut = () => {
-    if (this.reduced || !this.spot) return
-    this.fadeControls?.stop()
-    this.fadeControls = animate(
-      this.spot,
-      { opacity: 0 },
-      { type: 'spring', bounce: 0, duration: this.fadeDuration },
-    )
+  private onLeave = () => {
+    this.seeded = false
+    this.fade(0)
   }
 
   private onMove = (e: PointerEvent) => {
     if (this.reduced) return
     const r = this.getBoundingClientRect()
-    this.tx = e.clientX - r.left
-    this.ty = e.clientY - r.top
+    const tx = e.clientX - r.left
+    const ty = e.clientY - r.top
     if (!this.seeded) {
-      this.x = this.tx
-      this.y = this.ty
+      this.x.jump(tx)
+      this.y.jump(ty)
       this.seeded = true
+      this.paint()
+      return
     }
-    if (this.raf === null) this.raf = requestAnimationFrame(this.tick)
+    animate(this.x, tx, this.spring)
+    animate(this.y, ty, this.spring)
   }
 
-  private onLeave = () => {
-    if (this.reduced) return
-    this.seeded = false
-    this.fadeControls?.stop()
-    if (this.spot) {
-      this.fadeControls = animate(
-        this.spot,
-        { opacity: 0 },
-        { type: 'spring', bounce: 0, duration: this.fadeDuration },
-      )
-    }
-  }
-
-  private tick = () => {
-    const k = Math.min(Math.max(this.smoothing, 0.01), 1)
-    this.x += (this.tx - this.x) * k
-    this.y += (this.ty - this.y) * k
-    if (this.spot) {
-      this.spot.style.background = `radial-gradient(${this.size}px circle at ${this.x}px ${this.y}px, ${this.color}, transparent 60%)`
-    }
-    if (Math.abs(this.tx - this.x) > 0.4 || Math.abs(this.ty - this.y) > 0.4) {
-      this.raf = requestAnimationFrame(this.tick)
-    } else {
-      this.raf = null
-    }
+  private paint = () => {
+    if (!this.spot) return
+    this.spot.style.background = `radial-gradient(${this.size}px circle at ${this.x.get()}px ${this.y.get()}px, var(--spotlight-color, rgba(255,255,255,0.18)), transparent 60%)`
   }
 
   render() {

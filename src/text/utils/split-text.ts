@@ -1,3 +1,14 @@
+const ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+}
+
+/** Escapes text for safe insertion into an HTML string. */
+export const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => ESCAPES[c])
+
 export type SplitMode = 'chars' | 'words' | 'lines'
 
 export interface SplitTextResult {
@@ -21,7 +32,7 @@ export function splitText(el: HTMLElement, by: SplitMode, masked = false): Split
           [...w]
             .map(
               (c) =>
-                `<span style="display:inline-block;overflow:hidden;vertical-align:bottom" aria-hidden="true"><span style="display:inline-block;will-change:transform;transform:translateY(110%)">${c}</span></span>`,
+                `<span style="display:inline-block;overflow:hidden;vertical-align:bottom" aria-hidden="true"><span style="display:inline-block;will-change:transform;transform:translateY(110%)">${escapeHtml(c)}</span></span>`,
             )
             .join(''),
         )
@@ -33,7 +44,7 @@ export function splitText(el: HTMLElement, by: SplitMode, masked = false): Split
         [...w]
           .map(
             (c) =>
-              `<span style="display:inline-block;will-change:transform,opacity;opacity:0" aria-hidden="true">${c}</span>`,
+              `<span style="display:inline-block;will-change:transform,opacity;opacity:0" aria-hidden="true">${escapeHtml(c)}</span>`,
           )
           .join(''),
       )
@@ -47,7 +58,7 @@ export function splitText(el: HTMLElement, by: SplitMode, masked = false): Split
     el.innerHTML = units
       .map(
         (u) =>
-          `<span style="display:inline-block;overflow:hidden;vertical-align:bottom" aria-hidden="true"><span style="display:inline-block;will-change:transform;transform:translateY(110%)">${u}</span></span>`,
+          `<span style="display:inline-block;overflow:hidden;vertical-align:bottom" aria-hidden="true"><span style="display:inline-block;will-change:transform;transform:translateY(110%)">${escapeHtml(u)}</span></span>`,
       )
       .join(' ')
     return { spans: [...el.querySelectorAll<HTMLElement>('span > span')], originalText }
@@ -56,7 +67,7 @@ export function splitText(el: HTMLElement, by: SplitMode, masked = false): Split
   el.innerHTML = units
     .map(
       (u) =>
-        `<span style="display:inline-block;will-change:transform,opacity;opacity:0" aria-hidden="true">${u}</span>`,
+        `<span style="display:inline-block;will-change:transform,opacity;opacity:0" aria-hidden="true">${escapeHtml(u)}</span>`,
     )
     .join(' ')
   return { spans: [...el.querySelectorAll<HTMLElement>('span')], originalText }
@@ -65,7 +76,7 @@ export function splitText(el: HTMLElement, by: SplitMode, masked = false): Split
 function _splitByLines(el: HTMLElement, originalText: string, masked: boolean): SplitTextResult {
   const words = originalText.split(/\s+/)
 
-  el.innerHTML = words.map((w) => `<span style="display:inline">${w}</span>`).join(' ')
+  el.innerHTML = words.map((w) => `<span style="display:inline">${escapeHtml(w)}</span>`).join(' ')
 
   const wordSpans = [...el.querySelectorAll<HTMLElement>('span')]
   const lineMap = new Map<number, string[]>()
@@ -82,7 +93,7 @@ function _splitByLines(el: HTMLElement, originalText: string, masked: boolean): 
     el.innerHTML = lines
       .map((lineWords) => {
         const text = lineWords.join(' ')
-        return `<span style="display:block;overflow:hidden;vertical-align:bottom" aria-hidden="true"><span style="display:block;will-change:transform;transform:translateY(110%)">${text}</span></span>`
+        return `<span style="display:block;overflow:hidden;vertical-align:bottom" aria-hidden="true"><span style="display:block;will-change:transform;transform:translateY(110%)">${escapeHtml(text)}</span></span>`
       })
       .join('')
     return { spans: [...el.querySelectorAll<HTMLElement>('span > span')], originalText }
@@ -91,7 +102,7 @@ function _splitByLines(el: HTMLElement, originalText: string, masked: boolean): 
   el.innerHTML = lines
     .map((lineWords) => {
       const text = lineWords.join(' ')
-      return `<span style="display:block;will-change:transform,opacity;opacity:0" aria-hidden="true">${text}</span>`
+      return `<span style="display:block;will-change:transform,opacity;opacity:0" aria-hidden="true">${escapeHtml(text)}</span>`
     })
     .join('')
   return { spans: [...el.querySelectorAll<HTMLElement>('span')], originalText }

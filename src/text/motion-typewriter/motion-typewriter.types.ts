@@ -1,7 +1,7 @@
 export interface MotionTypewriterProps {
-  speed: number
+  interval: number
   delay: number
-  pause: number
+  hold: number
   loop: boolean
   cursor: boolean
 }

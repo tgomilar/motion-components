@@ -1,7 +1,8 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { MotionImageCompareProps, CompareOrientation } from './motion-image-compare.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionImageCompareProps, CompareOrientation } from './motion-image-compare.types.js'
 

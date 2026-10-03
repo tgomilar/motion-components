@@ -1,10 +1,12 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { useIntersect } from '../utils/use-intersect.js'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionSwapProps, TriggerMode } from './motion-swap.types.js'
 import type { AnimationPlaybackControls } from 'motion'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionSwapProps, TriggerMode } from './motion-swap.types.js'
 
@@ -16,7 +18,7 @@ interface CharPair {
 
 /**
  * Letter-swap text effect. Splits text into individual characters and
- * swaps them vertically on hover or reveal trigger.
+ * swaps them vertically on hover or when scrolled into view.
  *
  * @element motion-swap
  *
@@ -25,35 +27,27 @@ interface CharPair {
  * @example
  * ```html
  * <motion-swap>Hello</motion-swap>
- * <motion-swap trigger="reveal">Hello</motion-swap>
+ * <motion-swap trigger="view">Hello</motion-swap>
  * ```
  */
 @customElement('motion-swap')
 export class MotionSwap extends Controllable(LitElement) implements MotionSwapProps {
-  /** Trigger mode: `'hover'` (swap on mouseenter/mouseleave) or `'reveal'` (one-shot on viewport entry). */
+  /** Trigger mode: `'hover'` (swap on mouseenter/mouseleave) or `'view'` (one-shot on viewport entry). */
   @property({ type: String }) trigger: TriggerMode = 'hover'
 
-  /**
-   * Letters swap bottom-to-top. Cannot be disabled from markup, as with any HTML boolean attribute.
-   * Set the property instead: `el.reverse = false` swaps top-to-bottom.
-   */
-  @property({ type: Boolean, reflect: true }) reverse = true
+  /** Letters swap bottom-to-top. Set `reverse="false"` to swap top-to-bottom. */
+  @property({ type: Boolean, converter: flag, reflect: true }) reverse = true
 
   /** Delay in seconds between each character's animation start. */
-  @property({ type: Number, attribute: 'stagger-duration' }) staggerDuration = 0.03
+  @property({ type: Number }) interval = 0.03
 
-  /** Animation configuration for each character pair. */
-  @property({ type: Object }) transition: Record<string, unknown> = {
-    type: 'spring',
-    duration: 0.7,
-  }
+  /** Spring duration of each character swap, in seconds. */
+  @property({ type: Number }) duration = 0.7
+  /** Spring bounciness (0 = critically damped, higher = more elastic). */
+  @property({ type: Number }) bounce = 0.3
 
-  /**
-   * When `true`, only animate the first time the element enters view (reveal mode). Cannot be
-   * disabled from markup, as with any HTML boolean attribute. Set the property instead: `el.once =
-   * false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only animate the first time the element enters view (`trigger="view"`). Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   /** Delay in seconds before the animation starts. */
   @property({ type: Number }) delay = 0
@@ -85,16 +79,16 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
       this.stopAnims()
       const originals = this.pairs.map((p) => p.original)
       const duplicates = this.pairs.map((p) => p.duplicate)
-      const delayFn = stagger(this.staggerDuration)
+      const delayFn = stagger(this.interval)
       const oAnim = animate(
         originals,
         { y: ['0%', this.reverse ? '-100%' : '100%'], opacity: [1, 0] },
-        { delay: delayFn, ...this.transition },
+        { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
       )
       const dAnim = animate(
         duplicates,
         { y: [this.reverse ? '100%' : '-100%', '0%'], opacity: [0, 1] },
-        { delay: delayFn, ...this.transition },
+        { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
       )
       this.anims = [oAnim, dAnim]
       this.swapped = true
@@ -242,17 +236,17 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
     const oTarget = enter ? (this.reverse ? '-100%' : '100%') : '0%'
     const dTarget = enter ? '0%' : this.reverse ? '100%' : '-100%'
 
-    const delayFn = stagger(this.staggerDuration)
+    const delayFn = stagger(this.interval)
 
     this.oAnim = animate(
       originals,
       { y: oTarget, opacity: enter ? 0 : 1 },
-      { delay: delayFn, ...this.transition },
+      { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
     )
     this.dAnim = animate(
       duplicates,
       { y: dTarget, opacity: enter ? 1 : 0 },
-      { delay: delayFn, ...this.transition },
+      { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
     )
 
     this.swapped = enter

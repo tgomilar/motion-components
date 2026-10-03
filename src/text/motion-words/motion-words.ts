@@ -1,9 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionWordsProps } from './motion-words.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionWordsProps } from './motion-words.types.js'
 
@@ -19,18 +20,25 @@ export type { MotionWordsProps } from './motion-words.types.js'
  * <motion-words
  *   words="ship, design, animate"
  *   colors="#2563eb, #db2777, #16a34a"
- *   interval="2000">
+ *   interval="2">
  * </motion-words>
  * ```
  */
+/** Splits a comma-separated list, keeping commas inside parentheses, so `rgb(1, 2, 3)` stays whole. */
+const splitList = (value: string) =>
+  value
+    .split(/,(?![^(]*\))/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+
 @customElement('motion-words')
 export class MotionWords extends Controllable(LitElement) implements MotionWordsProps {
   /** Comma-separated list of words to cycle through. */
   @property({ type: String }) words = ''
   /** Comma-separated list of CSS colors, one per word. Optional. */
   @property({ type: String }) colors = ''
-  /** Time each word stays visible, in milliseconds. */
-  @property({ type: Number }) interval = 2000
+  /** Time each word stays visible, in seconds. */
+  @property({ type: Number }) interval = 2
 
   @state() private index = 0
 
@@ -75,7 +83,7 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
-      this.schedule(this.interval)
+      this.schedule(this.interval * 1000)
       return {
         handle: {
           pause: () => {
@@ -101,16 +109,31 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
 
   connectedCallback() {
     super.connectedCallback()
-    this.wordList = this.words
-      .split(',')
-      .map((w) => w.trim())
-      .filter(Boolean)
-    this.colorList = this.colors.split(',').map((c) => c.trim())
+    this.parseLists()
+    this.start()
+  }
+
+  willUpdate(changed: Map<string, unknown>) {
+    if (changed.has('words') || changed.has('colors')) this.parseLists()
+  }
+
+  updated(changed: Map<string, unknown>) {
+    if (changed.get('words') === undefined) return
+    this.stopTimer()
+    this.cancel()
+    this.start()
+  }
+
+  private parseLists() {
+    this.wordList = splitList(this.words)
+    this.colorList = splitList(this.colors)
+  }
+
+  private start() {
     this.index = 0
-    if (this.wordList.length > 1) {
-      if (this.reduced) this.schedule(this.interval)
-      else void this.play()
-    }
+    if (this.wordList.length < 2) return
+    if (this.reduced) this.schedule(this.interval * 1000)
+    else void this.play()
   }
 
   disconnectedCallback() {
@@ -122,7 +145,7 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
     this.nextFireAt = performance.now() + ms
     this.timer = setTimeout(() => {
       this.cycle()
-      this.schedule(this.interval)
+      this.schedule(this.interval * 1000)
     }, ms)
   }
 
@@ -220,7 +243,7 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
 
   render() {
     const word = this.wordList[this.index] ?? ''
-    const color = this.colorList[this.index] ?? 'currentColor'
+    const color = this.colorList[this.index] || 'currentColor'
     return html`<span class="word" style="color:${color}">${word}</span>`
   }
 }

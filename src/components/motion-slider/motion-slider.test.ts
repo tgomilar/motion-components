@@ -38,9 +38,9 @@ describe('motion-slider', () => {
     expect(el.querySelectorAll('button[aria-label]').length).toBe(2)
   })
 
-  it('goTo fires slidechange with the clamped index', async () => {
+  it('goTo fires motion-change with the clamped index', async () => {
     const el = await mount()
-    const changed = waitForEvent(el, 'slidechange')
+    const changed = waitForEvent(el, 'motion-change')
     el.goTo(1)
     const ev = (await changed) as CustomEvent<{ index: number }>
     expect(ev.detail.index).toBe(1)
@@ -49,7 +49,7 @@ describe('motion-slider', () => {
   it('clamps navigation at the boundaries', async () => {
     const el = await mount()
     let last = -1
-    el.addEventListener('slidechange', (e) => {
+    el.addEventListener('motion-change', (e) => {
       last = (e as CustomEvent<{ index: number }>).detail.index
     })
     el.goTo(99)
@@ -61,7 +61,7 @@ describe('motion-slider', () => {
   it('ArrowRight / ArrowLeft move the active slide', async () => {
     const el = await mount()
     const indices: number[] = []
-    el.addEventListener('slidechange', (e) => {
+    el.addEventListener('motion-change', (e) => {
       indices.push((e as CustomEvent<{ index: number }>).detail.index)
     })
     el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }))

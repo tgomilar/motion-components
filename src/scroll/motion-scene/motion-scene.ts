@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { scroll } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionSceneProps } from './motion-scene.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionSceneProps } from './motion-scene.types.js'
 
@@ -40,11 +42,8 @@ interface SceneRange {
 export class MotionScene extends Controllable(LitElement) implements MotionSceneProps {
   /** Height of the scroll-driven scene (e.g. `"200vh"`, `"150%"`). */
   @property({ type: String }) height = '200vh'
-  /**
-   * Whether the inner stage is `position: sticky`. Cannot be disabled from markup, as with any HTML
-   * boolean attribute. Set the property instead: `el.pin = false`.
-   */
-  @property({ type: Boolean }) pin = true
+  /** Whether the inner stage is `position: sticky`. Set `pin="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) pin = true
   /** CSS selector for a custom scroll container element (defaults to the document). */
   @property({ type: String }) container = ''
 

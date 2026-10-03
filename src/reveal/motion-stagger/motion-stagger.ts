@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, query } from 'lit/decorators.js'
+import { property, query } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { REVEAL_SPRING } from '../../utils/springs.js'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
 
@@ -34,11 +36,8 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
   @property({ type: Number }) y = 16
   /** Stagger origin: `'first'`, `'last'` or `'center'`. */
   @property({ type: String }) from: StaggerFrom = 'first'
-  /**
-   * When `true`, only animate the first time the list enters view. Cannot be disabled from markup,
-   * as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only animate the first time the list enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   @query('slot') private slotEl!: HTMLSlotElement
 
@@ -105,6 +104,11 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
 
     if (this.reduced) return
 
+    if (this.playState !== 'idle') {
+      animate(elements, { opacity: 1, y: 0 }, { duration: 0 })
+      return
+    }
+
     animate(elements, { opacity: 0, y: this.y }, { duration: 0 })
 
     this.observer?.disconnect()
@@ -120,6 +124,8 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
           this.animated = true
           this.observer?.disconnect()
         }
+      } else if (!entry.isIntersecting) {
+        if (!this.once && this.playState !== 'idle') this.cancel()
       }
     }
   }

@@ -200,11 +200,12 @@
     "generate-exports": "node scripts/generate-exports.mjs",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
-    "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run test && npm run build && npm run check:exports && npm run size",
+    "prepublishOnly": "rm -rf dist && npm run generate-exports && npm run typecheck && npm run format:check && npm run check:preload && npm run test && npm run build && npm run check:exports && npm run check:ssr && npm run size",
     "size": "size-limit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:ssr": "node scripts/check-ssr.mjs"
   },
   "keywords": [
     "web-components",

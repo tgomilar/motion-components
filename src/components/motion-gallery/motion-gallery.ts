@@ -2,6 +2,8 @@ import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import '../../respond/motion-hover/motion-hover.js'
 import '../../reveal/motion-stagger/motion-stagger.js'
+import { BaseElement, defineElement } from '../../utils/define.js'
+import { readFlag } from '../../utils/attributes.js'
 export type { MotionGalleryProps } from './motion-gallery.types.js'
 
 const SPRING_EXPAND = { type: 'spring', stiffness: 380, damping: 40, restDelta: 0.001 } as const
@@ -21,7 +23,7 @@ const SPRING_COLLAPSE = { type: 'spring', stiffness: 460, damping: 48, restDelta
  * `columns`, `gap` and `aspect-ratio` are live. `stagger` is read once, when the
  * entrance animation runs.
  *
- * @attr {string} [columns='3'] - Number of grid columns.
+ * @attr {number} [columns=3] - Number of grid columns.
  * @attr {number} [gap=16] - Grid gap in pixels.
  * @attr {string} [aspect-ratio] - CSS `aspect-ratio` for each item. Unset by default, so items keep their intrinsic ratio.
  * @attr {boolean} [stagger=true] - Stagger the entrance animation. Set `"false"` to disable. Read once on connect.
@@ -35,7 +37,7 @@ const SPRING_COLLAPSE = { type: 'spring', stiffness: 460, damping: 48, restDelta
  * </motion-gallery>
  * ```
  */
-export class MotionGallery extends HTMLElement {
+export class MotionGallery extends BaseElement {
   static observedAttributes = ['columns', 'gap', 'aspect-ratio', 'stagger']
 
   private items: HTMLElement[] = []
@@ -57,7 +59,7 @@ export class MotionGallery extends HTMLElement {
   private initialized = false
 
   private get columns() {
-    return this.getAttribute('columns') ?? '3'
+    return Number(this.getAttribute('columns') ?? 3)
   }
   private get gap() {
     return Number(this.getAttribute('gap') ?? 16)
@@ -66,7 +68,7 @@ export class MotionGallery extends HTMLElement {
     return this.getAttribute('aspect-ratio') ?? ''
   }
   private get showStagger() {
-    return this.getAttribute('stagger') !== 'false'
+    return readFlag(this, 'stagger', true)
   }
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -86,7 +88,6 @@ export class MotionGallery extends HTMLElement {
       contain: 'layout style',
     })
 
-    // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
     this.items = Array.from(this.children) as HTMLElement[]
     if (!this.items.length) return
 
@@ -563,7 +564,7 @@ export class MotionGallery extends HTMLElement {
   }
 }
 
-customElements.define('motion-gallery', MotionGallery)
+defineElement('motion-gallery', MotionGallery)
 
 declare global {
   interface HTMLElementTagNameMap {

@@ -24,7 +24,7 @@ describe('motion-parallax', () => {
 
   async function mount() {
     return (await fixture(
-      html`<motion-parallax speed="0.3" axis="y"><img alt="" /></motion-parallax>`,
+      html`<motion-parallax depth="0.3" axis="y"><img alt="" /></motion-parallax>`,
     )) as MotionParallax
   }
 
@@ -33,7 +33,7 @@ describe('motion-parallax', () => {
       html`<motion-parallax><img alt="" /></motion-parallax>`,
     )) as MotionParallax
     expect(el.shadowRoot?.querySelector('slot')).toBeTruthy()
-    expect(el.speed).toBe(0.5)
+    expect(el.depth).toBe(0.5)
     expect(el.axis).toBe('y')
     expect(el.container).toBe('')
   })
@@ -49,9 +49,9 @@ describe('motion-parallax', () => {
     expect(scrollOptions.offset).toEqual(['start end', 'end start'])
   })
 
-  it('derives keyframes from speed and axis', async () => {
+  it('derives keyframes from depth and axis', async () => {
     const el = await mount()
-    // speed 0.3 * range 80 = 24px along the y axis
+    // depth 0.3 * range 80 = 24px along the y axis
     const [target, keyframes] = animateMock.mock.calls[0]
     expect(target).toBe(el)
     expect(keyframes).toEqual({ y: ['24px', '-24px'] })
@@ -69,7 +69,7 @@ describe('motion-parallax', () => {
     const el = await mount()
     el.finish()
     await elementUpdated(el)
-    // final state is -(speed * 80) => -24px along y
+    // final state is -(depth * 80) => -24px along y
     expect(el.style.transform).toBe('translateY(-24px)')
     expect(el.playState).toBe('finished')
   })

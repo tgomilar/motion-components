@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
+import { customElement } from '../../utils/define.js'
+import { escapeHtml } from '../utils/split-text.js'
 
 type Keyframes = Parameters<typeof animate>[1]
 import type { MotionGlitchProps, GlitchTrigger } from './motion-glitch.types.js'
@@ -19,7 +21,7 @@ export type { MotionGlitchProps, GlitchTrigger } from './motion-glitch.types.js'
  *
  * @example
  * ```html
- * <motion-glitch trigger="loop" intensity="6" interval="2500">
+ * <motion-glitch trigger="loop" intensity="6" interval="2.5">
  *   ERROR_404
  * </motion-glitch>
  * ```
@@ -28,10 +30,10 @@ export type { MotionGlitchProps, GlitchTrigger } from './motion-glitch.types.js'
 export class MotionGlitch extends Controllable(LitElement) implements MotionGlitchProps {
   /** Maximum horizontal displacement of the RGB layers, in pixels. */
   @property({ type: Number }) intensity = 5
-  /** When the glitch fires: `'hover'`, `'auto'` (once on mount), or `'loop'`. */
+  /** When the glitch fires: `'hover'`, `'mount'` (once on load), or `'loop'`. */
   @property({ type: String, reflect: true }) trigger: GlitchTrigger = 'loop'
-  /** Time between glitch bursts when `trigger="loop"`, in milliseconds. */
-  @property({ type: Number }) interval = 2000
+  /** Time between glitch bursts when `trigger="loop"`, in seconds. */
+  @property({ type: Number }) interval = 2
 
   static styles = css`
     :host {
@@ -54,7 +56,7 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
       this.runGlitch()
-      this.schedule(this.interval)
+      this.schedule(this.interval * 1000)
       return {
         handle: {
           pause: () => {
@@ -80,11 +82,12 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
   firstUpdated() {
     const text = this.textContent?.trim() ?? ''
     if (!text) return
+    const safe = escapeHtml(text)
 
     this.innerHTML = `<span style="position:relative;display:inline-block">\
-<span data-mg-main style="display:block">${text}</span>\
-<span data-mg-r aria-hidden="true" style="position:absolute;inset:0;display:block;color:#ff0040;opacity:0;pointer-events:none">${text}</span>\
-<span data-mg-b aria-hidden="true" style="position:absolute;inset:0;display:block;color:#00e5ff;opacity:0;pointer-events:none">${text}</span>\
+<span data-mg-main style="display:block">${safe}</span>\
+<span data-mg-r aria-hidden="true" style="position:absolute;inset:0;display:block;color:#ff0040;opacity:0;pointer-events:none">${safe}</span>\
+<span data-mg-b aria-hidden="true" style="position:absolute;inset:0;display:block;color:#00e5ff;opacity:0;pointer-events:none">${safe}</span>\
 </span>`
 
     this.main = this.querySelector('[data-mg-main]')
@@ -93,7 +96,7 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
 
     if (this.trigger === 'hover') {
       this.addEventListener('mouseenter', this.runGlitch)
-    } else if (this.trigger === 'auto') {
+    } else if (this.trigger === 'mount') {
       this.runGlitch()
     } else if (this.trigger === 'loop') {
       void this.play()
@@ -104,7 +107,7 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
     this.nextFireAt = performance.now() + ms
     this.loopId = setTimeout(() => {
       this.runGlitch()
-      this.schedule(this.interval)
+      this.schedule(this.interval * 1000)
     }, ms)
   }
 

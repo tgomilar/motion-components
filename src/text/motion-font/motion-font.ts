@@ -1,10 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
-import { animate, scroll } from 'motion'
+import { property } from 'lit/decorators.js'
+import { animate, scroll, GroupAnimationWithThen } from 'motion'
 import { useIntersect } from '../utils/use-intersect.js'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionFontProps, FontTrigger } from './motion-font.types.js'
-import type { AnimationPlaybackControls, AnimationPlaybackControlsWithThen } from 'motion'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionFontProps, FontTrigger } from './motion-font.types.js'
 
@@ -56,14 +57,10 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   @property({ type: Number }) bounce = 0
   /** Delay before the transition starts, in seconds. */
   @property({ type: Number }) delay = 0
-  /** Trigger source: `'auto'` (viewport), `'hover'`, or `'scroll'` (progress-mapped). */
-  @property({ type: String, reflect: true }) trigger: FontTrigger = 'auto'
-  /**
-   * When `true` and `trigger="auto"`, only animate the first time it enters view. Cannot be
-   * disabled from markup, as with any HTML boolean attribute. Set the property instead: `el.once =
-   * false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** Trigger source: `'view'` (when scrolled into view), `'hover'`, or `'scroll'` (progress-mapped). */
+  @property({ type: String, reflect: true }) trigger: FontTrigger = 'view'
+  /** When `true` and `trigger="view"`, only animate the first time it enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   static styles = css`
     :host {
@@ -76,8 +73,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   private disconnectIntersect: (() => void) | null = null
   private scrollCleanup: (() => void) | null = null
   private triggered = false
-  private hoverInAnim: AnimationPlaybackControls | null = null
-  private hoverOutAnim: AnimationPlaybackControls | null = null
+  private hoverAnim: GroupAnimationWithThen | null = null
 
   constructor() {
     super()
@@ -103,26 +99,32 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
     },
   })
 
+  private springAxes(start: (ax: AxisDef) => number, target: (ax: AxisDef) => number) {
+    return new GroupAnimationWithThen(
+      this.axesDef.map((ax) => {
+        const obj = { value: start(ax) }
+        return animate(
+          obj,
+          { value: target(ax) },
+          {
+            duration: this.duration,
+            type: 'spring',
+            bounce: this.bounce,
+            delay: this.delay,
+            onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
+          },
+        )
+      }),
+    )
+  }
+
   private autoStart() {
-    const targets = this.axesDef.map((ax) => ax.to)
-    const controls: AnimationPlaybackControlsWithThen[] = []
-    for (let i = 0; i < this.axesDef.length; i++) {
-      const ax = this.axesDef[i]
-      const obj = { value: ax.from }
-      const c = animate(
-        obj,
-        { value: targets[i] },
-        {
-          duration: this.duration,
-          type: 'spring',
-          bounce: this.bounce,
-          delay: this.delay,
-          onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
-        },
-      )
-      controls.push(c)
-    }
-    return controlsRun(controls[0])
+    return controlsRun(
+      this.springAxes(
+        (ax) => ax.from,
+        (ax) => ax.to,
+      ),
+    )
   }
 
   private scrollStart() {
@@ -208,7 +210,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
       return
     }
 
-    // trigger === 'auto'
+    // trigger === 'view'
     this.setupIntersect()
   }
 
@@ -224,64 +226,37 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
 
   private setupIntersect() {
     this.disconnectIntersect?.()
-    this.disconnectIntersect = useIntersect(this, 0.2, () => {
-      if (!this.triggered && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.triggered = true
-          this.disconnectIntersect?.()
+    this.disconnectIntersect = useIntersect(
+      this,
+      0.2,
+      () => {
+        if (!this.triggered && this.playState === 'idle') {
+          void this.play()
+          if (this.once) {
+            this.triggered = true
+            this.disconnectIntersect?.()
+          }
         }
-      }
-    })
+      },
+      () => {
+        if (!this.once && this.playState !== 'idle') this.cancel()
+      },
+    )
   }
 
-  private onHoverIn = () => {
-    this.hoverOutAnim?.stop()
-    const targets = this.axesDef.map((ax) => ax.to)
-    const controls: AnimationPlaybackControls[] = []
-    for (let i = 0; i < this.axesDef.length; i++) {
-      const ax = this.axesDef[i]
-      const current = Number(this.style.getPropertyValue(ax.prop) || ax.from)
-      const obj = { value: current }
-      const c = animate(
-        obj,
-        { value: targets[i] },
-        {
-          duration: this.duration,
-          type: 'spring',
-          bounce: this.bounce,
-          delay: this.delay,
-          onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
-        },
-      )
-      controls.push(c)
+  private hoverTo(target: (ax: AxisDef) => number) {
+    this.hoverAnim?.stop()
+    if (this.reduced) {
+      this.setAll(target)
+      return
     }
-    this.hoverInAnim = controls[0]
+    const current = (ax: AxisDef) => Number(this.style.getPropertyValue(ax.prop) || ax.from)
+    this.hoverAnim = this.springAxes(current, target)
   }
 
-  private onHoverOut = () => {
-    this.hoverInAnim?.stop()
-    const targets = this.axesDef.map((ax) => ax.from)
-    const controls: AnimationPlaybackControls[] = []
-    for (let i = 0; i < this.axesDef.length; i++) {
-      const ax = this.axesDef[i]
-      const current = Number(this.style.getPropertyValue(ax.prop) || ax.to)
-      const obj = { value: current }
-      const c = animate(
-        obj,
-        { value: targets[i] },
-        {
-          duration: this.duration,
-          type: 'spring',
-          bounce: this.bounce,
-          delay: this.delay,
-          onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
-        },
-      )
-      controls.push(c)
-    }
-    this.hoverOutAnim = controls[0]
-  }
+  private onHoverIn = () => this.hoverTo((ax) => ax.to)
+
+  private onHoverOut = () => this.hoverTo((ax) => ax.from)
 
   private setAll(getValue: (ax: AxisDef) => number) {
     for (const ax of this.axesDef) {
@@ -289,9 +264,9 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
     }
   }
 
-  /** Resets axes to their `from` values and re-arms the viewport observer. Only valid when `trigger="auto"`. */
+  /** Resets axes to their `from` values and re-arms the viewport observer. Only valid when `trigger="view"`. */
   replay() {
-    if (this.trigger !== 'auto') return
+    if (this.trigger !== 'view') return
     this.triggered = false
     this.cancel()
     this.setupIntersect()

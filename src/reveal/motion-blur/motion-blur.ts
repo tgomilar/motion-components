@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { scroll } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
 
@@ -17,7 +19,7 @@ export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
  *
  * @example
  * ```html
- * <motion-blur blur="14" y="20" direction="in">
+ * <motion-blur intensity="14" y="20" direction="in">
  *   <img src="hero.jpg" alt="" />
  * </motion-blur>
  * ```
@@ -25,14 +27,11 @@ export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
 @customElement('motion-blur')
 export class MotionBlur extends Controllable(LitElement) implements MotionBlurProps {
   /** Maximum blur amount in pixels at the unfocused extreme. */
-  @property({ type: Number, attribute: 'blur' }) amount = 10
+  @property({ type: Number }) intensity = 10
   /** Vertical translation in pixels at the unfocused extreme. */
   @property({ type: Number }) y = 12
-  /**
-   * When `true` (and `direction="in"`), latch focused state on first reveal. Cannot be disabled
-   * from markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true` (and `direction="in"`), latch focused state on first reveal. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
   /** `'in'` blurs on entry, `'out'` blurs on exit, `'both'` blur-focus-blur. */
   @property({ type: String, reflect: true }) direction: BlurDirection = 'in'
 
@@ -98,7 +97,7 @@ export class MotionBlur extends Controllable(LitElement) implements MotionBlurPr
       this.style.transform = ''
     } else {
       this.style.opacity = '0'
-      this.style.filter = `blur(${this.amount}px)`
+      this.style.filter = `blur(${this.intensity}px)`
       this.style.transform = `translateY(${-this.y}px)`
     }
   }
@@ -112,13 +111,11 @@ export class MotionBlur extends Controllable(LitElement) implements MotionBlurPr
           if (this.latched) return
           const p = Math.max(0, Math.min(1, progress))
           this.style.opacity = String(p)
-          this.style.filter = `blur(${this.amount * (1 - p)}px)`
+          this.style.filter = `blur(${this.intensity * (1 - p)}px)`
           this.style.transform = `translateY(${this.y * (1 - p)}px)`
           if (this.once && p >= 1) {
             this.latched = true
-            this.style.filter = ''
-            this.style.transform = ''
-            this.unbind()
+            this.finish()
           }
         },
         { target: this, offset: ['start end', 'center center'] },
@@ -128,7 +125,7 @@ export class MotionBlur extends Controllable(LitElement) implements MotionBlurPr
         (progress: number) => {
           const p = Math.max(0, Math.min(1, progress))
           this.style.opacity = String(1 - p)
-          this.style.filter = `blur(${this.amount * p}px)`
+          this.style.filter = `blur(${this.intensity * p}px)`
           this.style.transform = `translateY(${-this.y * p}px)`
         },
         { target: this, offset: ['center center', 'end start'] },
@@ -141,7 +138,7 @@ export class MotionBlur extends Controllable(LitElement) implements MotionBlurPr
           // Bell curve: 0 at entry, peaks at 0.5 (element centered), 0 at exit
           const bellP = 1 - Math.abs(p * 2 - 1)
           this.style.opacity = String(bellP)
-          this.style.filter = `blur(${this.amount * (1 - bellP)}px)`
+          this.style.filter = `blur(${this.intensity * (1 - bellP)}px)`
           this.style.transform = `translateY(${this.y * (1 - 2 * p)}px)`
         },
         { target: this, offset: ['start end', 'end start'] },

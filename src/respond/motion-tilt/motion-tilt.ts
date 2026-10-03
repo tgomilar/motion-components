@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, query } from 'lit/decorators.js'
+import { property, query } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 import type { MotionTiltProps } from './motion-tilt.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionTiltProps } from './motion-tilt.types.js'
 
@@ -27,12 +29,16 @@ export type { MotionTiltProps } from './motion-tilt.types.js'
 export class MotionTilt extends LitElement implements MotionTiltProps {
   /** Maximum tilt angle in degrees on each axis. */
   @property({ type: Number }) max = 15
+  /** Spring duration of the tilt and settle, in seconds. */
+  @property({ type: Number }) duration = 0.5
+  /** Spring bounciness of the tilt and settle (0 = no overshoot). */
+  @property({ type: Number }) bounce = 0.2
   /** Scale factor while hovering. */
   @property({ type: Number }) scale = 1.04
   /** When `true`, render a moving radial-gradient gloss highlight overlay. */
-  @property({ type: Boolean }) gloss = false
+  @property({ type: Boolean, converter: flag }) gloss = false
   /** When `true`, ignores pointer input and settles to the rest state. */
-  @property({ type: Boolean, reflect: true }) disabled = false
+  @property({ type: Boolean, converter: flag, reflect: true }) disabled = false
 
   @query('.inner') private inner!: HTMLElement
   @query('.gloss') private glossEl!: HTMLElement
@@ -120,7 +126,7 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
     animate(
       this.inner,
       { rotateX, rotateY, scale: this.scale },
-      { type: 'spring', stiffness: 180, damping: 22 },
+      { type: 'spring', duration: this.duration, bounce: this.bounce },
     )
 
     const lift = (Math.abs(rotateX) + Math.abs(rotateY)) / (this.max * 4)
@@ -148,7 +154,7 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
     animate(
       this.inner,
       { rotateX: 0, rotateY: 0, scale: 1 },
-      { type: 'spring', stiffness: 140, damping: 18 },
+      { type: 'spring', duration: this.duration, bounce: this.bounce },
     )
 
     this.inner.style.filter = ''

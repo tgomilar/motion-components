@@ -23,9 +23,13 @@ describe('motion-progress', () => {
     expect(el.playState).toBe('running')
   })
 
-  it('reflects position, color and thickness onto the bar', async () => {
+  it('reflects position and thickness onto the bar and colors it from --progress-color', async () => {
     const el = (await fixture(
-      html`<motion-progress position="bottom" color="#ff0000" thickness="5"></motion-progress>`,
+      html`<motion-progress
+        position="bottom"
+        thickness="5"
+        style="--progress-color: #ff0000"
+      ></motion-progress>`,
     )) as MotionProgress
     await elementUpdated(el)
     expect(el.getAttribute('position')).toBe('bottom')
@@ -33,7 +37,7 @@ describe('motion-progress', () => {
     expect(b.style.bottom).toBe('0px')
     expect(b.style.top).toBe('auto')
     expect(b.style.height).toBe('5px')
-    expect(b.style.background).toBe('rgb(255, 0, 0)')
+    expect(getComputedStyle(b).backgroundColor).toBe('rgb(255, 0, 0)')
   })
 
   it('finish() settles the bar to fully filled and fires motion-finish', async () => {

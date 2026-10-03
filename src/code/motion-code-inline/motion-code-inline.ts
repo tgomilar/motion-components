@@ -1,8 +1,10 @@
 import type { MotionCodeInlineProps } from './motion-code-inline.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 export type { MotionCodeInlineProps } from './motion-code-inline.types.js'
 
 import { LitElement, html, css, svg, nothing } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 
 /**
  * Inline code snippet with an optional copy-to-clipboard button. Renders the
@@ -22,9 +24,10 @@ import { customElement, property, state } from 'lit/decorators.js'
 @customElement('motion-code-inline')
 export class MotionCodeInline extends LitElement implements MotionCodeInlineProps {
   /** Show a copy-to-clipboard button that fades in on hover. */
-  @property({ type: Boolean }) copy = false
+  @property({ type: Boolean, converter: flag }) copy = false
   /** Show the copy button and keep it permanently visible, without needing hover. Implies `copy`. */
-  @property({ type: Boolean, attribute: 'copy-visible', reflect: true }) copyVisible = false
+  @property({ type: Boolean, converter: flag, attribute: 'copy-visible', reflect: true })
+  copyVisible = false
 
   @state() private copied = false
 

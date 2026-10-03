@@ -1,7 +1,9 @@
 import { LitElement, html, css, svg, nothing } from 'lit'
-import { customElement, property, query } from 'lit/decorators.js'
+import { property, query } from 'lit/decorators.js'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionLiquidProps } from './motion-liquid.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionLiquidProps } from './motion-liquid.types.js'
 
@@ -25,7 +27,7 @@ export type { MotionLiquidProps } from './motion-liquid.types.js'
  *
  * @example
  * ```html
- * <motion-liquid intensity="14" speed="2.5">LIQUID</motion-liquid>
+ * <motion-liquid intensity="14" duration="3.6">LIQUID</motion-liquid>
  * ```
  */
 @customElement('motion-liquid')
@@ -34,10 +36,10 @@ export class MotionLiquid extends Controllable(LitElement) implements MotionLiqu
   @property({ type: String }) text?: string
   /** Maximum displacement amount in pixels (peak of the noise pulse). */
   @property({ type: Number }) intensity = 10
-  /** Animation speed of the noise / displacement loop. */
-  @property({ type: Number }) speed = 2
+  /** Seconds per distortion cycle. Lower is faster, `0` holds the text still. */
+  @property({ type: Number }) duration = 4.5
   /** When `true`, pause the distortion loop while the cursor is over the element. */
-  @property({ type: Boolean, attribute: 'pause-on-hover' }) pauseOnHover = false
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   static styles = css`
     :host {
@@ -102,6 +104,7 @@ export class MotionLiquid extends Controllable(LitElement) implements MotionLiqu
 
   firstUpdated() {
     if ('fonts' in document) document.fonts.ready.then(() => this.fit())
+    if (this.shouldAnimate) void this.play()
   }
 
   updated(changed: Map<string, unknown>) {
@@ -145,14 +148,14 @@ export class MotionLiquid extends Controllable(LitElement) implements MotionLiqu
 
   private get shouldAnimate() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    return !reduce && this.speed > 0
+    return !reduce && this.duration > 0
   }
 
   render() {
     const animate = this.shouldAnimate
 
-    const freqDur = `${(9 / this.speed).toFixed(3)}s`
-    const scaleDur = `${(5.24 / this.speed).toFixed(3)}s`
+    const freqDur = `${this.duration.toFixed(3)}s`
+    const scaleDur = `${(this.duration * 0.582).toFixed(3)}s`
     const min = (this.intensity * 0.3).toFixed(3)
     const max = this.intensity.toFixed(3)
 

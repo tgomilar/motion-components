@@ -1,9 +1,11 @@
 import { LitElement, html, css, type PropertyValues } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { ref } from 'lit/directives/ref.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControlsWithThen } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 const FLIP_SPRING = { type: 'spring', stiffness: 160, damping: 22 } as const
 import type { MotionCountdownProps } from './motion-countdown.types.js'
@@ -35,6 +37,12 @@ const STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
  *
  * @element motion-countdown
  *
+ * @cssprop --countdown-size - Font size of the digits. Default `3.5rem`.
+ * @cssprop --countdown-color - Digit color. Default `currentColor`.
+ * @cssprop --countdown-gap - Space between units. Default `0.75rem`.
+ * @cssprop --countdown-label-size - Font size of the unit labels. Default `0.65rem`.
+ * @cssprop --countdown-label-color - Unit label color. Default `currentColor`.
+ *
  * @example
  * ```html
  * <motion-countdown to="2026-12-31T23:59:59" format="days hours minutes seconds" roll></motion-countdown>
@@ -46,13 +54,10 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   @property({ type: String, reflect: true }) to = ''
   /** Space-separated list of units to display: `days`, `hours`, `minutes`, `seconds`. */
   @property({ type: String, reflect: true }) format = 'days hours minutes seconds'
-  /**
-   * Whether to show unit labels (Days, Hours, etc.) beneath each value. Cannot be disabled from
-   * markup, as with any HTML boolean attribute. Set the property instead: `el.labels = false`.
-   */
-  @property({ type: Boolean, reflect: true }) labels = true
+  /** Whether to show unit labels (Days, Hours, etc.) beneath each value. Set `labels="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag, reflect: true }) labels = true
   /** Enable slot-machine roll animation instead of the default flip. */
-  @property({ type: Boolean, reflect: true }) roll = false
+  @property({ type: Boolean, converter: flag, reflect: true }) roll = false
 
   @state() private time: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 }
 

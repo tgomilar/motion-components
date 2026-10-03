@@ -1,7 +1,9 @@
+export type ScrambleTrigger = 'view' | 'hover'
+
 export interface MotionScrambleProps {
-  speed: number
+  interval: number
   delay: number
   iterations: number
   once: boolean
-  hover: boolean
+  trigger: ScrambleTrigger
 }

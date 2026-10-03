@@ -1,5 +1,5 @@
 export interface MotionParallaxProps {
-  speed?: number
+  depth?: number
   axis?: 'x' | 'y'
   container?: string
 }

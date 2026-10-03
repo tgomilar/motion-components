@@ -1,8 +1,10 @@
 import type { MotionCodeProps } from './motion-code.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 export type { MotionCodeProps } from './motion-code.types.js'
 
 import { LitElement, html, css, svg, nothing } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { unsafeHTML } from 'lit/directives/unsafe-html.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
@@ -25,16 +27,16 @@ interface Token {
  *
  * @element motion-code
  *
- * @cssprop [--cw-keyword] - Keyword token colour.
- * @cssprop [--cw-string] - String token colour.
- * @cssprop [--cw-tag] - Tag and selector token colour.
- * @cssprop [--cw-attr] - Attribute and property token colour.
- * @cssprop [--cw-num] - Numeric token colour.
- * @cssprop [--cw-comment] - Comment token colour. Falls back to `--color-muted`.
+ * @cssprop [--code-keyword] - Keyword token colour.
+ * @cssprop [--code-string] - String token colour.
+ * @cssprop [--code-tag] - Tag and selector token colour.
+ * @cssprop [--code-attr] - Attribute and property token colour.
+ * @cssprop [--code-num] - Numeric token colour.
+ * @cssprop [--code-comment] - Comment token colour. Falls back to `--color-muted`.
  *
  * @example
  * ```html
- * <motion-code filename="app.ts" copy copy-label type type-speed="60" no-loop>
+ * <motion-code filename="app.ts" copy copy-label typing typing-speed="60" typing-loop="false">
  *   <script type="text/plain">
  *     const greeting = 'hello'
  *   </script>
@@ -57,31 +59,31 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
    * Hide the whole title bar: traffic-light dots, filename and copy button.
    * Suppresses `copy` as a side effect, since the button lives in the chrome.
    */
-  @property({ type: Boolean, attribute: 'hide-chrome' }) hideChrome = false
+  @property({ type: Boolean, converter: flag, attribute: 'hide-chrome' }) hideChrome = false
   /** Show a copy-to-clipboard button in the chrome. Copies the dedented source, not the highlighted markup. */
-  @property({ type: Boolean }) copy = false
+  @property({ type: Boolean, converter: flag }) copy = false
   /** Label the copy button with "Copy" / "Copied!" text instead of showing the icon alone. */
-  @property({ type: Boolean, attribute: 'copy-label' }) copyLabel = false
+  @property({ type: Boolean, converter: flag, attribute: 'copy-label' }) copyLabel = false
   /** Denser layout: smaller radius, tighter padding and a smaller type scale. */
-  @property({ type: Boolean, reflect: true }) compact = false
+  @property({ type: Boolean, converter: flag, reflect: true }) compact = false
   /** Reveal the code with a typewriter animation instead of rendering it at once. */
-  @property({ type: Boolean }) type = false
+  @property({ type: Boolean, converter: flag }) typing = false
   /** Typing speed in characters per second. Total duration is derived from the character count. */
-  @property({ type: Number, attribute: 'type-speed' }) typeSpeed = 80
-  /** Delay in milliseconds before the first character appears, applied on every pass. */
-  @property({ type: Number, attribute: 'type-delay' }) typeDelay = 0
+  @property({ type: Number, attribute: 'typing-speed' }) typingSpeed = 80
+  /** Delay in seconds before the first character appears, applied on every pass. */
+  @property({ type: Number, attribute: 'typing-delay' }) typingDelay = 0
   /**
-   * Type once instead of looping. Also changes the trigger: with `no-loop` the
-   * animation waits until the block scrolls into view, otherwise it starts on connect.
+   * Repeat the typing animation. Set `typing-loop="false"` to type once; the
+   * animation then waits until the block scrolls into view instead of starting on connect.
    */
-  @property({ type: Boolean, attribute: 'no-loop' }) noLoop = false
-  /** Milliseconds to hold the completed text before restarting. Ignored when `no-loop` is set. */
-  @property({ type: Number, attribute: 'type-loop-delay' }) typeLoopDelay = 1500
+  @property({ type: Boolean, converter: flag, attribute: 'typing-loop' }) typingLoop = true
+  /** Seconds to hold the completed text before restarting. Ignored when `typing-loop="false"`. */
+  @property({ type: Number, attribute: 'typing-hold' }) typingHold = 1.5
 
   @state() private copied = false
   @state() private highlighted = ''
   @state() private visibleChars = -1
-  @state() private typing = false
+  @state() private typingNow = false
 
   private tokens: Token[] = []
   private raw = ''
@@ -98,7 +100,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     start: () => {
       if (!this.totalChars) return { handle: this.typeHandle(), done: Promise.resolve() }
       this.beginTyping()
-      if (!this.noLoop) return { handle: this.typeHandle() }
+      if (this.typingLoop) return { handle: this.typeHandle() }
       return {
         handle: this.typeHandle(),
         done: new Promise<void>((resolve) => {
@@ -108,11 +110,11 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     },
     applyFinalState: () => {
       this.visibleChars = this.totalChars
-      this.typing = false
+      this.typingNow = false
     },
     applyInitialState: () => {
-      this.visibleChars = this.type ? 0 : -1
-      this.typing = false
+      this.visibleChars = this.typing ? 0 : -1
+      this.typingNow = false
     },
   })
 
@@ -262,22 +264,22 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     /* ── Token colours — all overridable via CSS custom properties ──────────
        Map any external theme's values to these variables on :root.           */
     .cw-comment {
-      color: var(--cw-comment, var(--color-muted, #60608a));
+      color: var(--code-comment, var(--color-muted, #60608a));
     }
     .cw-keyword {
-      color: var(--cw-keyword, #7c3aed);
+      color: var(--code-keyword, #7c3aed);
     }
     .cw-string {
-      color: var(--cw-string, #16a34a);
+      color: var(--code-string, #16a34a);
     }
     .cw-tag {
-      color: var(--cw-tag, #0369a1);
+      color: var(--code-tag, #0369a1);
     }
     .cw-attr {
-      color: var(--cw-attr, #be123c);
+      color: var(--code-attr, #be123c);
     }
     .cw-num {
-      color: var(--cw-num, #b45309);
+      color: var(--code-num, #b45309);
     }
   `
 
@@ -296,7 +298,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
 
   /** Restart the typing animation from the beginning */
   replay() {
-    if (this.type) {
+    if (this.typing) {
       this.cancel()
       void this.play()
     }
@@ -310,8 +312,8 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     this.highlighted = this.renderTokens(this.tokens)
     this.hasCode = true
     this.playback.teardown()
-    if (this.type) {
-      if (this.noLoop) {
+    if (this.typing) {
+      if (!this.typingLoop) {
         // The observer fires immediately with the current intersection state,
         // so this covers both already-visible and scrolled-to-later windows.
         this.setupRevealObserver()
@@ -323,7 +325,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
   }
 
   protected updated() {
-    if (this.typing) {
+    if (this.typingNow) {
       const cursor = this.shadowRoot?.querySelector<HTMLElement>('.cursor')
       if (cursor && !this.cursorControls) {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -348,17 +350,17 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     style.id = id
     style.textContent = `
       :root {
-        --cw-keyword: #7c3aed; --cw-string: #16a34a;
-        --cw-tag:     #0369a1; --cw-attr:   #be123c; --cw-num: #b45309;
+        --code-keyword: #7c3aed; --code-string: #16a34a;
+        --code-tag:     #0369a1; --code-attr:   #be123c; --code-num: #b45309;
       }
       [data-theme="dark"] {
-        --cw-keyword: #c084fc; --cw-string: #86efac;
-        --cw-tag:     #7dd3fc; --cw-attr:   #fda4af; --cw-num: #fcd34d;
+        --code-keyword: #c084fc; --code-string: #86efac;
+        --code-tag:     #7dd3fc; --code-attr:   #fda4af; --code-num: #fcd34d;
       }
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
-          --cw-keyword: #c084fc; --cw-string: #86efac;
-          --cw-tag:     #7dd3fc; --cw-attr:   #fda4af; --cw-num: #fcd34d;
+          --code-keyword: #c084fc; --code-string: #86efac;
+          --code-tag:     #7dd3fc; --code-attr:   #fda4af; --code-num: #fcd34d;
         }
       }
     `
@@ -374,8 +376,8 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     this.highlighted = this.renderTokens(this.tokens)
     if (!raw) return
     this.hasCode = true
-    if (this.type) {
-      if (this.noLoop) {
+    if (this.typing) {
+      if (!this.typingLoop) {
         this.setupRevealObserver()
       } else {
         void this.play()
@@ -450,7 +452,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       finish: () => {
         this.stopTyping()
         this.visibleChars = this.totalChars
-        this.typing = false
+        this.typingNow = false
       },
       cancel: () => this.stopTyping(),
     }
@@ -460,7 +462,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     this.typePhase = 'delay'
     this.phaseElapsed = 0
     this.visibleChars = 0
-    this.typing = true
+    this.typingNow = true
     this.typeLoop.start()
   }
 
@@ -472,19 +474,19 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
   private typeTick(dt: number) {
     this.phaseElapsed += dt
     if (this.typePhase === 'delay') {
-      if (this.phaseElapsed < this.typeDelay) return
+      if (this.phaseElapsed < this.typingDelay * 1000) return
       this.typePhase = 'typing'
       this.phaseElapsed = 0
       return
     }
     if (this.typePhase === 'typing') {
       const total = this.totalChars
-      const duration = (total / this.typeSpeed) * 1000
+      const duration = (total / this.typingSpeed) * 1000
       const progress = Math.min(this.phaseElapsed / duration, 1)
       this.visibleChars = Math.floor(progress * total)
       if (progress < 1) return
-      this.typing = false
-      if (this.noLoop) {
+      this.typingNow = false
+      if (!this.typingLoop) {
         this.typeLoop.stop()
         this.resolveTyped?.()
         this.resolveTyped = null
@@ -494,16 +496,16 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       this.phaseElapsed = 0
       return
     }
-    if (this.phaseElapsed >= this.typeLoopDelay) {
+    if (this.phaseElapsed >= this.typingHold * 1000) {
       this.typePhase = 'delay'
       this.phaseElapsed = 0
       this.visibleChars = 0
-      this.typing = true
+      this.typingNow = true
     }
   }
 
   private renderPartial(): string {
-    if (!this.type || this.visibleChars < 0) return this.highlighted
+    if (!this.typing || this.visibleChars < 0) return this.highlighted
 
     let charsLeft = this.visibleChars
     let result = ''
@@ -973,11 +975,11 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
           </div>`}
       <div class="body">
         <div class="code-area">
-          ${this.type
+          ${this.typing
             ? html`<pre class="sizer" aria-hidden="true">${unsafeHTML(this.highlighted)}</pre>`
             : nothing}
           <pre>
-${unsafeHTML(this.renderPartial())}${this.typing
+${unsafeHTML(this.renderPartial())}${this.typingNow
               ? html`<span class="cursor"></span>`
               : nothing}</pre
           >

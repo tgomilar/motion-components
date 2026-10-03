@@ -1,10 +1,12 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property, state } from 'lit/decorators.js'
+import { property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
 import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionCurveProps } from './motion-curve.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionCurveProps } from './motion-curve.types.js'
 
@@ -23,7 +25,7 @@ export type { MotionCurveProps } from './motion-curve.types.js'
  *
  * @example
  * ```html
- * <motion-curve amplitude="20" speed="0.5">Motion</motion-curve>
+ * <motion-curve amplitude="20" wave-duration="2">Motion</motion-curve>
  * <motion-curve text="endless" loop loop-speed="60"></motion-curve>
  * ```
  */
@@ -35,22 +37,30 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
   @property({ type: Number }) amplitude = 24
   /** Distance between wave crests, in pixels. */
   @property({ type: Number, attribute: 'wave-length' }) waveLength = 280
-  /** Wave travel speed (radians per frame at 60fps). */
-  @property({ type: Number }) speed = 0.4
+  /** Seconds for one full wave cycle. Lower is faster, `0` holds the wave still. */
+  @property({ type: Number, attribute: 'wave-duration' }) waveDuration = 2.5
   /** When `true`, scroll the text horizontally as a marquee. */
-  @property({ type: Boolean, reflect: true }) loop = false
+  @property({ type: Boolean, converter: flag, reflect: true }) loop = false
   /** Scroll speed when `loop` is enabled, in pixels per second. */
   @property({ type: Number, attribute: 'loop-speed' }) loopSpeed = 80
   /** Gap between repeated text sets in loop mode, in pixels. */
   @property({ type: Number, attribute: 'loop-gap' }) loopGap = 48
   /** When `true`, omit vertical padding equal to `amplitude`. */
-  @property({ type: Boolean, attribute: 'no-pad' }) noPad = false
+  @property({ type: Boolean, converter: flag, attribute: 'no-pad' }) noPad = false
   /** When `true`, pause the wave/loop while the cursor is over the element. */
-  @property({ type: Boolean, attribute: 'pause-on-hover' }) pauseOnHover = false
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   @state() private numSets = 2
 
   static styles = css`
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
     :host {
       display: inline-block;
       font-size: inherit;
@@ -89,7 +99,7 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
-      this.waveLoop = frameLoop(() => this.tick())
+      this.waveLoop = frameLoop((dt) => this.tick(dt / 1000))
       this.waveLoop.start()
       if (this.loop) this.setupLoopControls()
       return {
@@ -153,7 +163,7 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
       changed.has('text') ||
       changed.has('loop') ||
       changed.has('loopSpeed') ||
-      changed.has('speed') ||
+      changed.has('waveDuration') ||
       changed.has('amplitude') ||
       changed.has('waveLength') ||
       changed.has('loopGap') ||
@@ -179,8 +189,8 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
     void this.play()
   }
 
-  private tick() {
-    this.phase += (this.speed * 2 * Math.PI) / 60
+  private tick(dt: number) {
+    if (this.waveDuration > 0) this.phase += (2 * Math.PI * dt) / this.waveDuration
 
     const spans = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
     const amp = this.amplitude
@@ -241,14 +251,12 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
 
     if (this.loop) {
       return html`
-        <span class="track">
+        <span class="sr-only">${this.text}</span>
+        <span class="track" aria-hidden="true">
           ${Array.from(
             { length: this.numSets },
             (_, i) =>
-              html`<span
-                class="set"
-                style="margin-right:${this.loopGap}px"
-                aria-hidden=${i > 0 ? 'true' : undefined}
+              html`<span class="set" style="margin-right:${this.loopGap}px" data-set=${i}
                 >${chars()}</span
               >`,
           )}
@@ -256,7 +264,7 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
       `
     }
 
-    return html`${chars()}`
+    return html`<span class="sr-only">${this.text}</span><span aria-hidden="true">${chars()}</span>`
   }
 }
 

@@ -1,8 +1,9 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionGravityProps } from './motion-gravity.types.js'
+import { customElement } from '../../utils/define.js'
 
 export type { MotionGravityProps } from './motion-gravity.types.js'
 
@@ -28,9 +29,11 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
   /** Drop distance in pixels (each char starts this far above its rest). */
   @property({ type: Number }) height = 60
   /** Delay between successive character drops, in seconds. */
-  @property({ type: Number }) stagger = 0.05
+  @property({ type: Number }) interval = 0.05
   /** Spring duration of each character's fall, in seconds. */
   @property({ type: Number }) duration = 0.6
+  /** Spring bounciness of the landing (0 = no overshoot). */
+  @property({ type: Number }) bounce = 0.45
   /** Delay before the first character starts falling, in seconds. */
   @property({ type: Number }) delay = 0
 
@@ -45,6 +48,14 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
       line-height: inherit;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
     .char {
       display: inline-block;
       white-space: pre;
@@ -55,17 +66,21 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
       const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
-      if (!chars.length) return { handle: { pause() {}, resume() {}, finish() {}, cancel() {} } }
+      if (!chars.length) {
+        return {
+          handle: { pause() {}, resume() {}, finish() {}, cancel() {} },
+          done: Promise.resolve(),
+        }
+      }
       return controlsRun(
         animate(
           chars,
           { y: [-this.height, 0], opacity: [0, 1] },
           {
-            delay: stagger(this.stagger, { startDelay: this.delay }),
+            delay: stagger(this.interval, { startDelay: this.delay }),
             duration: this.duration,
             type: 'spring',
-            stiffness: 380,
-            damping: 22,
+            bounce: this.bounce,
           },
         ),
       )
@@ -101,8 +116,9 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
     const needsPlay =
       changed.has('text') ||
       changed.has('height') ||
-      changed.has('stagger') ||
+      changed.has('interval') ||
       changed.has('duration') ||
+      changed.has('bounce') ||
       changed.has('delay')
 
     if (needsPlay) {
@@ -118,9 +134,14 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
   }
 
   render() {
-    return html`${[...(this.text ?? '')].map(
-      (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
-    )}`
+    return html`
+      <span class="sr-only">${this.text}</span>
+      <span aria-hidden="true">
+        ${[...(this.text ?? '')].map(
+          (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
+        )}
+      </span>
+    `
   }
 }
 

@@ -1,9 +1,11 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { REVEAL_SPRING } from '../../utils/springs.js'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionRevealProps } from './motion-reveal.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionRevealProps } from './motion-reveal.types.js'
 
@@ -30,11 +32,8 @@ export class MotionReveal extends Controllable(LitElement) implements MotionReve
   @property({ type: Number }) y = 24
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.1
-  /**
-   * When `true`, only animate the first time the element enters view. Cannot be disabled from
-   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   static styles = css`
     :host {
@@ -91,6 +90,8 @@ export class MotionReveal extends Controllable(LitElement) implements MotionReve
           this.revealed = true
           this.observer?.disconnect()
         }
+      } else if (!entry.isIntersecting) {
+        if (!this.once && this.playState !== 'idle') this.cancel()
       }
     }
   }

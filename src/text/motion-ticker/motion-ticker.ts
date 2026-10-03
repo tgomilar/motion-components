@@ -2,6 +2,8 @@ import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionTickerProps, TickerDirection } from './motion-ticker.types.js'
+import { BaseElement, defineElement } from '../../utils/define.js'
+import { readFlag } from '../../utils/attributes.js'
 
 export type { MotionTickerProps, TickerDirection } from './motion-ticker.types.js'
 
@@ -36,7 +38,7 @@ const MIN_RATE = 0.05
  * </motion-ticker>
  * ```
  */
-export class MotionTicker extends Controllable(HTMLElement) {
+export class MotionTicker extends Controllable(BaseElement) {
   static observedAttributes = [
     'speed',
     'gap',
@@ -114,10 +116,10 @@ export class MotionTicker extends Controllable(HTMLElement) {
     return (this.getAttribute('direction') ?? 'left') as TickerDirection
   }
   private get pauseOnHover(): MotionTickerProps['pauseOnHover'] {
-    return this.getAttribute('pause-on-hover') !== 'false'
+    return readFlag(this, 'pause-on-hover', true)
   }
   private get wave(): MotionTickerProps['wave'] {
-    return this.hasAttribute('wave')
+    return readFlag(this, 'wave', false)
   }
   private get waveAmplitude(): MotionTickerProps['waveAmplitude'] {
     return Number(this.getAttribute('wave-amplitude') ?? 10)
@@ -435,7 +437,7 @@ function node(tag: string, styles: Partial<CSSStyleDeclaration> = {}): HTMLEleme
   return el
 }
 
-customElements.define('motion-ticker', MotionTicker)
+defineElement('motion-ticker', MotionTicker)
 
 declare global {
   interface HTMLElementTagNameMap {

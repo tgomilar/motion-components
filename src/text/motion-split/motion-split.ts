@@ -1,11 +1,13 @@
 import { LitElement, html, css } from 'lit'
-import { customElement, property } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { REVEAL_SPRING } from '../../utils/springs.js'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import { splitText } from '../utils/split-text.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionSplitProps, SplitBy } from './motion-split.types.js'
+import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
 
 export type { MotionSplitProps, SplitBy } from './motion-split.types.js'
 
@@ -36,11 +38,8 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
   @property({ type: Number }) duration = 0.6
   /** Initial vertical offset in pixels for each unit. */
   @property({ type: Number }) y = 20
-  /**
-   * When `true`, only animate the first time the element enters view. Cannot be disabled from
-   * markup, as with any HTML boolean attribute. Set the property instead: `el.once = false`.
-   */
-  @property({ type: Boolean }) once = true
+  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. */
+  @property({ type: Boolean, converter: flag }) once = true
 
   static styles = css`
     :host {
@@ -90,24 +89,34 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
     }
     this.spans = spans
 
-    if (!this.reduced) {
-      this.spans.forEach((s) => {
-        s.style.opacity = '0'
-        s.style.transform = `translateY(${this.y}px)`
-      })
-    }
-
     this.setAttribute('data-ready', '')
 
-    this.disconnectIntersect = useIntersect(this.spans[0], 0.1, () => {
-      if (!this.animated && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.animated = true
-          this.disconnectIntersect?.()
-        }
-      }
+    if (this.reduced) {
+      this.finish()
+      return
+    }
+
+    this.spans.forEach((s) => {
+      s.style.opacity = '0'
+      s.style.transform = `translateY(${this.y}px)`
     })
+
+    this.disconnectIntersect = useIntersect(
+      this.spans[0],
+      0.1,
+      () => {
+        if (!this.animated && this.playState === 'idle') {
+          void this.play()
+          if (this.once) {
+            this.animated = true
+            this.disconnectIntersect?.()
+          }
+        }
+      },
+      () => {
+        if (!this.once && this.playState !== 'idle') this.cancel()
+      },
+    )
   }
 
   disconnectedCallback() {
