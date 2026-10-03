@@ -255,6 +255,18 @@ describe('motion-theme-toggle', () => {
     expect(el.mode).toBe('dark')
   })
 
+  it('icon-only toggle hides labels visually but keeps them accessible', async () => {
+    const el = await mount(
+      html`<motion-theme-toggle appearance="toggle" icon-only system></motion-theme-toggle>`,
+    )
+    const segments = [...shadow(el).querySelectorAll<HTMLLabelElement>('.segment')]
+    expect(segments.map((s) => s.title)).toEqual(['Light', 'Dark', 'System'])
+    const label = segments[1].querySelector('span')!
+    expect(label.className).toBe('visually-hidden')
+    expect(label.textContent).toBe('Dark')
+    expect(label.getBoundingClientRect().width).toBeLessThanOrEqual(1)
+  })
+
   it('switch appearance ignores the system option', async () => {
     const el = await mount(
       html`<motion-theme-toggle appearance="switch" system mode="system"></motion-theme-toggle>`,

@@ -95,6 +95,8 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
   @property({ type: String }) target = 'html'
   /** Reveals the new theme with a circular view-transition wipe from the control. Off by default. */
   @property({ type: Boolean, reflect: true }) wipe = false
+  /** Hides the option labels of the `toggle` appearance and shows icons only. Labels stay available to screen readers and as tooltips. */
+  @property({ type: Boolean, attribute: 'icon-only', reflect: true }) iconOnly = false
   /** Spring duration of the icon morph and wipe, in seconds. */
   @property({ type: Number }) duration = 0.5
   /** Spring bounciness of the icon morph and controls. */
@@ -194,6 +196,17 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       border-radius: var(--_radius);
       cursor: pointer;
       user-select: none;
+    }
+    :host([icon-only]) .segment {
+      padding: 0.45em 0.6em;
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
     .segment input,
     .remember input:not(:focus-visible) {
@@ -557,7 +570,11 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
           ${this.modes.map(
             (mode) => html`
               <motion-press class="segment-wrap" data-mode=${mode}>
-                <label class="segment" part="segment">
+                <label
+                  class="segment"
+                  part="segment"
+                  title=${this.iconOnly ? this.labelFor(mode) : nothing}
+                >
                   <input
                     type="radio"
                     name=${this.uid}
@@ -566,7 +583,9 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
                     @change=${this.onRadio}
                   />
                   ${this.icon(mode)}
-                  <span>${this.labelFor(mode)}</span>
+                  <span class=${this.iconOnly ? 'visually-hidden' : ''}
+                    >${this.labelFor(mode)}</span
+                  >
                 </label>
               </motion-press>
             `,

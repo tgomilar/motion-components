@@ -23,6 +23,7 @@ export interface MotionThemeToggleProps {
   remember: string
   target: string
   wipe: boolean
+  iconOnly: boolean
   duration: number
   bounce: number
 }
