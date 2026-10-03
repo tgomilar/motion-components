@@ -1,6 +1,6 @@
 {
   "name": "motion-components",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "description": "Framework-agnostic web components with physics-based motion. Built on Motion and Lit.",
   "author": "Tanja Gomilar <tanja.gomilar@gmail.com>",
