@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Framework-agnostic web components with physics-based motion. Built on Motion and Lit.",
   "author": "Tanja Gomilar <tanja.gomilar@gmail.com>",
-  "homepage": "https://github.com/tgomilar/motion-components#readme",
+  "homepage": "https://www.motion-components.dev",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tgomilar/motion-components.git"
@@ -276,13 +276,24 @@
   },
   "keywords": [
     "web-components",
+    "custom-elements",
     "animation",
     "motion",
     "lit",
     "motion-one",
     "spring",
     "physics",
-    "framework-agnostic"
+    "framework-agnostic",
+    "scroll-animation",
+    "text-animation",
+    "animated-icons",
+    "charts",
+    "react",
+    "vue",
+    "svelte",
+    "astro",
+    "accessibility",
+    "reduced-motion"
   ],
   "license": "MIT",
   "dependencies": {
