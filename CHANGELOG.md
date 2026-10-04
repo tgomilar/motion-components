@@ -31,6 +31,7 @@
 
 ### Added
 
+- New text annotation components that draw a mark onto their text when it scrolls into view, on hover, or on mount: `motion-marker` (a highlighter stroke behind the text), `motion-underline` (`shape` is `line`, `dashed`, `dotted` or `wave`), `motion-strike` (a line through the text) and `motion-ring` (an ellipse, or a box with `shape="box"`, around a word). Marker, strike and the straight, dashed and dotted underlines follow text that wraps across lines. Colors and thickness are set with `--mc-marker-color`, `--mc-mark-color` and `--mc-mark-thickness`; new CSS custom properties now use the `--mc-` prefix.
 - Usage guidance in every component's documentation comment: when to use it, when not to, accessibility, reduced motion and common mistakes. It appears in editor hovers through the custom elements manifest, and in the Markdown docs and `llms-full.txt` on the site.
 - `motion-icon`: `animation` takes `draw` plus a motion, such as `draw wiggle` or `draw pulse`, to draw the outline and move the icon at the same time. On filled icons only the motion runs.
 - `motion-code`: reads its code from a `<pre>` child, so the code is in the page HTML for search engines and readers without JavaScript.

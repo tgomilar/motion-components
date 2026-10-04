@@ -137,6 +137,11 @@
       "import": "./dist/motion-magnetic.js",
       "default": "./dist/motion-magnetic.js"
     },
+    "./motion-marker": {
+      "types": "./dist/text/motion-marker/motion-marker.d.ts",
+      "import": "./dist/motion-marker.js",
+      "default": "./dist/motion-marker.js"
+    },
     "./motion-parallax": {
       "types": "./dist/scroll/motion-parallax/motion-parallax.d.ts",
       "import": "./dist/motion-parallax.js",
@@ -166,6 +171,11 @@
       "types": "./dist/reveal/motion-reveal/motion-reveal.d.ts",
       "import": "./dist/motion-reveal.js",
       "default": "./dist/motion-reveal.js"
+    },
+    "./motion-ring": {
+      "types": "./dist/text/motion-ring/motion-ring.d.ts",
+      "import": "./dist/motion-ring.js",
+      "default": "./dist/motion-ring.js"
     },
     "./motion-scene": {
       "types": "./dist/scroll/motion-scene/motion-scene.d.ts",
@@ -212,6 +222,11 @@
       "import": "./dist/motion-stretch.js",
       "default": "./dist/motion-stretch.js"
     },
+    "./motion-strike": {
+      "types": "./dist/text/motion-strike/motion-strike.d.ts",
+      "import": "./dist/motion-strike.js",
+      "default": "./dist/motion-strike.js"
+    },
     "./motion-swap": {
       "types": "./dist/text/motion-swap/motion-swap.d.ts",
       "import": "./dist/motion-swap.js",
@@ -246,6 +261,11 @@
       "types": "./dist/text/motion-typewriter/motion-typewriter.d.ts",
       "import": "./dist/motion-typewriter.js",
       "default": "./dist/motion-typewriter.js"
+    },
+    "./motion-underline": {
+      "types": "./dist/text/motion-underline/motion-underline.d.ts",
+      "import": "./dist/motion-underline.js",
+      "default": "./dist/motion-underline.js"
     },
     "./motion-words": {
       "types": "./dist/text/motion-words/motion-words.d.ts",

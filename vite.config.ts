@@ -33,6 +33,10 @@ const entries: Record<string, string> = {
   'motion-gravity': 'src/text/motion-gravity/motion-gravity.ts',
   'motion-font': 'src/text/motion-font/motion-font.ts',
   'motion-swap': 'src/text/motion-swap/motion-swap.ts',
+  'motion-marker': 'src/text/motion-marker/motion-marker.ts',
+  'motion-underline': 'src/text/motion-underline/motion-underline.ts',
+  'motion-strike': 'src/text/motion-strike/motion-strike.ts',
+  'motion-ring': 'src/text/motion-ring/motion-ring.ts',
 
   'motion-slider': 'src/components/motion-slider/motion-slider.ts',
   'motion-gallery': 'src/components/motion-gallery/motion-gallery.ts',
