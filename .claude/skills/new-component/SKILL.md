@@ -133,7 +133,7 @@ For a component named `motion-foo` placed in `src/<category>/motion-foo/`:
    - At least one `<CodeWindow>` showing per-component import: `import 'motion-components/motion-foo'` (and the bulk option below it).
    - A `<PropsTable>` with `nameLabel="Attribute"` listing every attribute, type, default, and a short description.
    - An "Accessibility" `<h2>` covering keyboard + reduced-motion behaviour.
-   - `<script>import "motion-components"</script>` at the bottom.
+   - `<script>` at the bottom with one subpath import per tag the page renders, for example `import "motion-components/motion-<name>";` and `import "motion-components/motion-split";`. Never import the whole library on a docs page: `CodeWindow`, `PropsTable`, `Search`, `Nav` and the layout import their own tags.
 
 ## Verifying
 

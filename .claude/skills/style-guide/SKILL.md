@@ -33,6 +33,7 @@ Every component class must have a `/** … */` block above the class (or `@custo
 - `@property {type} name - Description.` — one per public attribute/property. Use kebab-case attribute names. Include the default value in the description.
 - `@fires <event-name> — Description.` — only if the component dispatches custom events
 - `@cssprop` — only if the component exposes CSS custom properties (rare)
+- CSS custom properties of new components are prefixed `--mc-` (for example `--mc-marker-color`, `--mc-mark-thickness`), including internal ones. Existing unprefixed properties stay until a major version.
 - `@csspart` — only if the component exposes shadow parts (rare)
 - `@example` — with a ```html code block showing real usage
 
@@ -85,7 +86,7 @@ Every component gets one Astro page at `site/src/pages/docs/<category>/<tag>.ast
 9. **Slots** (if named slots) — same `<PropsTable>` pattern.
 10. **Methods** (if any) — small HTML table.
 11. **Accessibility** — what works for keyboard / screen-readers / reduced-motion. Always present, even if just one sentence.
-12. `<script>import "motion-components"</script>` at the bottom.
+12. `<script>` at the bottom with one subpath import per tag the page renders, for example `import "motion-components/motion-<name>";` and `import "motion-components/motion-split";`. Never import the whole library on a docs page: `CodeWindow`, `PropsTable`, `Search`, `Nav` and the layout import their own tags.
 
 The sidebar auto-discovers pages via `import.meta.glob`. No manual nav edit required.
 
