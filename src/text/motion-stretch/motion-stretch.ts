@@ -48,7 +48,7 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
   /** Maximum lateral displacement of edge characters, in pixels. */
   @property({ type: Number }) spread = 12
   /** Spring duration of the spread and release, in seconds. */
-  @property({ type: Number }) duration = 0.45
+  @property({ type: Number }) duration = 0.77
   /** Spring bounciness (0 = critically damped, higher = more elastic). */
   @property({ type: Number }) bounce = 0.55
 

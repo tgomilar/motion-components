@@ -47,10 +47,10 @@ describe('motion-stretch', () => {
     expect(chars(el)).toHaveLength(2)
   })
 
-  it('has defaults: spread 12, spring duration 0.45, bounce 0.55', async () => {
+  it('has defaults: spread 12, spring duration 0.77, bounce 0.55', async () => {
     const el = await mount()
     expect(el.spread).toBe(12)
-    expect(el.duration).toBe(0.45)
+    expect(el.duration).toBe(0.77)
     expect(el.bounce).toBe(0.55)
   })
 
@@ -62,7 +62,7 @@ describe('motion-stretch', () => {
     expect(calls.map((c) => c[0])).toEqual(chars(el))
     expect(calls.map((c) => c[1])).toEqual([{ x: -10 }, { x: 0 }, { x: 10 }])
     for (const c of calls) {
-      expect(c[2]).toEqual({ type: 'spring', duration: 0.45, bounce: 0.55 })
+      expect(c[2]).toEqual({ type: 'spring', duration: 0.77, bounce: 0.55 })
     }
   })
 
@@ -89,7 +89,7 @@ describe('motion-stretch', () => {
     expect(animateMock).toHaveBeenCalledTimes(3)
     for (const c of animateMock.mock.calls) {
       expect(c[1]).toEqual({ x: 0 })
-      expect(c[2]).toEqual({ type: 'spring', duration: 0.45, bounce: 0.55 })
+      expect(c[2]).toEqual({ type: 'spring', duration: 0.77, bounce: 0.55 })
     }
   })
 
