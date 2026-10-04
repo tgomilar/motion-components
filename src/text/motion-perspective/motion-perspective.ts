@@ -17,7 +17,36 @@ export type { MotionPerspectiveProps, VanishDirection } from './motion-perspecti
  * doubles as a pre-upgrade fallback: the browser shows it before the
  * element is defined, so the page never paints an empty gap.
  *
+ * **Use it for:** a short word or title that should look as if it goes back
+ * into the distance, either still or with a slow back-and-forth depth motion
+ * (`oscillate`).
+ *
+ * **Avoid it for:** long text or sentences, because the characters sit on
+ * one line and never wrap. For content that should tilt in 3D toward the
+ * pointer, use `motion-tilt`.
+ *
+ * **Accessibility:** the full text is in a visually hidden span and the
+ * character spans have `aria-hidden`, so screen readers read the text once,
+ * as normal words. The far characters are smaller and fainter, so check that
+ * they are still readable, or lower `depth`. With `oscillate`, the motion
+ * starts at once and does not end on its own. `pause-on-hover` reacts to the
+ * mouse only, so give other users a way to stop it, for example a button
+ * that calls `pause()`.
+ *
+ * **Reduced motion:** with `oscillate`, the oscillation does not start and
+ * the text keeps the still perspective layout. Without `oscillate` nothing
+ * changes, because that layout does not move.
+ *
+ * **Common mistakes:** placing an oscillating `motion-perspective` inside
+ * running text: the characters change `font-size` on every frame, so the
+ * element changes size and the text around it moves. Changing the child text
+ * after the element connects has no effect; set `text` instead.
+ *
  * @element motion-perspective
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @example
  * ```html

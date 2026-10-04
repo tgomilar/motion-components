@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `motion-dialog`: with `light-dismiss`, pressing Enter or Space on a button inside the panel closed the dialog. Only clicks outside the panel close it now.
+- `motion-progress`: under reduced motion the bar jumped to full width and ignored scrolling. It now follows scrolling, without the spring. The bar is now hidden from screen readers as decoration; before, it was a progress bar with no value.
+- `motion-flip-card`: changing `trigger` after the first render had no effect. The `aria-live` region that never announced anything is removed.
+- `motion-gallery`: under reduced motion, the first opened image stayed at thumbnail size. The lightbox buttons now show a keyboard focus ring.
+- `motion-slider`: the arrows show a keyboard focus ring, and at the first and last slide they are `aria-disabled` and ignore activation. `motion-change` fires only when the slide changes.
+- `motion-image-compare`: the slider knob was hidden from screen readers and had no name. It is now a named slider, and Home and End move the split to 0 and 100.
+- `motion-ticker`: under reduced motion it no longer offers a "Press Space to pause" control that did nothing. Space and Enter on links inside the ticker work again. Screen readers and the Tab key only reach the original items, not the copies.
+- `motion-swap`: `once="false"` swaps again on every viewport entry. Screen readers read the text once as words, instead of every letter twice.
+- `motion-words`, `motion-countdown`: under reduced motion they keep running without animation, and `pause()`, `play()` and `cancel()` control them. `PlaybackController` delegates can opt in with `runsUnderReducedMotion`.
+- `motion-typewriter`: screen readers always get the full text, not the partly typed text. The caret blinks with Motion instead of a CSS animation, stays still under reduced motion, and the text survives removing and re-adding the element.
+- `motion-countdown`: `motion-finish` fires when the time runs out. In `roll` mode, screen readers read each value instead of every digit column. Under reduced motion, `finish()` stops the timer.
+- `motion-spotlight`: on keyboard focus the glow shows at the center when the pointer has not moved over it.
+- `motion-tilt`: focus outlines of slotted content are no longer clipped. Content with rounded corners that should clip its children needs its own `overflow: hidden`.
+- `motion-split`, `motion-headline`: the full text is in a visually hidden span instead of an `aria-label` on an element with no role, which some screen readers ignore.
+- `motion-scene`: under reduced motion, children now show their `data-to` end state. Before, they kept their own CSS, so a child hidden with `opacity: 0` stayed hidden.
+- `motion-code-inline`: the copy button becomes visible when it has keyboard focus, with a focus outline.
+- `motion-icon`: `cancel()` stops a `trigger="loop"` icon. Before, the next run still started after the pause.
+- `motion-code`: code given as child `<div>` lines is dedented, like the other sources.
+- Custom elements manifest: every animated component declares `motion-start`, `motion-finish` and `motion-cancel`, and `motion-words` has its description again.
+- `motion-chart`, `motion-pie`: a table cell's value is the first number in the cell, so units and notes are ignored (`€12k` → 12, `3 – 5%` → 3) instead of joining every digit. Commas only group thousands. A cell's `data-value` overrides its text, for formats such as `1.234,5`.
+- `motion-swap`, `motion-gravity`, `motion-curve`, and `motion-split` and `motion-headline` with `by="chars"`: text wraps between words, or after a hyphen, and never between two letters. Spaces are no longer rendered as letter spans, so they are not counted in the stagger.
+- `motion-state-icon`: `toggle` without `label` logs a warning; the icon name is still used as a fallback.
+- `motion-icon`: an inline `<svg>` inside another component (for example in a link wrapped by `motion-hover`) draws its outline again in Chromium. The stroke is now read from the SVG attributes, because Chromium reports no stroke while the outer component has not rendered its slot.
+- `motion-icon`: the sanitizer now removes `style` attributes and decodes CSS escapes before checking for outside references, so `u\72l(...)` and `image-set(...)` can no longer load files from another server.
+
+### Added
+
+- Usage guidance in every component's documentation comment: when to use it, when not to, accessibility, reduced motion and common mistakes. It appears in editor hovers through the custom elements manifest, and in the Markdown docs and `llms-full.txt` on the site.
+- `motion-icon`: `animation` takes `draw` plus a motion, such as `draw wiggle` or `draw pulse`, to draw the outline and move the icon at the same time. On filled icons only the motion runs.
+- `motion-code`: reads its code from a `<pre>` child, so the code is in the page HTML for search engines and readers without JavaScript.
+
 ## 1.1.0 — 2026-10-03
 
 ### Added

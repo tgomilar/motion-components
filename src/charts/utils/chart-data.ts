@@ -20,9 +20,13 @@ const list = (text: string) =>
     .map((item) => item.trim())
     .filter((item) => item !== '')
 
+const NUMBER = /[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?:e[-+]?\d+)?|[-+]?\.\d+/i
+
+/** Reads the first number in the text, so units and notes around it are ignored. Commas only group thousands. */
 const toNumber = (text: string) => {
-  const n = Number(text.replace(/[^\d.eE+-]/g, ''))
-  return text.trim() !== '' && Number.isFinite(n) ? n : 0
+  const match = text.replace(/\u2212/g, '-').match(NUMBER)
+  const n = match ? Number(match[0].replace(/,/g, '')) : NaN
+  return Number.isFinite(n) ? n : 0
 }
 
 /** Reads `values="1, 2, 3; 4, 5, 6"` (series separated by `;`) with optional labels and series names. */
@@ -43,7 +47,7 @@ export function fromValues(values: string, labels = '', names = ''): ChartData {
   }
 }
 
-/** Reads a table: the first column holds the labels, every other column is one series. */
+/** Reads a table: the first column holds the labels, every other column is one series. A cell's `data-value` overrides its text. */
 export function fromTable(table: HTMLTableElement): ChartData {
   const rows = [...table.rows].map((row) => [...row.cells])
   if (!rows.length) return { labels: [], series: [] }
@@ -53,13 +57,14 @@ export function fromTable(table: HTMLTableElement): ChartData {
     first.every((cell) => cell.localName === 'th') ||
     first.slice(1).every((cell) => !/\d/.test(cell.textContent ?? ''))
   const text = (cell?: HTMLTableCellElement) => cell?.textContent?.trim() ?? ''
+  const value = (cell?: HTMLTableCellElement) => toNumber(cell?.dataset.value ?? text(cell))
   const body = hasHeader ? rows.slice(1) : rows
   const width = Math.max(0, ...body.map((row) => row.length))
   return {
     labels: body.map((row) => text(row[0])),
     series: Array.from({ length: Math.max(0, width - 1) }, (_, s) => ({
       name: hasHeader ? text(first[s + 1]) : '',
-      values: body.map((row) => toNumber(text(row[s + 1]))),
+      values: body.map((row) => value(row[s + 1])),
     })),
   }
 }

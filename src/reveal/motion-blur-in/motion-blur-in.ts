@@ -13,7 +13,31 @@ export type { MotionBlurInProps } from './motion-blur-in.types.js'
  * focus once the element enters the viewport. The dominant editorial
  * entrance pattern of 2024–2025.
  *
+ * **Use it for:** headlines, hero text and images that should come into
+ * focus with a short animation the first time they scroll into view.
+ *
+ * **Avoid it for:** effects that should follow the scroll position; use
+ * `motion-blur`. For a list of items, use `motion-stagger`. For a fade
+ * without blur, use `motion-reveal`.
+ *
+ * **Accessibility:** the content stays in the page while it is hidden and
+ * blurred, so screen readers read it before it animates. Only opacity, filter
+ * and transform change, so the layout does not shift.
+ *
+ * **Reduced motion:** the content is never hidden or blurred. It shows at its
+ * final position at once, with no animation. The `motion-start` and
+ * `motion-finish` events still fire when it enters the view.
+ *
+ * **Common mistakes:** wrapping a whole page section in one `motion-blur-in`,
+ * so nothing shows until 10% of it is in view; wrap each block instead, or
+ * lower `threshold`. Changing `threshold` after the element has rendered has
+ * no effect, because it is read only once.
+ *
  * @element motion-blur-in
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The content to blur-reveal.
  *

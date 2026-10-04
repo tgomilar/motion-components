@@ -23,6 +23,29 @@ export type {
  * and a filled heart, loading and done, and eye and eye-off. Drawn on a 24 px
  * grid with 2 px round strokes, so it sits next to Lucide, Tabler and Heroicons.
  *
+ * **Use it for:** controls and indicators that switch between two states,
+ * such as a menu button, a play and pause control, a copy button that
+ * confirms, or a like button.
+ *
+ * **Avoid it for:** icons outside the eight built-in pairs, or icons that
+ * only animate on hover or on scroll; use `motion-icon`, which takes any SVG.
+ *
+ * **Accessibility:** with `toggle`, the icon gets `role="button"`,
+ * `aria-pressed` that follows `active`, and `tabindex="0"` unless you set
+ * one. Space and Enter switch it, and keyboard focus shows an outline.
+ * `label` becomes the `aria-label`; without it, a toggle logs a warning and
+ * falls back to the icon name, such as "menu". Without `toggle`, a `label`
+ * gives the icon `role="img"`, and no `label` hides it from screen readers.
+ *
+ * **Reduced motion:** the icon switches to the new state at once, with no
+ * morph, and the loading spinner does not spin.
+ *
+ * **Common mistakes:** setting `toggle` on an icon inside your own
+ * `<button>`, which puts one button inside another; leave out `toggle` and
+ * `label`, name the button, and set `active` from your code. Using a label
+ * that fits only one state, such as "Open menu": the label does not change,
+ * and `aria-pressed` already reports the state, so use a name such as "Menu".
+ *
  * @element motion-state-icon
  *
  * @fires motion-change - When `toggle` is set and the user switches the state. `detail: { active }`.
@@ -45,7 +68,7 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
   @property({ type: Boolean, converter: flag, reflect: true }) active = false
   /** Makes the icon a button that switches `active` on click, Space or Enter. */
   @property({ type: Boolean, converter: flag, reflect: true }) toggle = false
-  /** Accessible name. Without it (and without `toggle`) the icon is decorative. */
+  /** Accessible name. Without it (and without `toggle`) the icon is decorative. Required with `toggle`; a missing label logs a warning. */
   @property({ type: String }) label = ''
   /** Spring duration of the morph, in seconds. */
   @property({ type: Number }) duration = 0.45
@@ -125,6 +148,8 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
     this.spin = null
   }
 
+  private warned = false
+
   updated(changed: Map<string, unknown>) {
     if (changed.has('toggle') || changed.has('label') || changed.has('active')) this.applyRole()
     if (changed.has('name') || changed.has('active')) {
@@ -135,6 +160,13 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
   }
 
   private applyRole() {
+    if (this.toggle && !this.label && !this.warned) {
+      this.warned = true
+      console.warn(
+        `<motion-state-icon toggle> needs a label so screen readers announce what it does. Falling back to "${this.name}".`,
+        this,
+      )
+    }
     const name = this.label || (this.toggle ? this.name : '')
     if (this.toggle) {
       this.setAttribute('role', 'button')

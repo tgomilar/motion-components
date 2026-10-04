@@ -13,7 +13,30 @@ export type { MotionRevealProps } from './motion-reveal.types.js'
  * Viewport-triggered fade + translate reveal. Starts hidden, animates in
  * with a spring once the element intersects the viewport.
  *
+ * **Use it for:** headings, cards and images that should fade and rise into
+ * place the first time they scroll into view.
+ *
+ * **Avoid it for:** content in the first screen that people need at once.
+ * For a list of items, use `motion-stagger`, which reveals children one after
+ * another.
+ *
+ * **Accessibility:** the content stays in the page while it is hidden, so
+ * screen readers read it before it animates. Only opacity and transform
+ * change, so the layout does not shift.
+ *
+ * **Reduced motion:** the content shows at its final position at once, with
+ * no animation.
+ *
+ * **Common mistakes:** wrapping a whole page section in one reveal, so nothing
+ * shows until 10% of it is in view; wrap each block instead, or lower
+ * `threshold`. Putting a `motion-reveal` directly inside `motion-stagger`
+ * animates the same element twice.
+ *
  * @element motion-reveal
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The content to reveal on scroll-in.
  *

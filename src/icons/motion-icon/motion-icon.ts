@@ -6,11 +6,23 @@ import { Controllable, PlaybackController, controlsRun } from '../../utils/playb
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 import { useIntersect } from '../../text/utils/use-intersect.js'
-import type { IconAnimation, IconTrigger, MotionIconProps } from './motion-icon.types.js'
+import type {
+  IconAnimation,
+  IconMotion,
+  IconTrigger,
+  MotionIconProps,
+} from './motion-icon.types.js'
 
-export type { IconAnimation, IconTrigger, MotionIconProps } from './motion-icon.types.js'
+export type {
+  IconAnimation,
+  IconMotion,
+  IconTrigger,
+  MotionIconProps,
+} from './motion-icon.types.js'
 
 const SHAPES = 'path, line, polyline, polygon, circle, rect, ellipse'
+
+const MOTIONS = new Set<string>(['pop', 'bounce', 'rotate', 'wiggle', 'pulse'])
 
 const ELEMENTS = new Set(
   'svg g path line polyline polygon circle rect ellipse defs use symbol clippath mask lineargradient radialgradient stop title desc'.split(
@@ -18,10 +30,19 @@ const ELEMENTS = new Set(
   ),
 )
 
+function cssUnescape(value: string) {
+  return value.replace(/\\([0-9a-f]{1,6})\s?|\\([\s\S])/gi, (_, hex: string, ch: string) => {
+    if (!hex) return ch
+    const code = parseInt(hex, 16)
+    return code && code <= 0x10ffff ? String.fromCodePoint(code) : '\ufffd'
+  })
+}
+
 function unsafe(name: string, value: string) {
-  if (/^on/i.test(name) || /javascript:/i.test(value)) return true
+  if (/^on/i.test(name) || name.toLowerCase() === 'style') return true
   if (/(^|:)href$/i.test(name)) return !value.trim().startsWith('#')
-  return /url\(\s*['"]?\s*[^'"\s#]/i.test(value)
+  const css = cssUnescape(value)
+  return /javascript:|image(-set)?\(/i.test(css) || /url\(\s*['"]?\s*[^'"\s#]/i.test(css)
 }
 
 /** Parses SVG markup, keeping only drawing elements and local references. */
@@ -46,6 +67,19 @@ function parseSvg(markup: string): SVGSVGElement | null {
   return document.importNode(svg, true) as unknown as SVGSVGElement
 }
 
+/**
+ * The stroke a shape paints, read from its own and its ancestors' attributes and inline styles.
+ * Unlike the computed style, this works while the icon is slotted into a component that has
+ * not rendered yet, where Chromium reports an empty stroke.
+ */
+function declaredStroke(el: Element, svg: SVGSVGElement): string | null {
+  for (let node: Element | null = el; node; node = node === svg ? null : node.parentElement) {
+    const value = (node as SVGElement).style.stroke || node.getAttribute('stroke')
+    if (value) return value
+  }
+  return null
+}
+
 const requests = new Map<string, Promise<string>>()
 
 function fetchIcon(url: string) {
@@ -63,11 +97,35 @@ function fetchIcon(url: string) {
 
 /**
  * Animates any SVG icon: draws its strokes in, or pops, bounces, rotates,
- * wiggles or pulses it on a spring. Works with stroke sets such as Lucide,
- * Tabler, Heroicons and Iconoir; filled icons (Phosphor, Bootstrap) fall back
- * from `draw` to `pop`. Pass the icon as a URL in `src`, as an SVG string in
+ * wiggles or pulses it on a spring, or both at once with `draw wiggle`. Works
+ * with stroke sets such as Lucide, Tabler, Heroicons and Iconoir; filled icons
+ * (Phosphor, Bootstrap) fall back from `draw` to `pop`. Pass the icon as a URL in `src`, as an SVG string in
  * `icon`, or as a child `<svg>`. The icon inherits `currentColor`. Inside a
  * button or link, `hover` and `click` follow that button or link.
+ *
+ * **Use it for:** icons that draw in or move when people hover or click a
+ * button or link, when they scroll into view, or once when the page loads.
+ * It works with any SVG icon.
+ *
+ * **Avoid it for:** icons that switch between two states, such as menu and
+ * close or play and pause; use `motion-state-icon`. Avoid `trigger="loop"`
+ * next to text people need to read, because the loop never stops on its own.
+ *
+ * **Accessibility:** without `label` the icon is decorative and gets
+ * `aria-hidden="true"`. With `label` it gets `role="img"` and that name as
+ * `aria-label`. The icon is never focusable, and `trigger="hover"` reacts to
+ * the pointer only, not to keyboard focus. Inside a button or link with
+ * visible text, leave `label` empty. An icon-only button needs a name: set
+ * `aria-label` on the button, or `label` on the icon.
+ *
+ * **Reduced motion:** the icon shows its final state at once, with no
+ * animation. With `draw` and `trigger="view"`, the icon stays hidden until it
+ * scrolls into view and then appears at once.
+ *
+ * **Common mistakes:** using `animation="draw"` with a filled icon, such as
+ * Phosphor or Bootstrap: there are no strokes to draw, so it pops instead.
+ * Setting `label` on an icon inside a button that already has text, so
+ * screen readers read the name twice.
  *
  * @element motion-icon
  *
@@ -76,6 +134,7 @@ function fetchIcon(url: string) {
  * @fires motion-start - When an animation run starts.
  * @fires motion-finish - When an animation run finishes.
  * @fires error - When `src` cannot be loaded.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @cssprop --icon-size - Width and height of the icon. Default `1.5em`.
  * @cssprop --icon-color - Icon color. Default `currentColor`.
@@ -94,7 +153,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   @property({ type: String }) src = ''
   /** SVG markup to render, for example `import { Heart } from 'lucide-static'`. Takes precedence over `src`. */
   @property({ type: String }) icon = ''
-  /** `'draw'`, `'pop'`, `'bounce'`, `'rotate'`, `'wiggle'` or `'pulse'`. `draw` needs a stroke icon and falls back to `pop`. */
+  /** `'draw'`, `'pop'`, `'bounce'`, `'rotate'`, `'wiggle'` or `'pulse'`, or `draw` plus one of the others, such as `'draw wiggle'`, to run both. `draw` needs a stroke icon and falls back to `pop`. */
   @property({ type: String, reflect: true }) animation: IconAnimation = 'draw'
   /** What starts the animation: `'hover'`, `'click'`, `'view'` (scrolled into view), `'mount'` or `'loop'`. */
   @property({ type: String, reflect: true }) trigger: IconTrigger = 'hover'
@@ -144,13 +203,16 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   private disconnectIntersect: (() => void) | null = null
   private loopTimer: ReturnType<typeof setTimeout> | null = null
 
-  private get mode(): IconAnimation {
-    return this.animation === 'draw' && !this.strokes.length ? 'pop' : this.animation
+  private get parts(): { draw: boolean; motion: IconMotion | null } {
+    const tokens = this.animation.trim().split(/\s+/)
+    const motion = (tokens.find((t) => MOTIONS.has(t)) as IconMotion | undefined) ?? null
+    const draw = tokens.includes('draw') && this.strokes.length > 0
+    return { draw, motion: motion ?? (draw ? null : 'pop') }
   }
 
   private get startsHidden() {
     return (
-      this.mode === 'draw' &&
+      this.parts.draw &&
       (this.trigger === 'view' || this.trigger === 'mount' || this.trigger === 'loop')
     )
   }
@@ -262,14 +324,43 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
 
   private findStrokes(svg: SVGSVGElement) {
     return [...svg.querySelectorAll<SVGElement>(SHAPES)].filter((el) => {
-      if (el.getAttribute('stroke') === 'none') return false
-      const stroke = getComputedStyle(el).stroke
+      const stroke = declaredStroke(el, svg) ?? getComputedStyle(el).stroke
       return Boolean(stroke) && stroke !== 'none'
     })
   }
 
   private run(): AnimationPlaybackControlsWithThen {
     const svg = this.svg!
+    const { draw, motion } = this.parts
+    const drawing = draw ? this.draw(svg) : []
+    if (!motion) return new GroupAnimationWithThen(drawing)
+    const moving = this.move(svg, motion)
+    return drawing.length ? new GroupAnimationWithThen([...drawing, moving]) : moving
+  }
+
+  private draw(svg: SVGSVGElement) {
+    return [
+      ...this.strokes.map((el, i) =>
+        animate(
+          el,
+          { strokeDashoffset: [1, 0] },
+          {
+            type: 'spring',
+            bounce: 0,
+            duration: this.duration,
+            delay: this.delay + stagger(0.08)(i, this.strokes.length),
+          },
+        ),
+      ),
+      animate(
+        svg,
+        { fillOpacity: [0, 1] },
+        { duration: this.duration * 0.6, delay: this.delay + this.duration * 0.5 },
+      ),
+    ]
+  }
+
+  private move(svg: SVGSVGElement, motion: IconMotion): AnimationPlaybackControlsWithThen {
     const spring = {
       type: 'spring' as const,
       duration: this.duration,
@@ -277,27 +368,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
       delay: this.delay,
     }
     const keys = { duration: this.duration, ease: 'easeInOut' as const, delay: this.delay }
-    switch (this.mode) {
-      case 'draw':
-        return new GroupAnimationWithThen([
-          ...this.strokes.map((el, i) =>
-            animate(
-              el,
-              { strokeDashoffset: [1, 0] },
-              {
-                type: 'spring',
-                bounce: 0,
-                duration: this.duration,
-                delay: this.delay + stagger(0.08)(i, this.strokes.length),
-              },
-            ),
-          ),
-          animate(
-            svg,
-            { fillOpacity: [0, 1] },
-            { duration: this.duration * 0.6, delay: this.delay + this.duration * 0.5 },
-          ),
-        ])
+    switch (motion) {
       case 'pop':
         return animate(svg, { scale: [0.6, 1] }, spring)
       case 'bounce':
@@ -341,6 +412,12 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   private stopLoop() {
     if (this.loopTimer) clearTimeout(this.loopTimer)
     this.loopTimer = null
+  }
+
+  /** Reverts to the initial state and returns to idle. Also stops a `loop` until it is played again. Fires `motion-cancel`. */
+  override cancel() {
+    this.stopLoop()
+    super.cancel()
   }
 
   /** Restarts the animation from its starting state. */

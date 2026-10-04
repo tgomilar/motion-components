@@ -13,6 +13,25 @@ export type { MotionMagneticProps } from './motion-magnetic.types.js'
  * `strength`, springs back when the mouse leaves. Best on small interactive
  * targets like buttons and icons.
  *
+ * **Use it for:** small targets such as buttons, icon buttons and short links
+ * that should drift a little toward the mouse pointer.
+ *
+ * **Avoid it for:** large areas such as cards or images. The pull is a
+ * fraction of the distance from the center, so large elements move far. Use
+ * `motion-tilt` or `motion-hover` there.
+ *
+ * **Accessibility:** it adds no role, `tabindex` or ARIA attributes, so the
+ * slotted content keeps its own role and keyboard behavior. The pull reacts
+ * to mouse movement only, so keyboard focus does not move it. Only transform
+ * changes, so the layout does not shift. Put a real link or button inside.
+ *
+ * **Reduced motion:** mouse movement does nothing, and the content stays in
+ * its normal position.
+ *
+ * **Common mistakes:** expecting the pull to start before the pointer reaches
+ * the element. It reacts only while the pointer is over `motion-magnetic`
+ * itself; to make the active area larger, add `padding` to `motion-magnetic`.
+ *
  * @element motion-magnetic
  *
  * @slot - The element that follows the cursor.

@@ -10,6 +10,28 @@ export type { MotionFlipCardProps, FlipTrigger, FlipAxis } from './motion-flip-c
  * Two-sided card that flips between a `front` and `back` slot with spring
  * physics. Trigger on hover or click; choose the rotation axis.
  *
+ * **Use it for:** a short teaser on the front with a few lines of detail on
+ * the back, such as a team member card or a flash card.
+ *
+ * **Avoid it for:** information that people must not miss, because the back
+ * stays hidden until the card flips. For a simple lift on hover, use
+ * `motion-hover`.
+ *
+ * **Accessibility:** with `trigger="click"` the card gets `role="button"` and
+ * `tabindex="0"`, and Enter or Space flips it. With the default
+ * `trigger="hover"` it reacts only to the pointer, so keyboard users cannot
+ * flip it. Both faces stay in the page, so screen readers read the front and
+ * the back at any time. The card does not report whether it is flipped.
+ *
+ * **Reduced motion:** the card shows the other face at once, with no
+ * rotation.
+ *
+ * **Common mistakes:** leaving the card without a size; both faces are
+ * positioned on top of each other, so the card has no height of its own. Set
+ * a CSS width and height on `motion-flip-card`. Putting links or buttons
+ * inside a `trigger="click"` card; they sit inside a button, and a click on
+ * them also flips the card.
+ *
  * @element motion-flip-card
  *
  * @slot front - The face shown at rest.
@@ -76,18 +98,17 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
 
   private scene: HTMLElement | null = null
 
+  connectedCallback() {
+    super.connectedCallback()
+    this.addEventListener('pointerenter', this.onEnter)
+    this.addEventListener('pointerleave', this.onLeave)
+    this.addEventListener('click', this.onClick)
+    this.addEventListener('keydown', this.onKey)
+  }
+
   firstUpdated() {
     this.scene = this.renderRoot.querySelector('.scene')
     this.style.perspective = `${this.perspective}px`
-    if (this.trigger === 'hover') {
-      this.addEventListener('pointerenter', this.onEnter)
-      this.addEventListener('pointerleave', this.onLeave)
-    } else {
-      this.addEventListener('click', this.onClick)
-      this.setAttribute('tabindex', '0')
-      this.setAttribute('role', 'button')
-      this.addEventListener('keydown', this.onKey)
-    }
   }
 
   disconnectedCallback() {
@@ -100,13 +121,30 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
 
   updated(changed: Map<string, unknown>) {
     if (changed.has('perspective')) this.style.perspective = `${this.perspective}px`
+    if (changed.has('trigger')) this.syncTrigger(changed.get('trigger'))
   }
 
-  private onEnter = () => this.applyFlip(true)
-  private onLeave = () => this.applyFlip(false)
-  private onClick = () => this.applyFlip(!this.flipped)
+  private syncTrigger(previous: unknown) {
+    if (this.trigger === 'click') {
+      this.setAttribute('tabindex', '0')
+      this.setAttribute('role', 'button')
+    } else if (previous === 'click') {
+      this.removeAttribute('tabindex')
+      this.removeAttribute('role')
+    }
+  }
+
+  private onEnter = () => {
+    if (this.trigger === 'hover') this.applyFlip(true)
+  }
+  private onLeave = () => {
+    if (this.trigger === 'hover') this.applyFlip(false)
+  }
+  private onClick = () => {
+    if (this.trigger === 'click') this.applyFlip(!this.flipped)
+  }
   private onKey = (e: KeyboardEvent) => {
-    if (e.key !== ' ' && e.key !== 'Enter') return
+    if (this.trigger !== 'click' || (e.key !== ' ' && e.key !== 'Enter')) return
     e.preventDefault()
     this.applyFlip(!this.flipped)
   }
@@ -138,7 +176,7 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
 
   render() {
     return html`
-      <div class="scene" aria-live="polite">
+      <div class="scene">
         <div class="face front"><slot name="front"></slot></div>
         <div class="face back"><slot name="back"></slot></div>
       </div>

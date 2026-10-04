@@ -35,10 +35,9 @@ vi.mock('motion', () => ({ animate: animateMock, stagger: staggerMock }))
 import type { MotionHeadline } from './motion-headline.js'
 import './motion-headline.js'
 
-const units = (el: MotionHeadline, variant = 'slide') =>
-  variant === 'flip'
-    ? [...el.querySelectorAll<HTMLElement>('span')]
-    : [...el.querySelectorAll<HTMLElement>('span > span')]
+const units = (el: MotionHeadline) => [...el.querySelectorAll<HTMLElement>('[data-unit]')]
+const spoken = (el: MotionHeadline) =>
+  [...el.children].filter((c) => !c.hasAttribute('aria-hidden')) as HTMLElement[]
 
 describe('motion-headline', () => {
   let io: IntersectionHandle
@@ -69,15 +68,13 @@ describe('motion-headline', () => {
     expect(el.once).toBe(true)
   })
 
-  it('slide variant wraps each word in an aria-hidden mask and labels the host', async () => {
+  it('slide variant wraps each word in an aria-hidden mask and keeps the full text for screen readers', async () => {
     const el = await mount()
-    expect(el.getAttribute('aria-label')).toBe('Motion first web')
-    const masks = [...el.children] as HTMLElement[]
+    expect(el.hasAttribute('aria-label')).toBe(false)
+    expect(spoken(el).map((s) => s.textContent)).toEqual(['Motion first web'])
+    const masks = [...el.querySelectorAll<HTMLElement>(':scope > [aria-hidden]')]
     expect(masks).toHaveLength(3)
-    for (const m of masks) {
-      expect(m.getAttribute('aria-hidden')).toBe('true')
-      expect(m.style.overflow).toBe('hidden')
-    }
+    for (const m of masks) expect(m.style.overflow).toBe('hidden')
     expect(units(el).map((u) => u.textContent)).toEqual(['Motion', 'first', 'web'])
     expect(units(el).every((u) => u.style.transform === 'translateY(110%)')).toBe(true)
     expect(el.hasAttribute('data-ready')).toBe(true)
@@ -86,14 +83,15 @@ describe('motion-headline', () => {
   it('by="chars" masks every character', async () => {
     const el = await mount(html`<motion-headline by="chars">Hi yo</motion-headline>`)
     expect(units(el).map((u) => u.textContent)).toEqual(['H', 'i', 'y', 'o'])
-    expect(el.getAttribute('aria-label')).toBe('Hi yo')
+    expect(spoken(el).map((s) => s.textContent)).toEqual(['Hi yo'])
   })
 
-  it('flip variant renders aria-hidden units rotated away and labels the host', async () => {
+  it('flip variant renders aria-hidden units rotated away and keeps the full text for screen readers', async () => {
     const el = await mount(html`<motion-headline variant="flip">Flip it now</motion-headline>`)
-    expect(el.getAttribute('aria-label')).toBe('Flip it now')
+    expect(el.hasAttribute('aria-label')).toBe(false)
+    expect(spoken(el).map((s) => s.textContent)).toEqual(['Flip it now'])
     expect(el.style.perspective).toBe('600px')
-    const u = units(el, 'flip')
+    const u = units(el)
     expect(u.map((s) => s.textContent)).toEqual(['Flip', 'it', 'now'])
     for (const s of u) {
       expect(s.getAttribute('aria-hidden')).toBe('true')
@@ -106,12 +104,31 @@ describe('motion-headline', () => {
     const chars = await mount(
       html`<motion-headline variant="flip" by="chars">ab cd</motion-headline>`,
     )
-    expect(units(chars, 'flip').map((s) => s.textContent)).toEqual(['a', 'b', 'c', 'd'])
+    expect(units(chars).map((s) => s.textContent)).toEqual(['a', 'b', 'c', 'd'])
     const lines = await mount(
       html`<motion-headline variant="flip" by="lines">ab cd</motion-headline>`,
     )
-    expect(units(lines, 'flip').map((s) => s.textContent)).toEqual(['ab', 'cd'])
+    expect(units(lines).map((s) => s.textContent)).toEqual(['ab', 'cd'])
   })
+
+  for (const variant of ['slide', 'flip']) {
+    for (const by of ['chars', 'words', 'lines']) {
+      it(`variant="${variant}" by="${by}" keeps the full text in one visually hidden span outside the units`, async () => {
+        const el = await mount(
+          html`<motion-headline variant=${variant} by=${by}>Motion first web</motion-headline>`,
+        )
+        const [text, ...rest] = spoken(el)
+        expect(rest).toHaveLength(0)
+        expect(text.textContent).toBe('Motion first web')
+        expect(text.style.position).toBe('absolute')
+        expect(text.style.clipPath).toBe('inset(50%)')
+        expect(units(el).some((u) => u === text || u.contains(text) || text.contains(u))).toBe(
+          false,
+        )
+        expect(el.hasAttribute('aria-label')).toBe(false)
+      })
+    }
+  }
 
   it('observes the host and waits for the viewport', async () => {
     const el = await mount()
@@ -149,7 +166,7 @@ describe('motion-headline', () => {
     const el = await mount(html`<motion-headline variant="flip">One two</motion-headline>`)
     io.enter()
     const [targets, keyframes, options] = animateMock.mock.calls[0]
-    expect(targets).toEqual(units(el, 'flip'))
+    expect(targets).toEqual(units(el))
     expect(keyframes).toEqual({ rotateX: [90, 0], opacity: [0, 1] })
     expect(staggerMock).toHaveBeenCalledWith(0.06, { startDelay: 0 })
     expect(options).toMatchObject({ duration: 1, type: 'spring', bounce: 0.1 })
@@ -210,7 +227,7 @@ describe('motion-headline', () => {
     const el = await mount(html`<motion-headline variant="flip">One two</motion-headline>`)
     io.enter()
     el.cancel()
-    for (const u of units(el, 'flip')) {
+    for (const u of units(el)) {
       expect(u.style.transform).toBe('perspective(400px) rotateX(90deg)')
       expect(u.style.opacity).toBe('0')
     }
@@ -231,7 +248,7 @@ describe('motion-headline', () => {
     io.enter()
     expect(animateMock).not.toHaveBeenCalled()
     expect(el.playState).toBe('finished')
-    for (const u of units(el, 'flip')) {
+    for (const u of units(el)) {
       expect(u.style.transform).toBe('')
       expect(u.style.opacity).toBe('1')
     }

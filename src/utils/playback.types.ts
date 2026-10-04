@@ -42,4 +42,10 @@ export interface PlaybackDelegate {
   applyFinalState(): void
   /** Restore the pre-animation state. */
   applyInitialState(): void
+  /**
+   * Keep running under `prefers-reduced-motion: reduce` instead of jumping to
+   * the final state. For ongoing components, such as a word cycle or a
+   * countdown, whose run removes the motion itself.
+   */
+  runsUnderReducedMotion?: boolean
 }

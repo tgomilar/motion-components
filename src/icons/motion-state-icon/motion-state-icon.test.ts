@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion, waitForEvent } from '../../test/helpers.js'
 import type { MotionStateIcon, StateIconName } from './motion-state-icon.js'
@@ -91,6 +91,21 @@ describe('motion-state-icon', () => {
 
     el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
     expect(el.active).toBe(false)
+  })
+
+  it('warns once when toggle has no label', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const el = await fixture<MotionStateIcon>(
+      html`<motion-state-icon name="menu" toggle></motion-state-icon>`,
+    )
+    el.active = true
+    await elementUpdated(el)
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(el.getAttribute('aria-label')).toBe('menu')
+    warn.mockClear()
+    await fixture(html`<motion-state-icon name="menu" toggle label="Menu"></motion-state-icon>`)
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 
   it('spins while loading and stops when done', async () => {

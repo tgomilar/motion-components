@@ -15,7 +15,30 @@ export type { MotionGlitchProps, GlitchTrigger } from './motion-glitch.types.js'
  * RGB-split glitch effect on text. Renders red and cyan duplicate layers
  * that jitter on hover, an automatic loop, or a single auto-play.
  *
+ * **Use it for:** short labels with a technical or error look, such as
+ * `ERROR_404` or a game title.
+ *
+ * **Avoid it for:** long text, body copy and text with markup. For text that
+ * decodes through random letters, use `motion-scramble`.
+ *
+ * **Accessibility:** the original text stays as real text and is read as
+ * normal. The red and cyan copies are `aria-hidden`. `trigger="hover"` reacts
+ * to the mouse only, not to keyboard focus. With `trigger="loop"`, the bursts
+ * never stop on their own; if people must be able to stop them, add a button
+ * that calls `pause()`.
+ *
+ * **Reduced motion:** no glitch bursts run, with any `trigger` and with
+ * `glitch()`. The text stays still.
+ *
+ * **Common mistakes:** putting a link or other markup inside. Only the plain
+ * text is kept, so put the `motion-glitch` inside the link instead. Changing
+ * `trigger` after the element first renders has no effect.
+ *
  * @element motion-glitch
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text to glitch. Plain text only — markup inside is replaced.
  *

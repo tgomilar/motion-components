@@ -15,7 +15,33 @@ export type { MotionArcProps, ArcAlign, ArcDirection } from './motion-arc.types.
  * Text laid out along a partial arc. Like `motion-circle` but only fills a
  * configurable slice. Optional rotation; supports an inner slot for content.
  *
+ * **Use it for:** short labels, badges and headline accents that curve along
+ * part of a circle, with an optional slow rotation set by `duration`.
+ *
+ * **Avoid it for:** long text or body copy. For text around a full circle,
+ * use `motion-circle`. For a line of text that moves in a wave, use
+ * `motion-curve`.
+ *
+ * **Accessibility:** screen readers read the whole text once from a visually
+ * hidden copy. The positioned letters are `aria-hidden`. Content in the
+ * centre slot is read as normal, so give images an `alt` text (empty if they
+ * are decorative). A rotation never stops on its own, and `pause-on-hover`
+ * works with a mouse only. If people must be able to stop it, add a button
+ * that calls `pause()`.
+ *
+ * **Reduced motion:** the arc does not rotate, even when `duration` is set.
+ * The text stays still in its arc shape.
+ *
+ * **Common mistakes:** too much text for the `radius` and `arc`. The letters
+ * are spread evenly over `arc` degrees, so long text crowds together; raise
+ * `radius` or `arc`. The element is always a square of twice the `radius`,
+ * even for a small `arc`, so plan for the empty space it leaves.
+ *
  * @element motion-arc
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - Optional content rendered at the centre of the arc.
  *

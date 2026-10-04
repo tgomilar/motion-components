@@ -1,5 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { property, state } from 'lit/decorators.js'
+import { animate } from 'motion'
+import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionTypewriterProps } from './motion-typewriter.types.js'
 import { customElement } from '../../utils/define.js'
@@ -11,7 +13,31 @@ export type { MotionTypewriterProps } from './motion-typewriter.types.js'
  * Typewriter text effect. Reveals slotted text character-by-character,
  * with optional looping (type → hold → erase → retype) and a blinking caret.
  *
+ * **Use it for:** a short line, such as a hero tagline or a prompt, that
+ * should type itself out when it scrolls into view, once or on repeat with
+ * `loop`.
+ *
+ * **Avoid it for:** long text, important information and text with links or
+ * other markup, which is removed. For words that take turns in one place,
+ * use `motion-words`.
+ *
+ * **Accessibility:** screen readers read the whole text at all times from a
+ * visually hidden copy, even before typing starts and while `loop` erases it.
+ * The typed characters and the caret are `aria-hidden`.
+ *
+ * **Reduced motion:** the full text shows at once and nothing is typed. The
+ * caret shows but does not blink; set `cursor="false"` to hide it.
+ *
+ * **Common mistakes:** waiting for `motion-finish` or `finished` with `loop`
+ * set: a looping run never finishes on its own. Forgetting that the element
+ * is empty until it types: the content after it moves as the line grows, so
+ * reserve the space in your layout.
+ *
  * @element motion-typewriter
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text to type. Plain text only — read once on connect.
  *
@@ -42,6 +68,15 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
       display: inline;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
     .cursor {
       display: inline-block;
       width: 2px;
@@ -49,21 +84,6 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
       background: currentColor;
       margin-left: 2px;
       vertical-align: text-bottom;
-      animation: blink 1s step-end infinite;
-    }
-
-    .cursor.done {
-      animation-delay: 0.5s;
-    }
-
-    @keyframes blink {
-      0%,
-      100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0;
-      }
     }
   `
 
@@ -75,6 +95,11 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
   private nextFireAt = 0
   private remaining = 0
   private resolveRun: (() => void) | null = null
+  private blink: AnimationPlaybackControls | null = null
+
+  private get reduced() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
@@ -114,10 +139,10 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
 
   connectedCallback() {
     // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
-    this.full = this.textContent?.trim() ?? ''
+    this.full = this.textContent?.trim() || this.full
     this.textContent = ''
     super.connectedCallback()
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (this.reduced) {
       this.displayed = this.full
       return
     }
@@ -137,6 +162,24 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
     super.disconnectedCallback()
     this.observer?.disconnect()
     this.stopTimer()
+    this.stopBlink()
+  }
+
+  protected updated() {
+    const caret = this.renderRoot.querySelector<HTMLElement>('.cursor')
+    if (!caret) this.stopBlink()
+    else if (!this.blink && !this.reduced) {
+      this.blink = animate(
+        caret,
+        { opacity: [1, 0] },
+        { duration: 0.5, repeat: Infinity, repeatType: 'reverse' },
+      )
+    }
+  }
+
+  private stopBlink() {
+    this.blink?.stop()
+    this.blink = null
   }
 
   private schedule(step: () => void, ms: number) {
@@ -189,14 +232,11 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
     void this.play()
   }
 
-  private get done() {
-    return !this.loop && this.displayed === this.full
-  }
-
   render() {
-    return html`${this.displayed}${this.cursor
-      ? html`<span class="cursor ${this.done ? 'done' : ''}"></span>`
-      : ''}`
+    return html`<span class="sr-only">${this.full}</span
+      ><span aria-hidden="true"
+        >${this.displayed}${this.cursor ? html`<span class="cursor"></span>` : ''}</span
+      >`
   }
 }
 

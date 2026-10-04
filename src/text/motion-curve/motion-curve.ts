@@ -5,6 +5,7 @@ import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
 import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionCurveProps } from './motion-curve.types.js'
+import { charsByWord } from '../utils/chars-by-word.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 
@@ -21,7 +22,32 @@ export type { MotionCurveProps } from './motion-curve.types.js'
  * marquee strings prefer the `text` attribute so the fallback does not
  * wrap across several lines.
  *
+ * **Use it for:** short words and headlines that ride a gentle wave, and,
+ * with `loop`, a banner that scrolls while it waves.
+ *
+ * **Avoid it for:** body text and long sentences that people need to read.
+ * For text on a fixed curve, use `motion-arc`. For a marquee that keyboard
+ * users can pause, use `motion-ticker`.
+ *
+ * **Accessibility:** screen readers read the whole text once from a visually
+ * hidden copy. The moving letters, and the repeated copies in `loop` mode,
+ * are `aria-hidden`. The wave never stops on its own, and `pause-on-hover`
+ * works with a mouse only. If people must be able to stop it, add a button
+ * that calls `pause()`.
+ *
+ * **Reduced motion:** the wave does not start. The letters stay on a straight
+ * line and, in `loop` mode, the text does not scroll.
+ *
+ * **Common mistakes:** changing the child text after the element is on the
+ * page. The child text is read once, when the element connects; set the
+ * `text` property instead. Using `no-pad` without room above and below, so
+ * the wave overlaps the content around it.
+ *
  * @element motion-curve
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @example
  * ```html
@@ -86,6 +112,10 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
       flex-shrink: 0;
     }
 
+    .word {
+      display: inline-block;
+      white-space: nowrap;
+    }
     .char {
       display: inline-block;
       will-change: transform;
@@ -179,12 +209,8 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
     this.style.paddingBottom = this.noPad ? '0' : `${this.amplitude}px`
     if (!this.loop) {
       const spans = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
-      let x = 0
-      this.xPositions = spans.map((span) => {
-        const pos = x
-        x += span.offsetWidth
-        return pos
-      })
+      const start = spans[0]?.offsetLeft ?? 0
+      this.xPositions = spans.map((span) => span.offsetLeft - start)
     }
     void this.play()
   }
@@ -264,7 +290,10 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
       `
     }
 
-    return html`<span class="sr-only">${this.text}</span><span aria-hidden="true">${chars()}</span>`
+    return html`<span class="sr-only">${this.text}</span
+      ><span aria-hidden="true"
+        >${charsByWord(this.text ?? '', (char) => html`<span class="char">${char}</span>`)}</span
+      >`
   }
 }
 

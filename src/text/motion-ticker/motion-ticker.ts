@@ -14,7 +14,39 @@ const MIN_RATE = 0.05
  * seamless infinite loop. Supports pause-on-hover, keyboard pause (Space/Enter),
  * direction control, and an optional sine-wave vertical oscillation effect.
  *
+ * **Use it for:** a looping strip of short items, such as logos, tags or
+ * news headlines, that moves sideways across the page on its own.
+ *
+ * **Avoid it for:** links, buttons and other controls: only the original
+ * items can be clicked or focused, not the copies, and the ticker keeps
+ * moving while one of them has focus. Also avoid it for content people must
+ * read in full. For items that people move through themselves, use
+ * `motion-slider`.
+ *
+ * **Accessibility:** the ticker is focusable (`tabindex="0"`) and has
+ * `role="region"` with the `aria-label` "Scrolling ticker. Press Space to
+ * pause.", which replaces any `aria-label` you set in the HTML. Hover (with
+ * `pause-on-hover`) and focus slow it to a stop. When the ticker itself has
+ * focus, Space or Enter pauses it until one of them is pressed again. Key
+ * presses on items inside it are left alone. Every copy of the items is
+ * `aria-hidden` and `inert`, so screen readers read each item once and Tab
+ * reaches only the original items.
+ *
+ * **Reduced motion:** the ticker is not built and does not move. The items
+ * stay in normal flow, with no copies and no `gap`. It gets no `tabindex`,
+ * role or label, because there is nothing to pause.
+ *
+ * **Common mistakes:** putting bare text directly inside: only child elements
+ * become items, so wrap each item in an element such as `<span>`. With
+ * `wave`, the ticker does not clip its content, so the items can show past
+ * its edges and make the page scroll sideways; put it in a parent with
+ * `overflow-x: clip`.
+ *
  * @element motion-ticker
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - Items to scroll. Each direct child is duplicated to fill the container.
  *
@@ -133,10 +165,10 @@ export class MotionTicker extends Controllable(BaseElement) {
     this.style.display = 'block'
     this.style.overflow = this.wave ? 'visible' : 'hidden'
     this.style.width = '100%'
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     this.setAttribute('tabindex', '0')
     this.setAttribute('role', 'region')
     this.setAttribute('aria-label', 'Scrolling ticker. Press Space to pause.')
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     requestAnimationFrame(() => this.build())
   }
 
@@ -179,6 +211,7 @@ export class MotionTicker extends Controllable(BaseElement) {
       flexShrink: '0',
     })
     setB.setAttribute('aria-hidden', 'true')
+    setB.inert = true
 
     items.forEach((c) => setA.appendChild(c))
 
@@ -207,7 +240,7 @@ export class MotionTicker extends Controllable(BaseElement) {
     let safety = 50
     let grown = false
     while (this.setA.offsetWidth < containerW && safety-- > 0) {
-      originals.forEach((c) => this.setA!.appendChild(c.cloneNode(true)))
+      originals.forEach((c) => this.setA!.appendChild(copyOf(c)))
       grown = true
     }
     const setB = this.setA.nextElementSibling as HTMLElement | null
@@ -381,7 +414,7 @@ export class MotionTicker extends Controllable(BaseElement) {
   private keyboardPaused = false
 
   private onKeyDown = (e: KeyboardEvent) => {
-    if (e.key !== ' ' && e.key !== 'Enter') return
+    if (e.target !== this || (e.key !== ' ' && e.key !== 'Enter')) return
     e.preventDefault()
     if (this.keyboardPaused) {
       this.keyboardPaused = false
@@ -435,6 +468,13 @@ function node(tag: string, styles: Partial<CSSStyleDeclaration> = {}): HTMLEleme
   const el = document.createElement(tag)
   Object.assign(el.style, styles)
   return el
+}
+
+function copyOf(item: HTMLElement): HTMLElement {
+  const copy = item.cloneNode(true) as HTMLElement
+  copy.setAttribute('aria-hidden', 'true')
+  copy.inert = true
+  return copy
 }
 
 defineElement('motion-ticker', MotionTicker)

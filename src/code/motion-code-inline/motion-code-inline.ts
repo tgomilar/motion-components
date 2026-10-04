@@ -11,6 +11,26 @@ import { property, state } from 'lit/decorators.js'
  * slotted text inside a styled `<code>` element; the copy button fades in on
  * hover, or stays visible with `copy-visible`.
  *
+ * **Use it for:** short code inside running text, such as a command, a file
+ * name, an attribute or a CSS variable, with an optional copy button.
+ *
+ * **Avoid it for:** code that spans more than one line or is long, because
+ * it never wraps; use `motion-code` for blocks.
+ *
+ * **Accessibility:** the text is in a real `<code>` element. The copy button
+ * is a native `<button>` named "Copy", which changes to "Copied" for 1.8
+ * seconds after a click. With `copy` alone, the button stays transparent
+ * until the pointer is over the component or the button has keyboard focus.
+ * Set `copy-visible` to show it at all times.
+ *
+ * **Reduced motion:** nothing changes. The component uses no Motion One
+ * animation; the copy button keeps its short 0.15 s CSS fade on hover.
+ *
+ * **Common mistakes:** putting a prompt such as `$ ` inside the element: the
+ * button copies all of the element's text, prompt included. Expecting copy to
+ * work on a page served over plain HTTP: the Clipboard API needs HTTPS or
+ * localhost, so the button does nothing there.
+ *
  * @element motion-code-inline
  *
  * @slot - The code text to render and copy.
@@ -71,8 +91,14 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
     }
 
     :host(:hover) button,
-    :host([copy-visible]) button {
+    :host([copy-visible]) button,
+    button:focus-visible {
       opacity: 1;
+    }
+
+    button:focus-visible {
+      outline: 2px solid var(--color-accent, #2563eb);
+      outline-offset: 1px;
     }
 
     button:hover {

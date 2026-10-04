@@ -8,12 +8,45 @@ import { customElement } from '../../utils/define.js'
 
 export type { MotionWordsProps } from './motion-words.types.js'
 
+/** Splits a comma-separated list, keeping commas inside parentheses, so `rgb(1, 2, 3)` stays whole. */
+const splitList = (value: string) =>
+  value
+    .split(/,(?![^(]*\))/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+
 /**
  * Rotating word swap. Cycles through a comma-separated list of `words`,
  * springing the host width between values and crossfading each word with
  * a translate + blur transition. Optional per-word `colors` list.
  *
+ * **Use it for:** one word inside a heading or sentence that should change
+ * on a timer, such as a verb that takes turns with other verbs.
+ *
+ * **Avoid it for:** information people must read in full, because only one
+ * word shows at a time, and long phrases, which do not wrap. To type a
+ * phrase out letter by letter, use `motion-typewriter`.
+ *
+ * **Accessibility:** only the current word is in the page, and changes are
+ * not announced (there is no live region), so a screen reader reads the word
+ * that shows at that moment. Make sure the sentence makes sense with every
+ * word. The words change without end, and the component gives users no way
+ * to stop them. Check that every color in `colors` has enough contrast with
+ * the background.
+ *
+ * **Reduced motion:** the words still change every `interval` seconds, but
+ * each change is instant, with no slide, blur or width animation. `pause()`,
+ * `play()` and `cancel()` control the cycle as usual.
+ *
+ * **Common mistakes:** putting the words as child text: the component only
+ * reads the `words` attribute and does not show its children. A `words` list
+ * with fewer than two entries never changes.
+ *
  * @element motion-words
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @example
  * ```html
@@ -24,13 +57,6 @@ export type { MotionWordsProps } from './motion-words.types.js'
  * </motion-words>
  * ```
  */
-/** Splits a comma-separated list, keeping commas inside parentheses, so `rgb(1, 2, 3)` stays whole. */
-const splitList = (value: string) =>
-  value
-    .split(/,(?![^(]*\))/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-
 @customElement('motion-words')
 export class MotionWords extends Controllable(LitElement) implements MotionWordsProps {
   /** Comma-separated list of words to cycle through. */
@@ -87,8 +113,7 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
       return {
         handle: {
           pause: () => {
-            this.remaining = Math.max(0, this.nextFireAt - performance.now())
-            this.stopTimer()
+            this.holdTimer()
             for (const controls of this.active) controls.pause()
           },
           resume: () => {
@@ -105,6 +130,7 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
       this.index = 0
       this.applyRest()
     },
+    runsUnderReducedMotion: true,
   })
 
   connectedCallback() {
@@ -132,8 +158,7 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
   private start() {
     this.index = 0
     if (this.wordList.length < 2) return
-    if (this.reduced) this.schedule(this.interval * 1000)
-    else void this.play()
+    void this.play()
   }
 
   disconnectedCallback() {
@@ -152,6 +177,11 @@ export class MotionWords extends Controllable(LitElement) implements MotionWords
   private stopTimer() {
     if (this.timer) clearTimeout(this.timer)
     this.timer = null
+  }
+
+  private holdTimer() {
+    this.remaining = Math.max(0, this.nextFireAt - performance.now())
+    this.stopTimer()
   }
 
   private settle(method: 'complete' | 'cancel') {

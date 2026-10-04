@@ -8,6 +8,32 @@ export type { MotionSliderProps } from './motion-slider.types.js'
  * Horizontal slider with spring-snap drag, arrow-button navigation, and dot indicators.
  * Slides snap to full-viewport-width positions on release. Responsive to container resize.
  *
+ * **Use it for:** a set of full-width slides, such as product photos or
+ * testimonials, that people move through by dragging, with the arrows or
+ * with the dots.
+ *
+ * **Avoid it for:** content that everyone must see, because later slides are
+ * easy to miss. It always shows one slide at the full width, so it does not
+ * fit a row of small cards. For a grid of images that open large, use
+ * `motion-gallery`.
+ *
+ * **Accessibility:** the slider takes keyboard focus, and the Left and Right
+ * arrow keys change the slide. The arrows are native buttons labelled
+ * "Previous slide" and "Next slide", and keyboard focus on them shows an
+ * outline. At the first and last slide, the arrow that cannot move has
+ * `aria-disabled="true"` and does nothing. The dots are not focusable and
+ * have no labels. The slider has no role or label and does not announce slide
+ * changes, and slides out of view are not hidden from screen readers or the
+ * Tab key. Add `role="region"` and an `aria-label` to the slider, and make
+ * sure each slide makes sense on its own.
+ *
+ * **Reduced motion:** the slide changes at once, with no spring. While you
+ * drag, the slides still follow the pointer, and the dots still use a short
+ * CSS transition.
+ *
+ * **Common mistakes:** adding slides after the slider is built; it reads its
+ * children once, so later children do not become slides.
+ *
  * @element motion-slider
  *
  * @slot - Slides. Each direct child becomes a slide in the carousel.
@@ -33,7 +59,7 @@ export class MotionSlider extends BaseElement {
   private track: HTMLElement | null = null
   private slides: HTMLElement[] = []
   private dots: HTMLElement[] = []
-  private arrows: [HTMLElement, HTMLElement] | null = null
+  private arrows: [HTMLButtonElement, HTMLButtonElement] | null = null
   private anim: AnimationPlaybackControls | null = null
   private index = 0
   private built = false
@@ -175,10 +201,11 @@ export class MotionSlider extends BaseElement {
     this.writeOffset(-this.index * this.slideW())
   }
 
-  private makeArrow(dir: 'prev' | 'next'): HTMLElement {
+  private makeArrow(dir: 'prev' | 'next'): HTMLButtonElement {
     const btn = document.createElement('button')
     Object.assign(btn.style, {
       all: 'unset',
+      outlineOffset: '2px',
       position: 'absolute',
       top: '50%',
       transform: 'translateY(-50%)',
@@ -203,7 +230,15 @@ export class MotionSlider extends BaseElement {
     btn.innerHTML = dir === 'prev' ? chevron('left') : chevron('right')
     btn.setAttribute('aria-label', dir === 'prev' ? 'Previous slide' : 'Next slide')
     btn.addEventListener('click', () => {
+      if (btn.getAttribute('aria-disabled') === 'true') return
       this.goTo(this.index + (dir === 'prev' ? -1 : 1))
+    })
+    btn.addEventListener('focus', () => {
+      if (btn.matches(':focus-visible'))
+        btn.style.outline = '2px solid var(--color-accent, #2563eb)'
+    })
+    btn.addEventListener('blur', () => {
+      btn.style.outline = 'none'
     })
     btn.addEventListener('mouseenter', () => {
       if (btn.style.opacity === '0.3') return
@@ -288,6 +323,7 @@ export class MotionSlider extends BaseElement {
 
   /** Navigate to the slide at `index`. Pass `initialVelocity` (px/ms) for a flick-snap feel. */
   goTo(index: number, initialVelocity = 0) {
+    const from = this.index
     this.index = Math.max(0, Math.min(this.slides.length - 1, index))
     const targetX = -this.index * this.slideW()
 
@@ -303,6 +339,7 @@ export class MotionSlider extends BaseElement {
     }
     this.updateDots()
     this.updateArrows()
+    if (this.index === from) return
     this.dispatchEvent(
       new CustomEvent('motion-change', {
         detail: { index: this.index },
@@ -323,10 +360,8 @@ export class MotionSlider extends BaseElement {
   private updateArrows() {
     if (!this.arrows) return
     const [prev, next] = this.arrows
-    prev.style.opacity = this.index === 0 ? '0.3' : '1'
-    prev.style.pointerEvents = this.index === 0 ? 'none' : 'auto'
-    next.style.opacity = this.index === this.slides.length - 1 ? '0.3' : '1'
-    next.style.pointerEvents = this.index === this.slides.length - 1 ? 'none' : 'auto'
+    setDisabled(prev, this.index === 0)
+    setDisabled(next, this.index === this.slides.length - 1)
   }
 }
 
@@ -334,6 +369,12 @@ function node(tag: string, styles: Partial<CSSStyleDeclaration> = {}): HTMLEleme
   const el = document.createElement(tag)
   Object.assign(el.style, styles)
   return el
+}
+
+function setDisabled(btn: HTMLButtonElement, disabled: boolean) {
+  btn.setAttribute('aria-disabled', String(disabled))
+  btn.style.opacity = disabled ? '0.3' : '1'
+  btn.style.pointerEvents = disabled ? 'none' : 'auto'
 }
 
 function chevron(dir: 'left' | 'right'): string {

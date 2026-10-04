@@ -18,10 +18,31 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
  * tile. It draws itself in when it scrolls into view, and springs to new
  * values when `values` changes.
  *
+ * **Use it for:** a small trend next to a number, in a sentence, a table cell
+ * or a stat tile, where the shape matters more than the exact values.
+ *
+ * **Avoid it for:** data people need to read exactly or explore. It has no
+ * axes, tooltip or keyboard support; use `motion-chart` instead.
+ *
+ * **Accessibility:** it has `role="img"` and an `aria-label`: your `label`,
+ * or a generated summary such as "from 3 to 11, low 3, high 11". The drawing
+ * itself is hidden, and the sparkline is not focusable. The summary has no
+ * units or context, so set `label`, for example "Signups this week, from 3
+ * to 11", when the text nearby does not explain the trend.
+ *
+ * **Reduced motion:** the line appears in full at once when the draw-in would
+ * start (on mount, or when half of it is in view). New values replace the old
+ * ones at once.
+ *
+ * **Common mistakes:** passing fewer than two values: nothing is drawn.
+ * Writing thousands separators, such as `1,200`: commas separate values, so
+ * it reads as 1 and 200.
+ *
  * @element motion-sparkline
  *
  * @fires motion-start - When the draw-in starts.
  * @fires motion-finish - When the draw-in finishes.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @cssprop --sparkline-width - Width. Default `6em`.
  * @cssprop --sparkline-height - Height. Default `1.5em`.

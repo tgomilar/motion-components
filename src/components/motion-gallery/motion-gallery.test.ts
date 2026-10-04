@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { userEvent } from 'vitest/browser'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion } from '../../test/helpers.js'
 
@@ -21,12 +22,15 @@ import './motion-gallery.js'
 
 const items = (el: MotionGallery) => Array.from(el.querySelectorAll('[role="button"]'))
 const lightbox = () => document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]')
+const clone = () => document.querySelector<HTMLElement>('body > img')
 
 describe('motion-gallery', () => {
   beforeEach(() => {
     stubReducedMotion(false)
     animateMock.mockClear()
-    document.querySelectorAll('[role="dialog"][aria-modal="true"]').forEach((n) => n.remove())
+    document
+      .querySelectorAll('[role="dialog"][aria-modal="true"], body > img')
+      .forEach((n) => n.remove())
   })
 
   async function mount() {
@@ -89,6 +93,33 @@ describe('motion-gallery', () => {
     next.click()
     next.click()
     expect(next.disabled).toBe(true)
+  })
+
+  it('under reduced motion, opens the item centred at full size without animating it', async () => {
+    stubReducedMotion(true)
+    const el = await mount()
+    const item = items(el)[0] as HTMLElement
+    item.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await elementUpdated(el)
+    const c = clone()!
+    expect(animateMock.mock.calls.some(([target]) => target === c)).toBe(false)
+    const r = c.getBoundingClientRect()
+    expect(r.width).toBeGreaterThan(item.getBoundingClientRect().width)
+    expect(r.left + r.width / 2).toBeCloseTo(window.innerWidth / 2, 0)
+    expect(r.top + r.height / 2).toBeCloseTo(window.innerHeight / 2, 0)
+  })
+
+  it('shows a focus outline on a lightbox button reached with the keyboard', async () => {
+    const el = await mount()
+    items(el)[0].dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await elementUpdated(el)
+    const box = lightbox()!
+    box.querySelector<HTMLButtonElement>('button[aria-label="Close lightbox"]')!.focus()
+    await userEvent.keyboard('{Tab}')
+    const next = box.querySelector<HTMLButtonElement>('button[aria-label="Next item"]')!
+    expect(document.activeElement).toBe(next)
+    expect(getComputedStyle(next).outlineStyle).toBe('solid')
+    expect(getComputedStyle(next).outlineColor).not.toBe('rgba(0, 0, 0, 0)')
   })
 
   it('Escape collapses the lightbox back to the grid', async () => {

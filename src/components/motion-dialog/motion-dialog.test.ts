@@ -86,4 +86,19 @@ describe('motion-dialog', () => {
     await elementUpdated(el)
     expect(el.open).toBe(false)
   })
+
+  it('light-dismiss ignores keyboard clicks on buttons inside the panel', async () => {
+    stubReducedMotion(true)
+    const el = (await fixture(
+      html`<motion-dialog light-dismiss><button>OK</button></motion-dialog>`,
+    )) as MotionDialog
+    el.show()
+    await elementUpdated(el)
+
+    // Enter or Space on a button fires a click with clientX and clientY of 0.
+    el.querySelector('button')!.click()
+    await elementUpdated(el)
+    expect(el.open).toBe(true)
+    expect(nativeDialog(el).open).toBe(true)
+  })
 })

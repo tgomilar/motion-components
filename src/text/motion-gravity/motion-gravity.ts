@@ -3,6 +3,7 @@ import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionGravityProps } from './motion-gravity.types.js'
+import { charsByWord } from '../utils/chars-by-word.js'
 import { customElement } from '../../utils/define.js'
 
 export type { MotionGravityProps } from './motion-gravity.types.js'
@@ -15,7 +16,30 @@ export type { MotionGravityProps } from './motion-gravity.types.js'
  * doubles as a pre-upgrade fallback: the browser shows it before the
  * element is defined, so the page never paints an empty gap.
  *
+ * **Use it for:** short, playful words and headings whose letters drop in and
+ * bounce into place when the page loads.
+ *
+ * **Avoid it for:** long sentences, and text below the first screen. It plays
+ * when the element first renders, not when it scrolls into view. For a
+ * split-text reveal on scroll, use `motion-split` or `motion-headline`.
+ *
+ * **Accessibility:** screen readers read the whole text once from a visually
+ * hidden copy. The falling letters are `aria-hidden`. The element has no
+ * heading role, so put it inside a heading element when it is a heading.
+ *
+ * **Reduced motion:** the letters show at their final position at once, with
+ * no drop.
+ *
+ * **Common mistakes:** placing it far down the page, so the drop is over
+ * before anyone sees it; call `replay()` when it comes into view. Changing
+ * the child text after the element is on the page; the child text is read
+ * once, so set the `text` property instead.
+ *
  * @element motion-gravity
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @example
  * ```html
@@ -54,6 +78,10 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
       height: 1px;
       overflow: hidden;
       clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .word {
+      display: inline-block;
       white-space: nowrap;
     }
     .char {
@@ -137,9 +165,7 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
     return html`
       <span class="sr-only">${this.text}</span>
       <span aria-hidden="true">
-        ${[...(this.text ?? '')].map(
-          (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
-        )}
+        ${charsByWord(this.text ?? '', (char) => html`<span class="char">${char}</span>`)}
       </span>
     `
   }

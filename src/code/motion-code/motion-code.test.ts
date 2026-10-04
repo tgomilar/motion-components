@@ -25,6 +25,28 @@ describe('motion-code', () => {
     expect(keyword?.textContent).toBe('const')
   })
 
+  it('reads code from a pre child', async () => {
+    const el = (await fixture(html`
+      <motion-code>
+        <pre><code>
+        const a = '&lt;b&gt;'
+          return a
+      </code></pre>
+      </motion-code>
+    `)) as MotionCode
+    await elementUpdated(el)
+    expect(codeText(el)).toBe("const a = '<b>'\n  return a")
+  })
+
+  it('dedents code given as div lines', async () => {
+    const host = document.createElement('div')
+    host.innerHTML =
+      '<motion-code><div>  if (a) {</div><div>    b()</div><div>  }</div></motion-code>'
+    const el = (await fixture(host.firstElementChild!)) as MotionCode
+    await elementUpdated(el)
+    expect(codeText(el)).toBe('if (a) {\n  b()\n}')
+  })
+
   it('hide-chrome removes the window chrome', async () => {
     const el = (await fixture(html`
       <motion-code hide-chrome><div>hi</div></motion-code>

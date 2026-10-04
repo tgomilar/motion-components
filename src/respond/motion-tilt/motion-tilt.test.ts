@@ -66,6 +66,16 @@ describe('motion-tilt', () => {
     expect(animateMock).not.toHaveBeenCalled()
   })
 
+  it('does not clip slotted content and rounds the gloss to its radius', async () => {
+    const el = (await fixture(
+      html`<motion-tilt gloss><button style="border-radius:12px">Card</button></motion-tilt>`,
+    )) as MotionTilt
+    const inner = el.shadowRoot!.querySelector<HTMLElement>('.inner')!
+    const gloss = el.shadowRoot!.querySelector<HTMLElement>('.gloss')!
+    expect(getComputedStyle(inner).overflow).toBe('visible')
+    expect(getComputedStyle(gloss).borderRadius).toBe('12px')
+  })
+
   it('ignores pointer input while disabled and reflects the attribute', async () => {
     const el = await mount()
     el.disabled = true

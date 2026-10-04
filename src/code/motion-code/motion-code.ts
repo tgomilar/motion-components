@@ -21,11 +21,38 @@ interface Token {
  * JS/TS, CSS, JSON and Python, with no external tokenizer; token colours are
  * overridable through CSS custom properties.
  *
- * Source is read from a `<script type="text/plain">` child, which is preferred
- * because the browser will not parse it as markup, or from the concatenated text
- * of child `<div>` elements. Either way the result is dedented.
+ * Source is read from a `<script type="text/plain">` child, a `<pre>` child
+ * (which keeps the code in the page HTML for search engines), or the text of
+ * child `<div>` elements, one per line. Either way the result is dedented.
+ *
+ * **Use it for:** code examples in docs, blog posts and landing pages that
+ * need a file name, a copy button, or a typing effect for a short snippet.
+ *
+ * **Avoid it for:** code inside a sentence; use `motion-code-inline`.
+ * Languages other than HTML, JS/TS, CSS, JSON and Python show as plain text.
+ * Avoid `typing` on long code that people need to read or copy at once.
+ *
+ * **Accessibility:** the code is real text in a `<pre>`, so screen readers
+ * can read it and people can select it. The copy button is a native
+ * `<button>` named "Copy", which changes to "Copied" for 1.8 seconds after a
+ * click, without a live region. With `typing`, the readable `<pre>` holds only
+ * the characters typed so far (the full copy is `aria-hidden`), and with the
+ * default `typing-loop` it empties again on every pass. Set
+ * `typing-loop="false"` so the full code stays after one pass.
+ *
+ * **Reduced motion:** the full code shows at once, with no typing, no loop
+ * and no blinking cursor.
+ *
+ * **Common mistakes:** putting the code as plain text directly inside the
+ * element: only a `<script type="text/plain">`, a `<pre>` or child `<div>`
+ * elements are read, so nothing shows. Setting `copy` together with
+ * `hide-chrome`: the copy button is in the title bar, so it is hidden too.
  *
  * @element motion-code
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @cssprop [--code-keyword] - Keyword token colour.
  * @cssprop [--code-string] - String token colour.
@@ -411,9 +438,13 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
   private extractRaw(): string {
     const scriptEl = this.querySelector('script[type="text/plain"]')
     if (scriptEl) return this.dedent(scriptEl.textContent ?? '')
-    return Array.from(this.querySelectorAll('div'))
-      .map((el) => el.textContent ?? '')
-      .join('\n')
+    const pre = this.querySelector('pre')
+    if (pre) return this.dedent(pre.textContent ?? '')
+    return this.dedent(
+      Array.from(this.querySelectorAll('div'))
+        .map((el) => el.textContent ?? '')
+        .join('\n'),
+    )
   }
 
   private dedent(code: string): string {

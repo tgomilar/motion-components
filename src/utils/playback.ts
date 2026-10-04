@@ -62,7 +62,7 @@ export class PlaybackController implements MotionControllable {
       this.resolveDone = resolve
     })
     this.emit('motion-start')
-    if (reduced()) {
+    if (reduced() && !this.delegate.runsUnderReducedMotion) {
       this.delegate.applyFinalState()
       this.settle('finished', 'motion-finish')
       return this.done

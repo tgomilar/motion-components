@@ -72,6 +72,36 @@ describe('motion-flip-card', () => {
     expect(animateMock.mock.calls[0][1]).toMatchObject({ rotateY: 0 })
   })
 
+  it('reacts when trigger changes after the first render', async () => {
+    const el = await mount('hover')
+    await elementUpdated(el)
+
+    el.trigger = 'click'
+    await elementUpdated(el)
+    expect(el.getAttribute('role')).toBe('button')
+    expect(el.tabIndex).toBe(0)
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    expect(animateMock).not.toHaveBeenCalled()
+    el.dispatchEvent(new MouseEvent('click'))
+    expect(animateMock.mock.calls[0][1]).toMatchObject({ rotateY: 180 })
+
+    animateMock.mockClear()
+    el.trigger = 'hover'
+    await elementUpdated(el)
+    expect(el.hasAttribute('role')).toBe(false)
+    expect(el.hasAttribute('tabindex')).toBe(false)
+    el.dispatchEvent(new MouseEvent('click'))
+    expect(animateMock).not.toHaveBeenCalled()
+    el.dispatchEvent(new PointerEvent('pointerleave'))
+    expect(animateMock.mock.calls[0][1]).toMatchObject({ rotateY: 0 })
+  })
+
+  it('does not mark the faces as a live region', async () => {
+    const el = await mount('click')
+    await elementUpdated(el)
+    expect(el.shadowRoot!.querySelector('[aria-live]')).toBeNull()
+  })
+
   it('flip() toggles programmatically', async () => {
     const el = await mount('click')
     await elementUpdated(el)

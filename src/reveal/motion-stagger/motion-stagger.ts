@@ -13,7 +13,32 @@ export type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
  * Staggered viewport-triggered reveal for a list of children. Fades and
  * translates each direct child in sequence once the first child enters the viewport.
  *
+ * **Use it for:** lists, card grids and icon rows whose items should fade and
+ * rise into place one after another when the list scrolls into view.
+ *
+ * **Avoid it for:** a single block of content; use `motion-reveal` or
+ * `motion-blur-in`. Avoid long lists that go far below the screen: the whole
+ * sequence starts when the first child comes into view, so items lower down
+ * can finish animating before anyone scrolls to them.
+ *
+ * **Accessibility:** the children stay in the page while they are hidden, so
+ * screen readers read them before they animate. Only opacity and transform
+ * change, so the layout does not shift.
+ *
+ * **Reduced motion:** all children show at their final position at once,
+ * with no animation. No run starts, so `motion-start` and `motion-finish` do
+ * not fire.
+ *
+ * **Common mistakes:** only direct child elements animate. Wrapping all items
+ * in one `<div>` or `<ul>` makes them animate as one block; put the items
+ * directly inside `motion-stagger`. Text placed directly inside, outside a
+ * child element, is not animated.
+ *
  * @element motion-stagger
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The list of children to reveal in sequence.
  *

@@ -37,12 +37,36 @@ function arcPath(cx: number, cy: number, r: number, inner: number, a0: number, a
  * slices spring to new sizes when the data changes, and the hovered slice
  * springs outward. More than six slices are combined into "Other".
  *
+ * **Use it for:** showing how a total splits into a few parts, such as
+ * traffic sources or a budget, with six slices or fewer.
+ *
+ * **Avoid it for:** values that are not parts of one whole, values over time,
+ * or many categories; use `motion-chart`.
+ *
+ * **Accessibility:** the drawing is hidden from screen readers, which read a
+ * visually hidden data table instead: your own `<table>`, or one built from
+ * `values` or `data` that lists each label, value and share, with `label` as
+ * its caption. The plot is a focusable group with the role description
+ * "pie chart" and `label` as its name. The arrow keys move between slices,
+ * Home and End jump to the first and last, Escape clears the selection, and a
+ * polite live region announces each slice with its value and share. Set
+ * `label`.
+ *
+ * **Reduced motion:** the whole pie appears at once when the sweep-in would
+ * start (on mount, or when 30% of it is in view). New values, the hovered
+ * slice and the tooltip change at once, without springs.
+ *
+ * **Common mistakes:** passing negative values: they are drawn as 0. Passing
+ * more than six items: the sixth item and all after it are merged into one
+ * slice labeled "Other", so group small items yourself to choose the label.
+ *
  * @element motion-pie
  *
  * @slot - An optional `<table>` with the data. It stays available to screen readers.
  *
  * @fires motion-start - When the sweep-in starts.
  * @fires motion-finish - When the sweep-in finishes.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @cssprop --chart-height - Height of the chart, including the legend. Default `16rem`.
  * @cssprop --chart-1 - Color of the first slice. `--chart-2` to `--chart-6` color the others.

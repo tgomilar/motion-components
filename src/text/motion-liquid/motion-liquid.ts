@@ -23,7 +23,32 @@ export type { MotionLiquidProps } from './motion-liquid.types.js'
  * doubles as a pre-upgrade fallback: the browser shows it before the
  * element is defined, so the page never paints an empty gap.
  *
+ * **Use it for:** one short word or title with a slow, flowing distortion,
+ * such as an accent in a hero section.
+ *
+ * **Avoid it for:** long text, and text that people need to read quickly. The
+ * text is one line of SVG text and does not wrap. For letters that ride a
+ * wave, use `motion-curve`.
+ *
+ * **Accessibility:** the SVG has `role="img"` and an `aria-label` with the
+ * text, so screen readers announce it as an image with that name. If it is a
+ * heading, put it inside a heading element. The distortion never stops on
+ * its own, and `pause-on-hover` works with a mouse only. Keep `intensity` low
+ * enough that the text stays readable.
+ *
+ * **Reduced motion:** the distortion filter is not applied. The text shows
+ * plain and still.
+ *
+ * **Common mistakes:** setting `duration="0"` to freeze the shape. This also
+ * turns the filter off, so the text shows with no distortion. Changing the
+ * child text after the element is on the page; the child text is read once,
+ * so set the `text` property instead.
+ *
  * @element motion-liquid
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @example
  * ```html

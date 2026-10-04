@@ -2,11 +2,10 @@ import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
-import { splitText } from '../utils/split-text.js'
+import { escapeHtml, screenReaderText, splitText, wordGroup } from '../utils/split-text.js'
 import { useIntersect } from '../utils/use-intersect.js'
 import type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-headline.types.js'
 import { customElement } from '../../utils/define.js'
-import { escapeHtml } from '../utils/split-text.js'
 import { flag } from '../../utils/attributes.js'
 
 export type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-headline.types.js'
@@ -17,7 +16,31 @@ export type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-
  * `variant="slide"` slides each unit up under a mask; `variant="flip"`
  * flips each unit on the X axis with perspective.
  *
+ * **Use it for:** page and section headings that reveal word by word, letter
+ * by letter or line by line as they scroll into view.
+ *
+ * **Avoid it for:** headings with links or other markup, because the content
+ * is replaced with plain text. For cards and images, use `motion-reveal`. For
+ * lists, use `motion-stagger`.
+ *
+ * **Accessibility:** the split pieces are `aria-hidden`, and a visually hidden
+ * span keeps the full text, so screen readers read it in one piece. The
+ * element has no heading role, so put it inside a heading element such as
+ * `<h2>`.
+ *
+ * **Reduced motion:** the text shows in its final place at once, with no
+ * animation. The element does not wait to scroll into view.
+ *
+ * **Common mistakes:** using `by="lines"` where the width can change. The
+ * lines are measured once, when the element first renders, and are not split
+ * again on resize. Changing `by` or `variant` after the first render has no
+ * effect. `variant="flip"` splits by words when `by="lines"`.
+ *
  * @element motion-headline
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The headline text. Plain text only — markup inside is replaced.
  *
@@ -151,38 +174,17 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
     const originalText = this.textContent?.trim() ?? ''
     if (!originalText) return
 
-    this.setAttribute('aria-label', originalText)
-
     const by = this.by === 'lines' ? 'words' : this.by
+    const words = originalText.split(/\s+/)
 
     this.style.perspective = '600px'
 
-    if (by === 'chars') {
-      const words = originalText.split(/\s+/)
-      this.innerHTML = words
-        .map((w) =>
-          [...w]
-            .map(
-              (c) =>
-                `<span style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${escapeHtml(c)}</span>`,
-            )
-            .join(''),
-        )
-        .join(' ')
-      this.units = [...this.querySelectorAll<HTMLElement>('span')]
-      return
-    }
+    const unit = (text: string) =>
+      `<span data-unit style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${escapeHtml(text)}</span>`
+    const pieces = by === 'chars' ? words.map((w) => wordGroup(w, unit)) : words.map(unit)
 
-    const units = originalText.split(/\s+/)
-
-    this.innerHTML = units
-      .map(
-        (u) =>
-          `<span style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${escapeHtml(u)}</span>`,
-      )
-      .join(' ')
-
-    this.units = [...this.querySelectorAll<HTMLElement>('span')]
+    this.innerHTML = screenReaderText(originalText) + pieces.join(' ')
+    this.units = [...this.querySelectorAll<HTMLElement>('[data-unit]')]
   }
 
   disconnectedCallback() {

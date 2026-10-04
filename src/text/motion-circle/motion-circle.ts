@@ -13,7 +13,32 @@ export type { MotionCircleProps, CircleDirection } from './motion-circle.types.j
  * Text wrapped around a full circle, optionally rotating. Place a logo or
  * icon inside the default slot to render in the centre.
  *
+ * **Use it for:** rotating badges and stamps, such as a short label that
+ * circles a logo or an icon in the centre slot.
+ *
+ * **Avoid it for:** text that people must read quickly, because rotating text
+ * is hard to read. For text along part of a circle, use `motion-arc`.
+ *
+ * **Accessibility:** screen readers read the whole text once from a visually
+ * hidden copy. The rotating letters are `aria-hidden`. Content in the centre
+ * slot is read as normal, so give images an `alt` text (empty if they are
+ * decorative). The rotation never stops on its own, and `pause-on-hover`
+ * works with a mouse only. If people must be able to stop it, add a button
+ * that calls `pause()`.
+ *
+ * **Reduced motion:** the ring does not rotate. The text stays still around
+ * the circle.
+ *
+ * **Common mistakes:** text with no separator at the end. The letters are
+ * spaced evenly around the full circle, so the last word runs into the first;
+ * end the text with a separator such as ` • `, as in the example. Too much
+ * text for the `radius` makes the letters crowd together.
+ *
  * @element motion-circle
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - Optional content rendered at the centre of the circle.
  *

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { userEvent } from 'vitest/browser'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion, waitForEvent } from '../../test/helpers.js'
 
@@ -12,6 +13,9 @@ vi.mock('motion', () => ({ animate: animateMock }))
 
 import type { MotionSlider } from './motion-slider.js'
 import './motion-slider.js'
+
+const arrow = (el: MotionSlider, label: string) =>
+  el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
 
 describe('motion-slider', () => {
   beforeEach(() => {
@@ -56,6 +60,43 @@ describe('motion-slider', () => {
     expect(last).toBe(2)
     el.goTo(-5)
     expect(last).toBe(0)
+  })
+
+  it('fires motion-change only when the index actually changes', async () => {
+    const el = await mount()
+    const indices: number[] = []
+    el.addEventListener('motion-change', (e) => {
+      indices.push((e as CustomEvent<{ index: number }>).detail.index)
+    })
+    el.goTo(0)
+    el.goTo(1)
+    el.goTo(1)
+    el.goTo(99)
+    el.goTo(99)
+    expect(indices).toEqual([1, 2])
+  })
+
+  it('disables the arrow at either end and ignores its activation', async () => {
+    const el = await mount()
+    const prev = arrow(el, 'Previous slide')
+    const next = arrow(el, 'Next slide')
+    expect(prev.getAttribute('aria-disabled')).toBe('true')
+    expect(next.getAttribute('aria-disabled')).toBe('false')
+    animateMock.mockClear()
+    prev.click()
+    expect(animateMock).not.toHaveBeenCalled()
+    el.goTo(2)
+    expect(prev.getAttribute('aria-disabled')).toBe('false')
+    expect(next.getAttribute('aria-disabled')).toBe('true')
+  })
+
+  it('shows a focus outline on an arrow reached with the keyboard', async () => {
+    const el = await mount()
+    el.focus()
+    await userEvent.keyboard('{Tab}')
+    const prev = arrow(el, 'Previous slide')
+    expect(document.activeElement).toBe(prev)
+    expect(getComputedStyle(prev).outlineStyle).toBe('solid')
   })
 
   it('ArrowRight / ArrowLeft move the active slide', async () => {
