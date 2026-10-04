@@ -11,6 +11,29 @@ export type { MotionImageCompareProps, CompareOrientation } from './motion-image
  * Slot two children with `slot="before"` and `slot="after"`. Keyboard-accessible:
  * focus the handle and use arrow keys to nudge the split.
  *
+ * **Use it for:** before and after views of the same scene, such as a photo
+ * edit or a redesign, with two images of the same size.
+ *
+ * **Avoid it for:** more than two images, or two images with different
+ * framing. For a set of images, use `motion-gallery` or `motion-slider`.
+ *
+ * **Accessibility:** the round knob takes keyboard focus. The arrow keys move
+ * the split by 2% (Left and Right, or Up and Down when
+ * `orientation="vertical"`), and Shift with an arrow key moves it by 10%.
+ * Home and End move it to 0% and 100%. The knob has `role="slider"`, the
+ * label "Image comparison" and a value from 0 to 100, so screen readers
+ * announce it. Write `alt` text that says which image is before and which is
+ * after.
+ *
+ * **Reduced motion:** a click or a key press moves the split at once, with
+ * no spring. Dragging follows the pointer directly, as it always does.
+ *
+ * **Common mistakes:** leaving the element without a size; both images are
+ * positioned on top of each other, so it has no height of its own. Set a CSS
+ * height or aspect ratio on `motion-image-compare`. On touch screens a swipe
+ * that starts on it moves the split and does not scroll the page, so leave
+ * room around it on phones.
+ *
  * @element motion-image-compare
  *
  * @slot before - The left/top image (visible behind the clip).
@@ -165,7 +188,9 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
   private onKey = (e: KeyboardEvent) => {
     const step = e.shiftKey ? 10 : 2
     let next = this.pos
-    if (this.orientation === 'horizontal') {
+    if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = 100
+    else if (this.orientation === 'horizontal') {
       if (e.key === 'ArrowLeft') next -= step
       else if (e.key === 'ArrowRight') next += step
       else return
@@ -227,17 +252,18 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
     return html`
       <div class="pane before"><slot name="before"></slot></div>
       <div class="pane after"><slot name="after"></slot></div>
-      <div class="handle" aria-hidden="true">
+      <div class="handle">
         <div
           class="knob"
           role="slider"
           tabindex="0"
+          aria-label="Image comparison"
           aria-valuemin="0"
           aria-valuemax="100"
           aria-valuenow=${Math.round(this.pos)}
           aria-orientation=${this.orientation}
         >
-          ⇆
+          <span aria-hidden="true">⇆</span>
         </div>
       </div>
     `

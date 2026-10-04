@@ -12,6 +12,27 @@ export type { MotionPressProps } from './motion-press.types.js'
  * Tactile press primitive. Scales slotted content down on `pointerdown`
  * and bounces back on release for a physical click feel.
  *
+ * **Use it for:** buttons, toggles and clickable cards that should shrink a
+ * little while pressed with a mouse, finger or pen, then spring back on
+ * release.
+ *
+ * **Avoid it for:** content that does nothing when clicked, because the press
+ * makes it look clickable. For hover feedback, use `motion-hover`.
+ *
+ * **Accessibility:** it adds no role, `tabindex` or keyboard handling, so it
+ * does not make content clickable or focusable. Put a real `<button>` or link
+ * inside. The effect reacts to pointer input only, so pressing Enter or Space
+ * on the button does not show it. Only transform changes, so the layout does
+ * not shift.
+ *
+ * **Reduced motion:** pressing and releasing do nothing, and the content
+ * stays at full size.
+ *
+ * **Common mistakes:** adding the click handler to `motion-press` instead of
+ * a button inside it, so keyboard users cannot reach or use it. Wrapping a
+ * full width button: the host is `display: inline-block`, so the button can
+ * shrink to its content; set `display: block` on `motion-press`.
+ *
  * @element motion-press
  *
  * @slot - The pressable content.

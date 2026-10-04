@@ -45,11 +45,12 @@ describe('motion-gravity', () => {
     return (await fixture(host.firstElementChild!)) as MotionGravity
   }
 
-  it('renders one span per character from child text, keeping spaces', async () => {
+  it('renders one span per character from child text, with spaces between words', async () => {
     const el = await mount()
     expect(el.text).toBe('GO UP')
     expect(el.textContent).toBe('')
-    expect(chars(el).map((c) => c.textContent)).toEqual(['G', 'O', ' ', 'U', 'P'])
+    expect(chars(el).map((c) => c.textContent)).toEqual(['G', 'O', 'U', 'P'])
+    expect(el.shadowRoot!.querySelector('[aria-hidden="true"]')!.textContent!.trim()).toBe('GO UP')
   })
 
   it('prefers the text attribute over child text', async () => {

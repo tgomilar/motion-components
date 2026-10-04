@@ -26,7 +26,35 @@ interface AxisDef {
  * Uses `CSS.registerProperty` to enable interpolation of `<number>` custom
  * properties, then drives `font-variation-settings` from those properties.
  *
+ * **Use it for:** headings, links and labels in a variable font whose weight,
+ * slant or width changes when they scroll into view, on hover or focus, or
+ * with scroll progress.
+ *
+ * **Avoid it for:** fonts that are not variable fonts, or that do not have the
+ * axis you set, because nothing changes. To scale or move an element on
+ * hover, use `motion-hover`.
+ *
+ * **Accessibility:** the slotted text stays real text, so screen readers read
+ * it as normal. With `trigger="hover"`, focus on a focusable element inside,
+ * such as a link, also starts the change; the element itself does not take
+ * focus. A change in weight or width can change the text width and move the
+ * text around it.
+ *
+ * **Reduced motion:** with `trigger="view"` or `trigger="scroll"`, the axes
+ * are set to their `to` values at once and do not follow the scroll. With
+ * `trigger="hover"`, the axes switch between `from` and `to` at once, with no
+ * transition.
+ *
+ * **Common mistakes:** changing `axis`, `axes`, `from`, `to` or `trigger`
+ * after the element first renders. The setup reads them once, so set them in
+ * the markup. Setting both `axes` and `axis`: `axes` wins, and `axis`, `from`
+ * and `to` are ignored.
+ *
  * @element motion-font
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text whose font axes will animate.
  *

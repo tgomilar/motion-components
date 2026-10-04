@@ -13,7 +13,33 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
  * Decode-style text scramble. Cycles each character through random glyphs,
  * locking them in left-to-right until the original text resolves.
  *
+ * **Use it for:** short labels, codes or headings that should decode into
+ * place when they scroll into view, or when the mouse moves over them
+ * (`trigger="hover"`).
+ *
+ * **Avoid it for:** body text, long sentences and text with links or other
+ * markup. For a number that counts up to a value, use `motion-counter`.
+ *
+ * **Accessibility:** the component adds no ARIA. The real text is in place
+ * before the effect starts and after it ends, but while it runs the text
+ * changes to random characters, and a screen reader that reads it at that
+ * moment reads those characters. Use it only for short text where that is
+ * acceptable. The hover trigger reacts to the mouse only, not to keyboard
+ * focus.
+ *
+ * **Reduced motion:** the scramble never starts. The text shows as normal,
+ * still text.
+ *
+ * **Common mistakes:** putting links or `<strong>` inside: the content is
+ * read once as plain text and all markup is removed. Using a proportional
+ * font: the random characters have different widths, so the line jumps
+ * while it runs; a monospace font keeps it steady.
+ *
  * @element motion-scramble
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text to scramble. Plain text only — read once on connect.
  *

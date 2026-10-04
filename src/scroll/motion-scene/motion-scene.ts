@@ -21,7 +21,35 @@ interface SceneRange {
  * Children declare `data-from`/`data-to` JSON and `data-start`/`data-end` progress
  * range to interpolate transform and CSS properties on scroll.
  *
+ * **Use it for:** scroll stories where a stage stays pinned while its
+ * children move, scale, rotate or fade as the reader scrolls, such as a
+ * product reveal.
+ *
+ * **Avoid it for:** a simple drift on one element; use `motion-parallax`.
+ * For a one-time entrance, use `motion-reveal`. Do not put long text in the
+ * stage: it is one screen tall and cuts off what does not fit.
+ *
+ * **Accessibility:** the component adds no roles or aria attributes. Children
+ * stay in the page and in reading order, so screen readers can read them at
+ * any scroll position, even when `data-from` sets `opacity` to 0. The stage
+ * has `overflow: hidden` and is as tall as the viewport or the `container`,
+ * so check the scene with large text and on small screens.
+ *
+ * **Reduced motion:** the scroll animation does not start. Children show
+ * their `data-to` end state at once. The scene keeps its `height` and its
+ * sticky stage.
+ *
+ * **Common mistakes:** hiding children in CSS, for example with
+ * `opacity: 0`, and showing them only through `data-to`: only the properties
+ * listed in `data-from` are animated, so they stay hidden. Put the start
+ * values in `data-from` instead. Writing `data-from` or `data-to` as invalid
+ * JSON, such as with single quotes: the child is skipped without an error.
+ *
  * @element motion-scene
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - Content rendered inside the sticky viewport-stage. Any child with
  *   `data-from` and `data-to` attributes will be animated on scroll.
@@ -102,7 +130,10 @@ export class MotionScene extends Controllable(LitElement) implements MotionScene
 
   firstUpdated() {
     this.style.height = this.height
-    if (this.reduced) return
+    if (this.reduced) {
+      this.applyProgress(1)
+      return
+    }
     void this.play()
   }
 

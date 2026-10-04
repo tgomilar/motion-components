@@ -12,7 +12,31 @@ export type { MotionProgressProps, ProgressPosition } from './motion-progress.ty
  * Fixed progress bar driven by document or per-element scroll. Spring-eased
  * scaleX transform — settles past the value rather than hard-snapping.
  *
+ * **Use it for:** a thin reading progress bar at the top or bottom of the
+ * window on long articles and documentation pages.
+ *
+ * **Avoid it for:** the progress of a task such as an upload; it only follows
+ * scrolling and has no value you can set. Use the native `<progress>` element
+ * for that.
+ *
+ * **Accessibility:** the bar is decoration only, so it has
+ * `aria-hidden="true"` and screen readers skip it. Screen reader users follow
+ * their own reading position, not the scroll position. The bar never takes
+ * focus and ignores the pointer.
+ *
+ * **Reduced motion:** the bar still follows scrolling, but without the
+ * spring. Its width matches the scroll position exactly.
+ *
+ * **Common mistakes:** pointing `target` at a box that scrolls on its own; the
+ * bar measures how that element moves through the window, not scrolling
+ * inside it. Setting `target` to an element that is not in the page yet when
+ * the bar starts; the bar then follows the whole document instead.
+ *
  * @element motion-progress
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @cssprop --progress-color - Bar color. Default `var(--color-accent, #2563eb)`.
  *
@@ -70,9 +94,16 @@ export class MotionProgress extends Controllable(LitElement) implements MotionPr
         },
       }
     },
-    applyFinalState: () => this.setScale(1),
-    applyInitialState: () => this.setScale(0),
+    applyFinalState: () => (this.reduced ? this.bind() : this.setScale(1)),
+    applyInitialState: () => {
+      this.release()
+      this.setScale(0)
+    },
   })
+
+  private get reduced() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }
 
   firstUpdated() {
     this.bar = this.renderRoot.querySelector('.bar')
@@ -82,10 +113,12 @@ export class MotionProgress extends Controllable(LitElement) implements MotionPr
 
   updated() {
     this.apply()
-    if (this.playState === 'running') {
-      this.unbind()
-      this.bind()
-    }
+    if (this.cleanup) this.bind()
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    this.release()
   }
 
   private apply() {
@@ -98,13 +131,19 @@ export class MotionProgress extends Controllable(LitElement) implements MotionPr
 
   private bind() {
     if (!this.bar) return
+    this.release()
     const target = this.target ? document.querySelector(this.target) : null
+    const options = target ? { target } : undefined
+    if (this.reduced) {
+      this.cleanup = scroll((progress: number) => this.setScale(progress), options)
+      return
+    }
     this.controls = animate(
       this.bar,
       { scaleX: [0, 1] },
       { type: 'spring', bounce: this.bounce, duration: this.duration },
     )
-    this.cleanup = scroll(this.controls, target ? { target: target as Element } : undefined)
+    this.cleanup = scroll(this.controls, options)
   }
 
   private unbind() {
@@ -123,7 +162,7 @@ export class MotionProgress extends Controllable(LitElement) implements MotionPr
   }
 
   render() {
-    return html`<div class="bar" role="progressbar" aria-label="Reading progress"></div>`
+    return html`<div class="bar" aria-hidden="true"></div>`
   }
 }
 

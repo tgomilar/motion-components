@@ -35,7 +35,9 @@ vi.mock('motion', () => ({ animate: animateMock, stagger: staggerMock }))
 import type { MotionSplit } from './motion-split.js'
 import './motion-split.js'
 
-const units = (el: MotionSplit) => [...el.querySelectorAll<HTMLElement>('span')]
+const units = (el: MotionSplit) => [...el.querySelectorAll<HTMLElement>('[data-unit]')]
+const spoken = (el: MotionSplit) =>
+  [...el.children].filter((c) => !c.hasAttribute('aria-hidden')) as HTMLElement[]
 
 describe('motion-split', () => {
   let io: IntersectionHandle
@@ -64,9 +66,10 @@ describe('motion-split', () => {
     expect(el.once).toBe(true)
   })
 
-  it('splits words into aria-hidden spans and labels the host with the full text', async () => {
+  it('splits words into aria-hidden spans and keeps the full text for screen readers', async () => {
     const el = await mount()
-    expect(el.getAttribute('aria-label')).toBe('Hello brave new world')
+    expect(el.hasAttribute('aria-label')).toBe(false)
+    expect(spoken(el).map((s) => s.textContent)).toEqual(['Hello brave new world'])
     expect(units(el).map((s) => s.textContent)).toEqual(['Hello', 'brave', 'new', 'world'])
     expect(units(el).every((s) => s.getAttribute('aria-hidden') === 'true')).toBe(true)
     expect(el.hasAttribute('data-ready')).toBe(true)
@@ -75,7 +78,24 @@ describe('motion-split', () => {
   it('by="chars" splits into one span per character', async () => {
     const el = await mount(html`<motion-split by="chars">Hi yo</motion-split>`)
     expect(units(el).map((s) => s.textContent)).toEqual(['H', 'i', 'y', 'o'])
-    expect(el.getAttribute('aria-label')).toBe('Hi yo')
+    expect(spoken(el).map((s) => s.textContent)).toEqual(['Hi yo'])
+  })
+
+  it('by="chars" wraps between words or after a hyphen, never between letters', async () => {
+    const box = document.createElement('div')
+    box.style.cssText = 'width: 8ch; font: 20px monospace'
+    document.body.append(box)
+    const el = await mount(html`<motion-split by="chars">motion-text-mask demo</motion-split>`)
+    box.append(el)
+    const groups = [...el.querySelectorAll<HTMLElement>(':scope > [aria-hidden]')]
+    expect(groups.map((g) => g.textContent)).toEqual(['motion-', 'text-', 'mask', 'demo'])
+    for (const group of groups) {
+      const tops = [...group.querySelectorAll('[data-unit]')].map(
+        (u) => u.getBoundingClientRect().top,
+      )
+      expect(new Set(tops).size).toBe(1)
+    }
+    box.remove()
   })
 
   it('by="lines" groups words into block spans', async () => {
@@ -84,6 +104,19 @@ describe('motion-split', () => {
     expect(units(el)[0].textContent).toBe('One line only')
     expect(units(el)[0].style.display).toBe('block')
   })
+
+  for (const by of ['chars', 'words', 'lines']) {
+    it(`by="${by}" keeps the full text in one visually hidden span outside the units`, async () => {
+      const el = await mount(html`<motion-split by=${by}>Hello brave new world</motion-split>`)
+      const [text, ...rest] = spoken(el)
+      expect(rest).toHaveLength(0)
+      expect(text.textContent).toBe('Hello brave new world')
+      expect(text.style.position).toBe('absolute')
+      expect(text.style.clipPath).toBe('inset(50%)')
+      expect(units(el).some((u) => u === text || u.contains(text) || text.contains(u))).toBe(false)
+      expect(el.hasAttribute('aria-label')).toBe(false)
+    })
+  }
 
   it('hides each unit at its y offset and observes the first unit', async () => {
     const el = await mount(html`<motion-split y="30">Hello world</motion-split>`)

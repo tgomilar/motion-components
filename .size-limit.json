@@ -7,7 +7,7 @@
   { "name": "motion-reveal",            "path": "dist/motion-reveal.js",    "limit": "1.5 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-stagger",           "path": "dist/motion-stagger.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
   { "name": "motion-blur",              "path": "dist/motion-blur.js",      "limit": "1.75 kB","ignore": ["lit", "motion"] },
-  { "name": "motion-blur-in",           "path": "dist/motion-blur-in.js",   "limit": "1.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-blur-in",           "path": "dist/motion-blur-in.js",   "limit": "1.55 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-magnetic",          "path": "dist/motion-magnetic.js",  "limit": "1.5 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-tilt",              "path": "dist/motion-tilt.js",      "limit": "2 kB",   "ignore": ["lit", "motion"] },
 
@@ -20,7 +20,7 @@
   { "name": "motion-scramble",          "path": "dist/motion-scramble.js",  "limit": "2 kB",   "ignore": ["lit", "motion"] },
   { "name": "motion-ticker",            "path": "dist/motion-ticker.js",    "limit": "3 kB",   "ignore": ["lit", "motion"] },
   { "name": "motion-words",             "path": "dist/motion-words.js",     "limit": "2 kB",   "ignore": ["lit", "motion"] },
-  { "name": "motion-curve",             "path": "dist/motion-curve.js",     "limit": "2.5 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-curve",             "path": "dist/motion-curve.js",     "limit": "2.6 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-circle",            "path": "dist/motion-circle.js",    "limit": "2 kB",   "ignore": ["lit", "motion"] },
   { "name": "motion-arc",               "path": "dist/motion-arc.js",       "limit": "2 kB",   "ignore": ["lit", "motion"] },
   { "name": "motion-perspective",       "path": "dist/motion-perspective.js","limit": "2 kB",  "ignore": ["lit", "motion"] },

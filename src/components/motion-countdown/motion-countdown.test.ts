@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion } from '../../test/helpers.js'
 import type { MotionCountdown } from './motion-countdown.js'
@@ -12,8 +12,12 @@ const digitText = (el: MotionCountdown) =>
     .map((n) => n.textContent)
     .join('')
 
+const NOW = new Date('2030-01-01T00:00:00Z')
+const after = (ms: number) => new Date(NOW.getTime() + ms).toISOString()
+
 describe('motion-countdown', () => {
   beforeEach(() => stubReducedMotion(false))
+  afterEach(() => vi.useRealTimers())
 
   it('renders one unit block per format token with labels', async () => {
     const el = (await fixture(
@@ -77,5 +81,67 @@ describe('motion-countdown', () => {
     )) as MotionCountdown
     await elementUpdated(el)
     expect(digitText(el)).toBe('00')
+  })
+
+  it('fires motion-finish once when the time runs out', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    vi.setSystemTime(NOW)
+    const el = (await fixture(
+      html`<motion-countdown to=${after(2000)} format="minutes seconds"></motion-countdown>`,
+    )) as MotionCountdown
+    let finishes = 0
+    el.addEventListener('motion-finish', () => finishes++)
+
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(finishes).toBe(0)
+    expect(el.playState).toBe('running')
+
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(finishes).toBe(1)
+    expect(el.playState).toBe('finished')
+  })
+
+  it('fires motion-finish when the time is up under reduced motion', async () => {
+    stubReducedMotion(true)
+    const el = document.createElement('motion-countdown')
+    el.to = new Date(Date.now() - 1000).toISOString()
+    let finishes = 0
+    el.addEventListener('motion-finish', () => finishes++)
+    document.body.append(el)
+    await elementUpdated(el)
+    expect(finishes).toBe(1)
+    expect(el.playState).toBe('finished')
+    el.remove()
+  })
+
+  it('finish() under reduced motion stops the timer', async () => {
+    stubReducedMotion(true)
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    const el = document.createElement('motion-countdown')
+    el.to = new Date(Date.now() + 3_600_000).toISOString()
+    document.body.append(el)
+    await elementUpdated(el)
+    el.finish()
+    expect(vi.getTimerCount()).toBe(0)
+    vi.useRealTimers()
+    el.remove()
+  })
+
+  it('roll mode hides the digit columns and exposes each value as text', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    const el = (await fixture(
+      html`<motion-countdown
+        to=${after(330_500)}
+        format="minutes seconds"
+        roll
+      ></motion-countdown>`,
+    )) as MotionCountdown
+    await elementUpdated(el)
+    const values = [...el.shadowRoot!.querySelectorAll('.sr-only')].map((n) => n.textContent)
+    expect(values).toEqual(['05', '30'])
+    const strips = [...el.shadowRoot!.querySelectorAll('.strip')]
+    expect(strips).toHaveLength(4)
+    expect(strips.every((s) => s.closest('[aria-hidden="true"]'))).toBe(true)
   })
 })

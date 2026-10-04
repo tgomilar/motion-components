@@ -1,4 +1,5 @@
-export type IconAnimation = 'draw' | 'pop' | 'bounce' | 'rotate' | 'wiggle' | 'pulse'
+export type IconMotion = 'pop' | 'bounce' | 'rotate' | 'wiggle' | 'pulse'
+export type IconAnimation = 'draw' | IconMotion | `draw ${IconMotion}`
 export type IconTrigger = 'hover' | 'click' | 'view' | 'mount' | 'loop'
 
 export interface MotionIconProps {

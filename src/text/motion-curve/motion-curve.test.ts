@@ -64,7 +64,7 @@ describe('motion-curve', () => {
 
   it('renders the text attribute one glyph per span', async () => {
     const el = (await fixture(html`<motion-curve text="A B"></motion-curve>`)) as MotionCurve
-    expect(chars(el).map((c) => c.textContent)).toEqual(['A', ' ', 'B'])
+    expect(chars(el).map((c) => c.textContent)).toEqual(['A', 'B'])
   })
 
   it('takes its text from child text and clears the light DOM', async () => {
@@ -127,7 +127,7 @@ describe('motion-curve', () => {
     )) as MotionCurve
     frames.step(1)
     const [first, second] = chars(el)
-    const x = first.offsetWidth
+    const x = second.offsetLeft - first.offsetLeft
     expect(offsetY(second)).toBeCloseTo(12 * Math.sin(((2 * Math.PI) / 100) * x), 5)
   })
 

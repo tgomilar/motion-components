@@ -14,7 +14,30 @@ export type { MotionTextMaskProps } from './motion-text-mask.types.js'
  * boundary and slides it upward into view — the same pattern used inside
  * `motion-headline`, exposed as a composable wrapper.
  *
+ * **Use it for:** a heading, a line or a word that should slide up from
+ * behind an invisible edge when it scrolls into view.
+ *
+ * **Avoid it for:** content in the first screen that people need at once.
+ * For a heading that splits into lines, words or letters by itself, use
+ * `motion-headline` with `variant="slide"`.
+ *
+ * **Accessibility:** the content stays in the page while it is hidden, so
+ * screen readers read it before it animates. Only transform changes, so the
+ * layout does not shift. The host clips its content with `overflow: hidden`,
+ * so a focus outline on a link inside can be cut off; give such links an
+ * outline that stays inside, for example with a negative `outline-offset`.
+ *
+ * **Reduced motion:** the content shows in place at once, with no slide.
+ *
+ * **Common mistakes:** wrapping a whole paragraph in one mask: the host is
+ * `inline-block`, so the paragraph slides up as one block, not line by line.
+ * Use one mask per line, or `motion-headline` with `by="lines"`.
+ *
  * @element motion-text-mask
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text or inline content to reveal under the mask.
  *

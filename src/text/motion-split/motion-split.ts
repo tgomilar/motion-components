@@ -16,7 +16,32 @@ export type { MotionSplitProps, SplitBy } from './motion-split.types.js'
  * fades + translates each unit in with a stagger when the first unit
  * enters view.
  *
+ * **Use it for:** headings and short paragraphs that should come in word by
+ * word, letter by letter or line by line when they scroll into view.
+ *
+ * **Avoid it for:** text with links, emphasis or other markup, because the
+ * content is replaced with plain spans. To reveal a block as one piece, use
+ * `motion-reveal`. For units that slide up under a mask, use
+ * `motion-headline`.
+ *
+ * **Accessibility:** the split spans get `aria-hidden`, and a visually hidden
+ * span keeps the original text, so screen readers read the whole phrase and
+ * not single letters. Only opacity and transform animate, so the layout does
+ * not shift.
+ *
+ * **Reduced motion:** the text is still split, but every unit shows at once
+ * in its final place, with no animation.
+ *
+ * **Common mistakes:** expecting `by="lines"` to follow the layout: lines are
+ * measured once, on first render, and are not measured again when the width
+ * changes. Replacing the text later: the new text is not split and does not
+ * animate.
+ *
  * @element motion-split
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text to split. Markup inside is replaced with span units.
  *

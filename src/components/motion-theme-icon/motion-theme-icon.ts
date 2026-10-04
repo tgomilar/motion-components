@@ -57,6 +57,25 @@ let uid = 0
  * Used by `<motion-theme-toggle>`, and usable on its own wherever a theme
  * indicator is needed. Inherits `currentColor`.
  *
+ * **Use it for:** showing the current theme inside your own theme control,
+ * or next to a theme setting.
+ *
+ * **Avoid it for:** switching the theme; it only draws the glyph. Use
+ * `motion-theme-toggle` for a working control. For other animated icons, use
+ * `motion-icon` or `motion-state-icon`.
+ *
+ * **Accessibility:** the SVG has `aria-hidden="true"` and the element has no
+ * role or label, so screen readers skip it. When it is the only content of a
+ * button, give the button an `aria-label`.
+ *
+ * **Reduced motion:** the glyph changes to the new mode at once, with no
+ * morph.
+ *
+ * **Common mistakes:** expecting `mode` to change the page theme; it only
+ * changes the drawing, so update `mode` from your own code when the theme
+ * changes. A misspelled `mode` value shows the sun, so use `light`, `dark` or
+ * `system`.
+ *
  * @element motion-theme-icon
  *
  * @cssprop --theme-icon-size - Width and height of the icon. Default `1.5em`.

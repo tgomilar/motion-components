@@ -14,6 +14,34 @@ const SPRING_COLLAPSE = { type: 'spring', stiffness: 460, damping: 48, restDelta
  * hover scaling on each item. Opens a full-viewport lightbox with prev/next navigation,
  * keyboard support, and focus trapping.
  *
+ * **Use it for:** a grid of photos or screenshots that people open one at a
+ * time in a large view and step through.
+ *
+ * **Avoid it for:** a single image, or images that link to other pages,
+ * because every item becomes a button. To compare two versions of one image,
+ * use `motion-image-compare`. To show one large slide at a time, use
+ * `motion-slider`.
+ *
+ * **Accessibility:** the host gets `role="group"` and the label "Image
+ * gallery". Each item gets `role="button"`, `tabindex="0"` and
+ * `aria-haspopup="dialog"`, and opens with Enter or Space. The lightbox has
+ * `role="dialog"` and `aria-modal="true"`. Focus moves to its close button,
+ * Tab stays on the lightbox buttons, the Left and Right arrow keys change
+ * the item, a live region reads the position, and Escape closes it and
+ * returns focus. Each item's label is its `data-caption`, or "Open item 1 of
+ * 3" when there is none, and this label replaces the `alt` text, so give
+ * every item a `data-caption`.
+ *
+ * **Reduced motion:** the entrance stagger and the hover lift are off, the
+ * backdrop shows at once, and opening, changing and closing items happen
+ * with no animation.
+ *
+ * **Common mistakes:** adding items after the gallery is in the page; it
+ * reads its children once, so later items do not open the lightbox. Styling
+ * items with `motion-gallery > img`; each item is moved into a
+ * `motion-hover` wrapper (and into a `motion-stagger` when `stagger` is on),
+ * so use a class on the item instead.
+ *
  * @element motion-gallery
  *
  * @slot - Gallery items. Each item should have a unique `data-caption` for the
@@ -288,7 +316,7 @@ export class MotionGallery extends BaseElement {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      transition: 'background 0.15s, outline 0.15s',
+      transition: 'background 0.15s',
       outline: '2px solid transparent',
       outlineOffset: '2px',
       ...pos,
@@ -299,8 +327,8 @@ export class MotionGallery extends BaseElement {
     btn.addEventListener('mouseleave', () => {
       btn.style.background = 'rgba(255,255,255,0.1)'
     })
-    btn.addEventListener('focus-visible', () => {
-      btn.style.outline = '2px solid rgba(255,255,255,0.6)'
+    btn.addEventListener('focus', () => {
+      if (btn.matches(':focus-visible')) btn.style.outline = '2px solid rgba(255,255,255,0.6)'
     })
     btn.addEventListener('blur', () => {
       btn.style.outline = '2px solid transparent'
@@ -354,7 +382,15 @@ export class MotionGallery extends BaseElement {
     this.clone = clone
     item.style.opacity = '0'
 
-    if (!this.reduced) {
+    if (this.reduced) {
+      Object.assign(clone.style, {
+        left: `${tx}px`,
+        top: `${ty}px`,
+        width: `${tw}px`,
+        height: `${th}px`,
+        borderRadius: '16px',
+      })
+    } else {
       this.expandAnim = animate(
         clone,
         { left: tx, top: ty, width: tw, height: th, borderRadius: '16px' },

@@ -5,16 +5,47 @@ import type { MotionProgress } from './motion-progress.js'
 import './motion-progress.js'
 
 const bar = (el: MotionProgress) => el.shadowRoot!.querySelector<HTMLElement>('.bar')!
+const scale = (el: MotionProgress) => parseFloat(bar(el).style.transform.slice('scaleX('.length))
+const frames = async (n: number) => {
+  for (let i = 0; i < n; i++) await new Promise(requestAnimationFrame)
+}
 
 describe('motion-progress', () => {
   beforeEach(() => stubReducedMotion(false))
 
-  it('renders a fixed progressbar with an accessible label', async () => {
+  it('hides the decorative bar from screen readers', async () => {
     const el = (await fixture(html`<motion-progress></motion-progress>`)) as MotionProgress
     await elementUpdated(el)
     const b = bar(el)
-    expect(b.getAttribute('role')).toBe('progressbar')
-    expect(b.getAttribute('aria-label')).toBe('Reading progress')
+    expect(b.getAttribute('aria-hidden')).toBe('true')
+    expect(b.hasAttribute('role')).toBe(false)
+  })
+
+  it('follows scrolling directly under reduced motion', async () => {
+    stubReducedMotion(true)
+    const spacer = document.createElement('div')
+    spacer.style.height = '4000px'
+    document.body.append(spacer)
+    window.scrollTo(0, 0)
+    try {
+      const el = (await fixture(html`<motion-progress></motion-progress>`)) as MotionProgress
+      await elementUpdated(el)
+      await frames(3)
+      expect(scale(el)).toBe(0)
+
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      window.scrollTo(0, max / 2)
+      await frames(3)
+      expect(scale(el)).toBeCloseTo(0.5, 1)
+
+      el.cancel()
+      window.scrollTo(0, max)
+      await frames(3)
+      expect(scale(el)).toBe(0)
+    } finally {
+      spacer.remove()
+      window.scrollTo(0, 0)
+    }
   })
 
   it('binds to scroll and reports running after connect', async () => {

@@ -14,7 +14,30 @@ export type { MotionCounterProps } from './motion-counter.types.js'
  * scrolls into view. Use `prefix`/`suffix` for currency or units, `decimals`
  * for fractional precision.
  *
+ * **Use it for:** key figures and statistics, such as a year, a percentage or
+ * a price, that count up once when they scroll into view.
+ *
+ * **Avoid it for:** values that change while the page is open. Setting a new
+ * `to` does not update the number that is shown, and `replay()` counts again
+ * from `from`.
+ *
+ * **Accessibility:** the number is plain text with no `aria-live`. Screen
+ * readers read the value shown at that moment, which can be `from` or a value
+ * in between. If the final value matters, also state it in nearby text.
+ *
+ * **Reduced motion:** the number shows `to` at once when the element scrolls
+ * into view, with no counting. Before that, it shows `from`.
+ *
+ * **Common mistakes:** expecting thousands separators. The number is formatted
+ * with `toFixed` only, so `10000` shows as "10000", not "10,000". Setting
+ * `decimals` lower than the decimals in `to` rounds the final value, so
+ * `to="4.87"` with `decimals="0"` ends at "5".
+ *
  * @element motion-counter
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @example
  * ```html

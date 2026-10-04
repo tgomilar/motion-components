@@ -52,11 +52,14 @@ describe('motion-scene', () => {
     expect(options.offset).toEqual(['start start', 'end end'])
   })
 
-  it('does not bind scroll when reduced motion is preferred', async () => {
+  it('does not bind scroll when reduced motion is preferred, and shows the end state', async () => {
     stubReducedMotion(true)
     const el = await mount()
     expect(scrollMock).not.toHaveBeenCalled()
     expect(el.playState).toBe('idle')
+    const child = el.querySelector('div') as HTMLElement
+    expect(child.style.transform).toContain('scale(1)')
+    expect(child.style.transform).toContain('translateY(0px)')
   })
 
   it('finish() applies the final (progress=1) child transform state', async () => {

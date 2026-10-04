@@ -47,6 +47,35 @@ let uid = 0
  * with a circular view-transition wipe from the control. API-compatible with
  * Google Chrome Labs' `dark-mode-toggle`.
  *
+ * **Use it for:** letting people choose a light or dark theme, or follow the
+ * system setting, for a whole site or for one part of a page.
+ *
+ * **Avoid it for:** sites with only one theme, and other on/off settings;
+ * use a native checkbox for those. To only show the current theme as an
+ * icon, use `motion-theme-icon`.
+ *
+ * **Accessibility:** `icon` and `switch` render a button with
+ * `role="switch"`, where checked means dark. With `system`, `icon` is a plain
+ * button whose label names the current mode, and each press moves to the
+ * next mode. `toggle` is a native radio group in a `<fieldset>`; with
+ * `icon-only` the labels stay available to screen readers. `menu` is a menu
+ * button: the Up and Down arrow keys open it and move between items, Home
+ * and End jump to the first and last item, and Escape closes it and returns
+ * focus to the button. Without `legend` the name is "Dark" for `icon` and
+ * `switch`, and "Theme" for `toggle` and `menu`, so set `legend` to a clear
+ * name.
+ *
+ * **Reduced motion:** the theme changes at once and `wipe` is skipped. The
+ * icon, the selection marker, the switch thumb and the menu change with no
+ * animation, and the hover and press effects are off.
+ *
+ * **Common mistakes:** writing dark styles only in a
+ * `prefers-color-scheme: dark` media query; the toggle cannot change that
+ * query, so style `[data-theme="dark"]` on the target. Relying on the
+ * component alone to apply a saved theme; it applies the theme only after it
+ * loads, so add a small inline script in `<head>` to avoid a flash of the
+ * wrong theme.
+ *
  * @element motion-theme-toggle
  *
  * @fires colorschemechange - When the mode or applied color scheme changes. `detail: { colorScheme, mode }`.

@@ -12,6 +12,25 @@ export type { MotionSpotlightProps } from './motion-spotlight.types.js'
  * spotlight fades in on hover and springs toward the cursor for a smooth,
  * weightful feel rather than locking 1:1 to the pointer.
  *
+ * **Use it for:** a soft glow that follows the pointer over cards, feature
+ * panels or a hero section, as a decorative touch.
+ *
+ * **Avoid it for:** anything that carries meaning, because keyboard, touch
+ * and reduced motion users may never see it. To move or lift the element
+ * itself on hover, use `motion-hover` or `motion-tilt`.
+ *
+ * **Accessibility:** the glow layer has `aria-hidden="true"` and ignores the
+ * pointer, so it does not change what screen readers read or what people can
+ * click. When content inside it takes keyboard focus, the glow fades in at the
+ * last pointer position, or at the center when the pointer is not over it.
+ *
+ * **Reduced motion:** the glow does not show and does not follow the pointer.
+ *
+ * **Common mistakes:** setting `border-radius` on the inner card only; the
+ * glow copies the radius of `motion-spotlight`, so round the host too. Using
+ * a strong `--spotlight-color` over text; the glow sits on top of the
+ * content and can lower the text contrast.
+ *
  * @element motion-spotlight
  *
  * @slot - The content the spotlight overlays.
@@ -73,8 +92,8 @@ export class MotionSpotlight extends LitElement implements MotionSpotlightProps 
     this.addEventListener('pointerenter', this.onEnter)
     this.addEventListener('pointermove', this.onMove)
     this.addEventListener('pointerleave', this.onLeave)
-    this.addEventListener('focusin', this.onEnter)
-    this.addEventListener('focusout', this.onLeave)
+    this.addEventListener('focusin', this.onFocus)
+    this.addEventListener('focusout', this.onBlur)
   }
 
   disconnectedCallback() {
@@ -82,8 +101,8 @@ export class MotionSpotlight extends LitElement implements MotionSpotlightProps 
     this.removeEventListener('pointerenter', this.onEnter)
     this.removeEventListener('pointermove', this.onMove)
     this.removeEventListener('pointerleave', this.onLeave)
-    this.removeEventListener('focusin', this.onEnter)
-    this.removeEventListener('focusout', this.onLeave)
+    this.removeEventListener('focusin', this.onFocus)
+    this.removeEventListener('focusout', this.onBlur)
     this.fadeControls?.stop()
     this.x.stop()
     this.y.stop()
@@ -107,20 +126,32 @@ export class MotionSpotlight extends LitElement implements MotionSpotlightProps 
     this.fade(0)
   }
 
+  private onFocus = () => {
+    if (this.reduced) return
+    if (!this.seeded) this.place(this.offsetWidth / 2, this.offsetHeight / 2)
+    this.fade(1)
+  }
+
+  private onBlur = () => this.fade(0)
+
   private onMove = (e: PointerEvent) => {
     if (this.reduced) return
     const r = this.getBoundingClientRect()
     const tx = e.clientX - r.left
     const ty = e.clientY - r.top
     if (!this.seeded) {
-      this.x.jump(tx)
-      this.y.jump(ty)
+      this.place(tx, ty)
       this.seeded = true
-      this.paint()
       return
     }
     animate(this.x, tx, this.spring)
     animate(this.y, ty, this.spring)
+  }
+
+  private place(x: number, y: number) {
+    this.x.jump(x)
+    this.y.jump(y)
+    this.paint()
   }
 
   private paint = () => {

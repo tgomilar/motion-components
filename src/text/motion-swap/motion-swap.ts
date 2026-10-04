@@ -5,6 +5,7 @@ import { useIntersect } from '../utils/use-intersect.js'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionSwapProps, TriggerMode } from './motion-swap.types.js'
 import type { AnimationPlaybackControls } from 'motion'
+import { wordParts } from '../utils/word-parts.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 
@@ -20,7 +21,33 @@ interface CharPair {
  * Letter-swap text effect. Splits text into individual characters and
  * swaps them vertically on hover or when scrolled into view.
  *
+ * **Use it for:** short labels and headings whose letters should slide out
+ * while copies slide in, when the mouse moves over them or when they scroll
+ * into view (`trigger="view"`).
+ *
+ * **Avoid it for:** long text, because every letter becomes two spans, and
+ * text with links or other markup, which is removed. To move a whole element
+ * on hover, use `motion-hover`.
+ *
+ * **Accessibility:** screen readers read the whole text once from a visually
+ * hidden copy, which also names a link or button the text sits in. The
+ * letters, both the visible ones and the copies that swap in, are
+ * `aria-hidden`. The hover trigger reacts to the mouse only, not to keyboard
+ * focus.
+ *
+ * **Reduced motion:** the letters never swap. The text stays still in its
+ * normal state.
+ *
+ * **Common mistakes:** changing the text or `trigger` after the first render:
+ * both are read once, so replace the element instead. Setting `delay` with
+ * the hover trigger and expecting it only on enter: the swap back on mouse
+ * leave waits for `delay` too.
+ *
  * @element motion-swap
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text to animate. Plain text only — read once on connect.
  *
@@ -32,7 +59,7 @@ interface CharPair {
  */
 @customElement('motion-swap')
 export class MotionSwap extends Controllable(LitElement) implements MotionSwapProps {
-  /** Trigger mode: `'hover'` (swap on mouseenter/mouseleave) or `'view'` (one-shot on viewport entry). */
+  /** Trigger mode: `'hover'` (swap on mouseenter/mouseleave) or `'view'` (swap on viewport entry). */
   @property({ type: String }) trigger: TriggerMode = 'hover'
 
   /** Letters swap bottom-to-top. Set `reverse="false"` to swap top-to-bottom. */
@@ -66,6 +93,7 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
   private dAnim: AnimationPlaybackControls | null = null
   private swapped = false
   private triggered = false
+  private delayTimer: ReturnType<typeof setTimeout> | undefined
   private disconnectIntersect: (() => void) | null = null
 
   private get reduced() {
@@ -138,14 +166,24 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
       this.addEventListener('mouseenter', this.onEnter)
       this.addEventListener('mouseleave', this.onLeave)
     } else {
-      this.disconnectIntersect = useIntersect(this, 0.1, () => {
-        if (this.triggered) return
-        this.triggered = true
-        if (this.once) this.disconnectIntersect?.()
-        const delayMs = this.delay * 1000
-        if (delayMs) setTimeout(() => void this.play(), delayMs)
-        else void this.play()
-      })
+      this.disconnectIntersect = useIntersect(
+        this,
+        0.1,
+        () => {
+          if (this.triggered) return
+          this.triggered = true
+          if (this.once) this.disconnectIntersect?.()
+          const delayMs = this.delay * 1000
+          if (delayMs) this.delayTimer = setTimeout(() => void this.play(), delayMs)
+          else void this.play()
+        },
+        () => {
+          if (this.once) return
+          this.triggered = false
+          clearTimeout(this.delayTimer)
+          this.cancel()
+        },
+      )
     }
   }
 
@@ -156,6 +194,7 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
 
   disconnectedCallback() {
     super.disconnectedCallback()
+    clearTimeout(this.delayTimer)
     this.stopAnims()
     this.oAnim?.stop()
     this.dAnim?.stop()
@@ -168,15 +207,27 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
     const words = text.split(/\s+/)
     this.pairs = []
 
+    const label = document.createElement('span')
+    label.textContent = words.join(' ')
+    label.style.cssText =
+      'position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;'
+    this.appendChild(label)
+
     words.forEach((word, wi) => {
       if (wi > 0) {
         this.appendSpace()
       }
-      ;[...word].forEach((char) => {
-        const pair = this.createCharPair(char)
-        this.pairs.push(pair)
-        this.appendChild(pair.container)
-      })
+      for (const part of wordParts(word)) {
+        const group = document.createElement('span')
+        group.style.cssText = 'display: inline-block; white-space: nowrap;'
+        group.setAttribute('aria-hidden', 'true')
+        ;[...part].forEach((char) => {
+          const pair = this.createCharPair(char)
+          this.pairs.push(pair)
+          group.appendChild(pair.container)
+        })
+        this.appendChild(group)
+      }
     })
   }
 
@@ -184,6 +235,7 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
     const space = document.createElement('span')
     space.textContent = ' '
     space.style.whiteSpace = 'pre'
+    space.setAttribute('aria-hidden', 'true')
     this.appendChild(space)
   }
 

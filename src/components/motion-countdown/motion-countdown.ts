@@ -35,7 +35,33 @@ const STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
  * Countdown timer with animated digit transitions. Supports flip (default) and
  * roll (slot-machine) modes. Customisable format, labels, and target date.
  *
+ * **Use it for:** the time left until a launch, an event start or the end of
+ * a sale, shown in days, hours, minutes and seconds.
+ *
+ * **Avoid it for:** elapsed time or a stopwatch, because it only counts down
+ * and stays at zero when the time is up. To count a number up once, use
+ * `motion-counter`.
+ *
+ * **Accessibility:** the numbers and unit labels are plain text, and the `:`
+ * separators are hidden from screen readers. There is no live region, so
+ * screen readers do not announce each second. In `roll` mode the columns of
+ * the numbers 0 to 9 are `aria-hidden`, and screen readers read the current
+ * value of each unit from a visually hidden copy.
+ *
+ * **Reduced motion:** the timer still updates every second, but each digit
+ * changes in place with no flip or roll. `motion-start` and `motion-finish`
+ * fire as usual, and `pause()`, `play()` and `cancel()` control the timer.
+ *
+ * **Common mistakes:** setting a new `to` after the time is up; the timer has
+ * stopped, so call `play()` to count down again. Leaving `days` out of
+ * `format` when the target is more than a day away; hours only go from 0 to
+ * 23, so the days are lost.
+ *
  * @element motion-countdown
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - Once when the time is up, or when `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @cssprop --countdown-size - Font size of the digits. Default `3.5rem`.
  * @cssprop --countdown-color - Digit color. Default `currentColor`.
@@ -68,6 +94,7 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   private ready = false
   private flips = new Set<AnimationPlaybackControlsWithThen>()
   private flipEpoch = 0
+  private resolveRun: (() => void) | null = null
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -125,6 +152,15 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
       user-select: none;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
     .label {
       font-size: var(--countdown-label-size, 0.65rem);
       font-weight: 700;
@@ -147,8 +183,12 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
+      const done = new Promise<void>((resolve) => {
+        this.resolveRun = resolve
+      })
       this.startTicking()
       return {
+        done,
         handle: {
           pause: () => this.stopTicking(),
           resume: () => this.startTicking(),
@@ -160,14 +200,17 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
         },
       }
     },
-    applyFinalState: () => this.applyTime({ days: 0, hours: 0, minutes: 0, seconds: 0 }),
+    applyFinalState: () => {
+      this.stopTicking()
+      this.applyTime({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+    },
     applyInitialState: () => this.applyTime(this.timeLeft()),
+    runsUnderReducedMotion: true,
   })
 
   connectedCallback() {
     super.connectedCallback()
-    if (this.reduced) this.startTicking()
-    else void this.play()
+    void this.play()
   }
 
   disconnectedCallback() {
@@ -187,8 +230,8 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   }
 
   private startTicking() {
-    this.tick()
     this.interval = setInterval(() => this.tick(), 1000)
+    this.tick()
   }
 
   private stopTicking() {
@@ -237,7 +280,8 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   }
 
   private tick() {
-    if (isNaN(new Date(this.to).getTime())) return
+    const target = new Date(this.to).getTime()
+    if (isNaN(target)) return
     const next = this.timeLeft()
 
     for (const unit of this.activeUnits()) {
@@ -266,6 +310,13 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
     }
 
     this.time = next
+    if (target <= Date.now()) this.timeUp()
+  }
+
+  private timeUp() {
+    this.stopTicking()
+    if (this.playState === 'idle') this.finish()
+    else this.resolveRun?.()
   }
 
   private rollDigit(strip: HTMLElement, oldDigit: number, newDigit: number) {
@@ -363,10 +414,11 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
           ${i > 0 ? html`<span class="sep" aria-hidden="true">:</span>` : ''}
           <div class="unit">
             <div class="digits">
+              ${this.roll ? html`<span class="sr-only">${padded}</span>` : ''}
               ${Array.from({ length: padded.length }, (_, pos) => {
                 const key = `${unit}-${pos}`
                 return this.roll
-                  ? html` <div class="reel">
+                  ? html` <div class="reel" aria-hidden="true">
                       <div class="strip" ${ref(this.ref(key))}>
                         ${STRIP.map((d) => html`<span class="digit">${d}</span>`)}
                       </div>

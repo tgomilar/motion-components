@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import { page } from 'vitest/browser'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion } from '../../test/helpers.js'
 import type { MotionImageCompare } from './motion-image-compare.js'
@@ -30,6 +31,15 @@ describe('motion-image-compare', () => {
     expect(k.getAttribute('aria-valuenow')).toBe('50')
     expect(k.getAttribute('aria-orientation')).toBe('horizontal')
     expect(k.tabIndex).toBe(0)
+  })
+
+  it('exposes the knob to screen readers as a named slider without the glyph', async () => {
+    const el = await mount()
+    await elementUpdated(el)
+    const k = knob(el)
+    const named = page.getByRole('slider', { name: 'Image comparison' }).elements()
+    expect(named).toContain(k)
+    expect(k.querySelector('[aria-hidden="true"]')!.textContent).toBe('⇆')
   })
 
   it('applies the initial split to the after-pane clip and handle', async () => {
@@ -76,6 +86,18 @@ describe('motion-image-compare', () => {
     )
     await elementUpdated(el)
     expect(knob(el).getAttribute('aria-valuenow')).toBe('60')
+  })
+
+  it('Home and End move the split to 0 and 100', async () => {
+    stubReducedMotion(true)
+    const el = await mount()
+    await elementUpdated(el)
+    knob(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
+    await elementUpdated(el)
+    expect(knob(el).getAttribute('aria-valuenow')).toBe('100')
+    knob(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }))
+    await elementUpdated(el)
+    expect(knob(el).getAttribute('aria-valuenow')).toBe('0')
   })
 
   it('clamps the split within 0–100 at the edge', async () => {

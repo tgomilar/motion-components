@@ -30,6 +30,14 @@ describe('motion-spotlight', () => {
     )) as MotionSpotlight
   }
 
+  async function mountSized() {
+    return (await fixture(
+      html`<motion-spotlight style="width:200px"
+        ><div style="height:100px">content</div></motion-spotlight
+      >`,
+    )) as MotionSpotlight
+  }
+
   it('renders a slot and an aria-hidden spotlight overlay', async () => {
     const el = await mount()
     expect(el.shadowRoot!.querySelector('slot')).not.toBeNull()
@@ -59,6 +67,20 @@ describe('motion-spotlight', () => {
     el.dispatchEvent(new FocusEvent('focusin'))
     expect(animateMock).toHaveBeenCalledOnce()
     expect(animateMock.mock.calls[0][1]).toMatchObject({ opacity: 1 })
+  })
+
+  it('draws the glow at the center on focus before the pointer has moved', async () => {
+    const el = await mountSized()
+    el.dispatchEvent(new FocusEvent('focusin'))
+    expect(spot(el).style.background).toContain('circle at 100px 50px')
+  })
+
+  it('keeps the pointer position when content takes focus', async () => {
+    const el = await mountSized()
+    const r = el.getBoundingClientRect()
+    el.dispatchEvent(new PointerEvent('pointermove', { clientX: r.left + 30, clientY: r.top + 20 }))
+    el.dispatchEvent(new FocusEvent('focusin'))
+    expect(spot(el).style.background).toContain('circle at 30px 20px')
   })
 
   it('reflects size and reads the color from --spotlight-color', async () => {

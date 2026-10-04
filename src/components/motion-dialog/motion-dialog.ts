@@ -13,6 +13,28 @@ export type { MotionDialogProps } from './motion-dialog.types.js'
  * and built-in accessibility. Open/close via the `open` attribute or `show()`
  * / `close()` methods.
  *
+ * **Use it for:** confirmations, short forms and focused tasks that must
+ * block the rest of the page until the person responds.
+ *
+ * **Avoid it for:** hints, menus or notes that should not block the page; use
+ * the native `popover` attribute or `<details>` for those. To enlarge images
+ * from a grid, use `motion-gallery`, which has its own lightbox.
+ *
+ * **Accessibility:** it opens a native `<dialog>` with `showModal()`, so the
+ * browser moves focus into the dialog and makes the rest of the page inert.
+ * Escape closes it with the exit animation. The component gives the dialog
+ * no accessible name, so start the content with a clear heading, and always
+ * include a visible close button.
+ *
+ * **Reduced motion:** the panel and the backdrop appear and disappear at
+ * once, with no slide or fade. `motion-close` still fires after the dialog
+ * closes.
+ *
+ * **Common mistakes:** listening for the native `close` event on
+ * `motion-dialog`; it does not reach the host, so listen for `motion-close`.
+ * Expecting a click outside the panel to close the dialog; that only happens
+ * with `light-dismiss`.
+ *
  * @element motion-dialog
  *
  * @slot - Content rendered inside the dialog panel.
@@ -115,9 +137,13 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
   }
 
   // Capture-phase listener on document catches the backdrop click regardless of
-  // shadow DOM retargeting. getBoundingClientRect distinguishes panel from backdrop.
+  // shadow DOM retargeting. Clicks on panel content never dismiss, which covers
+  // keyboard clicks reported at (0, 0). A click on the dialog itself lands on
+  // its padding or its backdrop, and getBoundingClientRect tells them apart.
   private onDocumentClick = (e: MouseEvent) => {
     if (!this.lightDismiss || !this.dialogEl?.open) return
+    const path = e.composedPath()
+    if (path[0] !== this.dialogEl && path.includes(this.dialogEl)) return
     const rect = this.dialogEl.getBoundingClientRect()
     const inside =
       e.clientX >= rect.left &&

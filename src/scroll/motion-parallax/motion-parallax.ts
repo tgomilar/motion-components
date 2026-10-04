@@ -12,7 +12,31 @@ export type { MotionParallaxProps } from './motion-parallax.types.js'
  * Lightweight parallax scroll primitive. Moves the slotted content along the
  * chosen axis by a configurable depth relative to the scroll position.
  *
+ * **Use it for:** background images, decorative shapes and layered hero art
+ * that should move at a different speed than the page while it scrolls.
+ *
+ * **Avoid it for:** text and controls people need to read or use. For a
+ * pinned scroll sequence, use `motion-scene`. For a one-time entrance, use
+ * `motion-reveal`.
+ *
+ * **Accessibility:** the component adds no roles or aria attributes. The
+ * content stays in the page and in reading order. Only `transform` changes,
+ * so the layout does not shift. Give decorative images an empty `alt`.
+ *
+ * **Reduced motion:** the scroll effect does not start, and the content stays
+ * at its normal position. If you call `play()`, the content jumps to its end
+ * offset and does not follow the scroll.
+ *
+ * **Common mistakes:** expecting `axis="x"` to follow a sideways scroller:
+ * `axis` only sets the direction of movement, and the movement still follows
+ * vertical scrolling. A `container` selector that matches nothing falls back
+ * to the page scroll without a warning.
+ *
  * @element motion-parallax
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The content that parallax-scrolls.
  *

@@ -14,6 +14,28 @@ export type { MotionTiltProps } from './motion-tilt.types.js'
  * cursor position with a soft drop-shadow that tracks the tilt.
  * Optional gloss overlay adds a moving highlight.
  *
+ * **Use it for:** cards, product images and feature tiles that should turn in
+ * 3D toward the mouse pointer, with an optional moving shine from `gloss`.
+ *
+ * **Avoid it for:** small controls such as buttons and icons; use
+ * `motion-hover` or `motion-magnetic`.
+ *
+ * **Accessibility:** it adds no role, `tabindex` or ARIA attributes, so the
+ * slotted content keeps its own role and keyboard behavior. The tilt reacts
+ * to the mouse only, so keyboard focus does not trigger it. The `gloss` layer
+ * ignores the pointer, so clicks reach the content. The wrapper does not clip
+ * its content, so focus outlines of slotted content show in full.
+ *
+ * **Reduced motion:** mouse movement does nothing. The content stays flat, at
+ * normal size, with no shadow or gloss.
+ *
+ * **Common mistakes:** changing the border radius of the content after it
+ * renders, for example in a media query. The wrapper copies the radius of the
+ * first slotted element only on first render and when the slotted content
+ * changes, so the corners of the gloss stop matching. Expecting the wrapper to
+ * clip the content to its rounded corners; give the content its own
+ * `overflow: hidden` for that.
+ *
  * @element motion-tilt
  *
  * @slot - The content to tilt. Border-radius is mirrored onto the inner wrapper.
@@ -53,7 +75,6 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
     .inner {
       position: relative;
       will-change: transform;
-      overflow: hidden;
     }
 
     .gloss {
@@ -62,6 +83,7 @@ export class MotionTilt extends LitElement implements MotionTiltProps {
       pointer-events: none;
       opacity: 0;
       z-index: 1;
+      border-radius: inherit;
     }
   `
 

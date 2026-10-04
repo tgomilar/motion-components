@@ -79,6 +79,51 @@ describe('motion-ticker', () => {
     expect(el.playState).toBe('idle')
   })
 
+  it('reduced motion offers no focus stop or pause hint', async () => {
+    stubReducedMotion(true)
+    const el = await ticker()
+    expect(el.hasAttribute('tabindex')).toBe(false)
+    expect(el.hasAttribute('role')).toBe(false)
+    expect(el.getAttribute('aria-label') ?? '').not.toContain('Space')
+    expect(el.textContent).toContain('Three')
+  })
+
+  it('leaves Space and Enter alone when they come from an item', async () => {
+    const el = (await fixture(
+      html`<motion-ticker style="width: 200px"
+        ><button>One</button><span>Two</span><span>Three</span></motion-ticker
+      >`,
+    )) as MotionTicker
+    await until(() => trackX(el) < -20)
+    const button = el.querySelector('button')!
+    for (const key of [' ', 'Enter']) {
+      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+      button.dispatchEvent(event)
+      expect(event.defaultPrevented).toBe(false)
+    }
+    await sleep(HOVER_DWELL)
+    expect(el.playState).toBe('running')
+  })
+
+  it('hides every copy from screen readers and the Tab order', async () => {
+    const el = (await fixture(
+      html`<motion-ticker style="width: 600px"
+        ><a href="#one">One</a><a href="#two">Two</a><a href="#three">Three</a></motion-ticker
+      >`,
+    )) as MotionTicker
+    await until(() => trackX(el) < -20)
+    expect(el.querySelector('div > div')!.childElementCount).toBeGreaterThan(3)
+
+    const links = [...el.querySelectorAll('a')]
+    const read = links.filter((a) => !a.closest('[aria-hidden="true"]'))
+    expect(read.map((a) => a.textContent)).toEqual(['One', 'Two', 'Three'])
+    const focusable = links.filter((a) => {
+      a.focus({ preventScroll: true })
+      return document.activeElement === a
+    })
+    expect(focusable).toEqual(read)
+  })
+
   it('cancel() drops back to idle', async () => {
     const el = await ticker()
     el.cancel()

@@ -41,12 +41,37 @@ function barPath(x: number, width: number, base: number, end: number) {
  * When the data changes, every bar and point springs to its new value, and a
  * change in the middle of an animation continues from where the chart is.
  *
+ * **Use it for:** comparing values across categories with bars, or showing a
+ * trend over time with lines, for up to eight series.
+ *
+ * **Avoid it for:** parts of a whole; use `motion-pie`. For a small trend in
+ * a sentence or a table cell, use `motion-sparkline`. Avoid it for more than
+ * eight series, because series after the eighth are not drawn.
+ *
+ * **Accessibility:** the drawing is hidden from screen readers, which read a
+ * visually hidden data table instead: your own `<table>`, or one built from
+ * `values` or `data` with `label` as its caption. The plot is a focusable
+ * group with the role description "chart" and `label` as its name. The Left
+ * and Right arrow keys move between points, Home and End jump to the first
+ * and last, Escape hides the tooltip, and a polite live region announces each
+ * point. Set `label`, and give each series a name.
+ *
+ * **Reduced motion:** bars and lines appear at their final values at once
+ * when the entrance would start (on mount, or when 30% of the chart is in
+ * view). Data changes and tooltip moves also happen at once.
+ *
+ * **Common mistakes:** writing thousands separators in `values`, such as
+ * `1,200`: commas separate values there, so it reads as 1 and 200. Using
+ * numbers such as years as series names in a header row of `<td>` cells: the
+ * row is read as data. Use `<th>` for every cell of that row, or a `<thead>`.
+ *
  * @element motion-chart
  *
  * @slot - An optional `<table>` with the data. It stays available to screen readers.
  *
  * @fires motion-start - When the entrance animation starts.
  * @fires motion-finish - When the entrance animation finishes.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @cssprop --chart-height - Height of the chart, including the legend. Default `16rem`.
  * @cssprop --chart-1 - Color of the first series. `--chart-2` to `--chart-8` color the others.

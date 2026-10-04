@@ -57,6 +57,42 @@ describe('motion-icon', () => {
     expect(el.playState).toBe('running')
   })
 
+  it('draws and wiggles together with a combined animation', async () => {
+    const io = stubIntersectionObserver()
+    const el = await mount('trigger="view" animation="draw wiggle" duration="0.3"')
+    expect(strokes(el)[0].style.strokeDashoffset).toBe('1')
+    io.enter()
+    expect(el.playState).toBe('running')
+    await new Promise((r) => setTimeout(r, 120))
+    const svg = el.querySelector('svg')!
+    expect(getComputedStyle(svg).transform).not.toBe('none')
+    await el.finished
+    expect(Number(getComputedStyle(strokes(el)[0]).strokeDashoffset.replace('px', ''))).toBeCloseTo(
+      0,
+    )
+  })
+
+  it('runs only the motion of a combined animation on filled icons', async () => {
+    const el = await mount('trigger="click" animation="draw wiggle"', FILLED)
+    expect(el.querySelector('path')!.hasAttribute('pathLength')).toBe(false)
+    el.click()
+    expect(el.playState).toBe('running')
+    await el.finished
+    expect(el.querySelector('svg')!.style.fillOpacity).toBe('')
+  })
+
+  it('prepares strokes while slotted into a component that has not rendered yet', async () => {
+    const host = document.createElement('div')
+    host.attachShadow({ mode: 'open' })
+    host.innerHTML = `<motion-icon trigger="view">${STROKE}</motion-icon>`
+    document.body.append(host)
+    const el = host.querySelector('motion-icon') as MotionIcon
+    await elementUpdated(el)
+    expect(strokes(el).every((p) => p.getAttribute('pathLength') === '1')).toBe(true)
+    expect(strokes(el)[0].style.strokeDashoffset).toBe('1')
+    host.remove()
+  })
+
   it('falls back from draw to pop for filled icons', async () => {
     const el = await mount('trigger="click"', FILLED)
     expect(el.querySelector('path')!.hasAttribute('pathLength')).toBe(false)
@@ -86,6 +122,17 @@ describe('motion-icon', () => {
     el.remove()
   })
 
+  it('cancel() during the pause stops the loop', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const el = await mount('trigger="loop" interval="0.5"')
+    el.finish()
+    el.cancel()
+    vi.advanceTimersByTime(1000)
+    expect(el.playState).toBe('idle')
+    vi.useRealTimers()
+    el.remove()
+  })
+
   it('shows the final state at once under reduced motion', async () => {
     stubReducedMotion(true)
     const el = await mount('trigger="mount"')
@@ -103,6 +150,20 @@ describe('motion-icon', () => {
     expect(path.getAttribute('fill')).toBe('url(#g)')
     expect(path.hasAttribute('style')).toBe(false)
     expect(svg.querySelector('use')!.getAttribute('href')).toBe('#g')
+  })
+
+  it('removes style attributes and escaped external references', async () => {
+    const el = await mount('', '')
+    el.icon = `<svg viewBox="0 0 24 24" style="background: red"><path d="M1 1" style="fill: none"/><path d="M2 2" fill="u\\72l(https://x.test/a)"/><path d="M3 3" mask="\\75 rl(//x.test/m)"/><path d="M4 4" filter="-webkit-image-set('https://x.test/i' 1x)"/><path d="M5 5" clip-path="url(&quot;#c&quot;)"/></svg>`
+    await elementUpdated(el)
+    const svg = el.shadowRoot!.querySelector('.icon svg')!
+    const paths = svg.querySelectorAll('path')
+    expect(svg.hasAttribute('style')).toBe(false)
+    expect(paths[0].hasAttribute('style')).toBe(false)
+    expect(paths[1].hasAttribute('fill')).toBe(false)
+    expect(paths[2].hasAttribute('mask')).toBe(false)
+    expect(paths[3].hasAttribute('filter')).toBe(false)
+    expect(paths[4].getAttribute('clip-path')).toBe('url("#c")')
   })
 
   it('fills icons without a fill with currentColor', async () => {

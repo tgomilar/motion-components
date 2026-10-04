@@ -80,6 +80,33 @@ describe('review fixes', () => {
     expect(data.series).toEqual([{ name: '', values: [1200, 12] }])
   })
 
+  it('reads the first number in a cell and ignores units and notes', () => {
+    const cells = [
+      '€12k',
+      '3 – 5%',
+      'Revenue 12 (est. 15)',
+      '−4.5',
+      '1,234,567.8',
+      '.5',
+      '2e3',
+      '—',
+      'n/a',
+    ]
+    const data = fromTable(
+      table(cells.map((c, i) => `<tr><td>${i}</td><td>${c}</td></tr>`).join('')),
+    )
+    expect(data.series[0].values).toEqual([12, 3, 12, -4.5, 1234567.8, 0.5, 2000, 0, 0])
+  })
+
+  it('prefers data-value over the cell text', () => {
+    const data = fromTable(
+      table(
+        '<tr><td>Jan</td><td data-value="1234.5">1.234,5 €</td></tr><tr><td>Feb</td><td>1.234,5</td></tr>',
+      ),
+    )
+    expect(data.series[0].values).toEqual([1234.5, 1.234])
+  })
+
   it('keeps a usable scale when min is above max', () => {
     const scale = niceScale(20, 15)
     expect(scale.ticks.length).toBeGreaterThan(1)

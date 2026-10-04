@@ -13,7 +13,32 @@ export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
  * viewport to opacity, blur, and Y-translation. Direction controls whether the
  * blur happens on entry, exit, or both.
  *
+ * **Use it for:** hero images, quotes and section headings that should come
+ * into focus, or fade away, as the page scrolls.
+ *
+ * **Avoid it for:** an entrance that should play on its own once the content
+ * is in view; use `motion-blur-in`, which plays over a fixed time. Avoid
+ * `direction="both"` for text people need to read, because the text is fully
+ * clear only when it is in the middle of the screen.
+ *
+ * **Accessibility:** the content stays in the page while it is faded or
+ * blurred, so screen readers can read it at any scroll position. Only
+ * opacity, filter and transform change, so the layout does not shift.
+ *
+ * **Reduced motion:** the content shows fully visible, sharp and in place at
+ * once, for every `direction`, and it does not change as the page scrolls.
+ * No run starts, so `motion-start` and `motion-finish` do not fire.
+ *
+ * **Common mistakes:** placing it near the end of the page, or on a page too
+ * short to scroll. With `direction="in"`, the content is fully clear only
+ * when its center reaches the middle of the screen, so it can stay faded and
+ * blurred. Use `motion-blur-in` there.
+ *
  * @element motion-blur
+ *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The content to blur on scroll.
  *

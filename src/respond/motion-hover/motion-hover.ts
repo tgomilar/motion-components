@@ -12,6 +12,27 @@ export type { MotionHoverProps } from './motion-hover.types.js'
  * Spring-based hover transform primitive. Animates scale, translation, rotation,
  * and skew on mouse enter, springs back on leave. Composes with any slotted content.
  *
+ * **Use it for:** buttons, links, cards and images that should grow, move or
+ * rotate a little while the mouse pointer is over them.
+ *
+ * **Avoid it for:** feedback on click or tap; use `motion-press`. For effects
+ * that follow the pointer, use `motion-magnetic` or `motion-tilt`. Do not use
+ * it as the only sign that something is interactive, because it does not run
+ * on keyboard focus.
+ *
+ * **Accessibility:** it adds no role, `tabindex` or ARIA attributes, so the
+ * slotted content keeps its own role and keyboard behavior. The effect reacts
+ * to mouse enter and leave only, so keyboard focus does not trigger it; give
+ * the content its own visible focus style. Only transform changes, so the
+ * layout does not shift, but the moved content can cover nearby elements.
+ *
+ * **Reduced motion:** mouse enter and leave do nothing, and the content stays
+ * at its rest state.
+ *
+ * **Common mistakes:** wrapping a block element such as a card. The host is
+ * `display: inline-block`, so the card can shrink to the width of its
+ * content; set `display: block` on `motion-hover`.
+ *
  * @element motion-hover
  *
  * @slot - The content that lifts on hover.

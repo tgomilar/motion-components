@@ -15,6 +15,25 @@ export type { MotionStretchProps } from './motion-stretch.types.js'
  * doubles as a pre-upgrade fallback: the browser shows it before the
  * element is defined, so the page never paints an empty gap.
  *
+ * **Use it for:** short words, logos or labels whose letters should spread
+ * apart with a springy bounce when the mouse moves over them.
+ *
+ * **Avoid it for:** text that must wrap, because the letters sit on one line,
+ * and effects that keyboard users need to see. To lift or scale a whole
+ * element on hover, use `motion-hover`.
+ *
+ * **Accessibility:** the full text is in a visually hidden span and the
+ * letter spans have `aria-hidden`, so screen readers read the text once, as
+ * normal words. The effect reacts to the mouse only, not to keyboard focus,
+ * so do not use it to show state or meaning.
+ *
+ * **Reduced motion:** the letters do not move when the mouse enters.
+ *
+ * **Common mistakes:** a large `spread` next to other content: the edge
+ * letters move about `spread` pixels outside the element and can cover the
+ * content next to it, so leave space around it. Changing the child text after
+ * the element connects has no effect; set `text` instead.
+ *
  * @element motion-stretch
  *
  * @example
