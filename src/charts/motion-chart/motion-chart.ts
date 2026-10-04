@@ -132,6 +132,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
 
   private springs = new SpringValues(() => this.requestUpdate())
   private draw = new SpringValues(() => this.requestUpdate())
+  private domain = new SpringValues(() => this.requestUpdate())
   private fmt = formatter('')
   private announcement = ''
   private tipShown = false
@@ -180,11 +181,13 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     this.disconnectIntersect = null
     this.springs.stop()
     this.draw.stop()
+    this.domain.stop()
   }
 
   willUpdate(changed: Map<string, unknown>) {
     if (changed.has('format')) this.fmt = formatter(this.format)
-    if (['values', 'labels', 'series', 'data'].some((key) => changed.has(key))) this.retarget()
+    if (['values', 'labels', 'series', 'data', 'min', 'max'].some((key) => changed.has(key)))
+      this.retarget()
     if (changed.has('type')) {
       if (this.playState === 'idle') this.showInitial()
       else this.showFinal()
@@ -235,13 +238,21 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     this.model = next
     if (this.active >= m) this.active = -1
     const targets = this.targets(next)
+    const { min, max } = this.scale()
     if (this.playState === 'idle') this.showInitial()
-    else if (reduced()) this.springs.set(targets)
-    else this.springs.to(targets, () => this.spring())
+    else if (reduced()) {
+      this.springs.set(targets)
+      this.domain.set([min, max])
+    } else {
+      this.springs.to(targets, () => this.spring())
+      this.domain.to([min, max], () => ({ ...this.spring(), bounce: 0 }))
+    }
   }
 
   private showInitial() {
     const targets = this.targets()
+    const { min, max } = this.scale()
+    this.domain.set([min, max])
     if (this.type === 'bar') {
       this.springs.set(targets.map(() => 0))
       this.draw.set([1])
@@ -252,6 +263,8 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
   }
 
   private showFinal() {
+    const { min, max } = this.scale()
+    this.domain.set([min, max])
     this.springs.set(this.targets())
     this.draw.set([1])
   }
@@ -282,16 +295,22 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     })
   }
 
-  private layout() {
-    const { labels } = this.model
+  private scale() {
     const values = this.targets()
     const lo = Number.isNaN(this.min) ? Math.min(0, ...values) : this.min
     const hi = Number.isNaN(this.max) ? Math.max(0, ...values) : this.max
-    const scale = niceScale(lo, hi)
+    return niceScale(lo, hi)
+  }
+
+  private layout() {
+    const { labels } = this.model
+    const scale = this.scale()
+    const [low, high] =
+      this.domain.current.length === 2 ? this.domain.current : [scale.min, scale.max]
     const left = Math.max(...scale.ticks.map((t) => this.fmt(t).length)) * CHAR + 10
     const plotW = Math.max(0, this.size.width - left - PAD.right)
     const plotH = Math.max(0, this.size.height - PAD.top - PAD.bottom)
-    const span = scale.max - scale.min || 1
+    const span = high - low || 1
     const band = labels.length ? plotW / labels.length : 0
     return {
       scale,
@@ -299,7 +318,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
       plotW,
       plotH,
       band,
-      y: (v: number) => PAD.top + plotH * (1 - (v - scale.min) / span),
+      y: (v: number) => PAD.top + plotH * (1 - (v - low) / span),
       x: (i: number) => left + band * (i + 0.5),
     }
   }
@@ -325,13 +344,17 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     const draw = this.draw.current[0] ?? 1
     const a = this.active
 
+    const plotBottom = PAD.top + L.plotH
     return svg`<svg aria-hidden="true">
-      ${L.scale.ticks.map(
-        (
-          t,
-        ) => svg`<line class="grid" x1=${L.left} x2=${L.left + L.plotW} y1=${L.y(t)} y2=${L.y(t)} />
+      <defs><clipPath id="plot"><rect x="0" y="0" width=${this.size.width} height=${plotBottom} /></clipPath></defs>
+      ${L.scale.ticks
+        .filter((t) => L.y(t) >= PAD.top - 1 && L.y(t) <= plotBottom + 1)
+        .map(
+          (
+            t,
+          ) => svg`<line class="grid" x1=${L.left} x2=${L.left + L.plotW} y1=${L.y(t)} y2=${L.y(t)} />
           <text class="tick" x=${L.left - 8} y=${L.y(t)} text-anchor="end" dominant-baseline="middle">${this.fmt(t)}</text>`,
-      )}
+        )}
       ${labels.map((label, i) =>
         i % every
           ? nothing
@@ -342,7 +365,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
           ? svg`<line class="crosshair" x1=${L.x(a)} x2=${L.x(a)} y1=${PAD.top} y2=${PAD.top + L.plotH} />`
           : nothing
       }
-      ${series.map((_, s) =>
+      <g clip-path="url(#plot)">${series.map((_, s) =>
         this.type === 'bar'
           ? labels.map(
               (_, i) =>
@@ -358,7 +381,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
                   (i) =>
                     svg`<circle class="point" fill=${seriesColor(s)} r="4" cx=${L.x(i)} cy=${L.y(this.value(s, i))} />`,
                 )}`,
-      )}
+      )}</g>
       <rect x=${L.left} y=${PAD.top} width=${L.plotW} height=${L.plotH} fill="transparent" />
     </svg>`
   }

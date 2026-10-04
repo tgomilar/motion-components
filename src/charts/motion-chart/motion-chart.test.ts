@@ -125,4 +125,24 @@ describe('motion-chart', () => {
       '1',
     )
   })
+
+  it('keeps bars inside the chart while the scale shrinks', async () => {
+    const el = await mount(
+      '<motion-chart trigger="mount" values="12900, 11200" labels="A, B"></motion-chart>',
+    )
+    await el.finished
+    await elementUpdated(el)
+    el.values = '3100, 2400'
+    let highest = Infinity
+    const start = performance.now()
+    while (performance.now() - start < 900) {
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      await elementUpdated(el)
+      for (const bar of bars(el)) highest = Math.min(highest, bar.getBBox().y)
+    }
+    expect(highest).toBeGreaterThanOrEqual(0)
+    const ticks = [...el.shadowRoot!.querySelectorAll('.tick')].map((t) => t.textContent)
+    expect(ticks).toContain('4,000')
+    expect(ticks).not.toContain('15,000')
+  })
 })
