@@ -29,6 +29,10 @@
 - `motion-icon`: an inline `<svg>` inside another component (for example in a link wrapped by `motion-hover`) draws its outline again in Chromium. The stroke is now read from the SVG attributes, because Chromium reports no stroke while the outer component has not rendered its slot.
 - `motion-icon`: the sanitizer now removes `style` attributes and decodes CSS escapes before checking for outside references, so `u\72l(...)` and `image-set(...)` can no longer load files from another server.
 
+### Changed
+
+- `motion-stretch`: the default `duration` is now `0.77` instead of `0.45`. With `bounce` `0.55`, the default spring now settles like the spring before 1.0 (`stiffness` 320, `damping` 16). Set `duration="0.45"` to keep the faster settle.
+
 ### Added
 
 - New text annotation components that draw a mark onto their text when it scrolls into view, on hover, or on mount: `motion-marker` (a highlighter stroke behind the text), `motion-underline` (`shape` is `line`, `dashed`, `dotted` or `wave`), `motion-strike` (a line through the text) and `motion-ring` (an ellipse, or a box with `shape="box"`, around a word). Marker, strike and the straight, dashed and dotted underlines follow text that wraps across lines. Colors and thickness are set with `--mc-marker-color`, `--mc-mark-color` and `--mc-mark-thickness`; new CSS custom properties now use the `--mc-` prefix.
