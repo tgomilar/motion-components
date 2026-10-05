@@ -35,14 +35,14 @@ import { property, state } from 'lit/decorators.js'
  *
  * @slot - The code text to render and copy.
  *
- * @cssprop [--color-accent=#2563eb] - Code text color, and the copy button color on hover.
- * @cssprop [--color-accent-dim=#2563eb18] - Background behind the code.
- * @cssprop [--color-muted=#60608a] - Copy button color.
+ * @cssprop [--mc-color-accent=#2563eb] - Code text color, and the copy button color on hover.
+ * @cssprop [--mc-color-accent-dim=#2563eb18] - Background behind the code.
+ * @cssprop [--mc-color-muted=#60608a] - Copy button color.
  *
  * @example
  * ```html
  * <motion-code-inline copy>npm i motion-components</motion-code-inline>
- * <motion-code-inline copy-visible>--color-accent</motion-code-inline>
+ * <motion-code-inline copy-visible>--mc-color-accent</motion-code-inline>
  * ```
  */
 @customElement('motion-code-inline')
@@ -66,8 +66,8 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
     code {
       font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
       font-size: 0.875em;
-      color: var(--color-accent, #2563eb);
-      background: var(--color-accent-dim, #2563eb18);
+      color: var(--mc-color-accent, #2563eb);
+      background: var(--mc-color-accent-dim, #2563eb18);
       padding: 0.15em 0.45em;
       border-radius: 5px;
       white-space: nowrap;
@@ -81,7 +81,7 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
       border: none;
       padding: 0.1em;
       cursor: pointer;
-      color: var(--color-muted, #60608a);
+      color: var(--mc-color-muted, #60608a);
       border-radius: 4px;
       opacity: 0;
       transition:
@@ -97,12 +97,12 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
     }
 
     button:focus-visible {
-      outline: 2px solid var(--color-accent, #2563eb);
+      outline: 2px solid var(--mc-color-accent, #2563eb);
       outline-offset: 1px;
     }
 
     button:hover {
-      color: var(--color-accent, #2563eb);
+      color: var(--mc-color-accent, #2563eb);
     }
 
     button svg {

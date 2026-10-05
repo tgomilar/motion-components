@@ -34,7 +34,7 @@ type Controls = ReturnType<typeof animateMock>
 type Options = { onUpdate: () => void } & Record<string, unknown>
 
 const props = (el: MotionFont) =>
-  [...el.style.fontVariationSettings.matchAll(/var\((--mf-[\d-]+)\)/g)].map((m) => m[1])
+  [...el.style.fontVariationSettings.matchAll(/var\((--mc-font-[\d-]+)\)/g)].map((m) => m[1])
 
 const axisValue = (el: MotionFont, i = 0) => Number(el.style.getPropertyValue(props(el)[i]))
 
@@ -73,14 +73,14 @@ describe('motion-font', () => {
     expect(el.delay).toBe(0)
     expect(el.once).toBe(true)
     expect(el.getAttribute('trigger')).toBe('view')
-    expect(el.style.fontVariationSettings).toMatch(/^["']wght["'] var\(--mf-\d+\)$/)
+    expect(el.style.fontVariationSettings).toMatch(/^["']wght["'] var\(--mc-font-\d+\)$/)
     expect(axisValue(el)).toBe(300)
   })
 
   it('parses a multi-axis spec into one custom property per axis', async () => {
     const el = await mount('axes="wght:300:800 slnt:0:-12"')
     expect(el.style.fontVariationSettings).toMatch(
-      /["']wght["'] var\(--mf-\d+-0\), ["']slnt["'] var\(--mf-\d+-1\)/,
+      /["']wght["'] var\(--mc-font-\d+-0\), ["']slnt["'] var\(--mc-font-\d+-1\)/,
     )
     expect(axisValue(el, 0)).toBe(300)
     expect(axisValue(el, 1)).toBe(0)

@@ -47,12 +47,12 @@ export type { MotionMarkerProps, MarkTrigger } from './motion-marker.types.js'
 export class MotionMarker extends MarkElement implements MotionMarkerProps {
   static styles = css`
     :host {
-      --mark: var(--mc-marker-color, rgb(250 204 21 / 0.4));
+      --mc-mark-ink: var(--mc-marker-color, rgb(250 204 21 / 0.4));
       display: inline;
       padding: 0 0.15em;
       margin: 0 -0.15em;
       border-radius: 0.2em;
-      background-image: linear-gradient(var(--mark), var(--mark));
+      background-image: linear-gradient(var(--mc-mark-ink), var(--mc-mark-ink));
       background-repeat: no-repeat;
       background-position: 0 85%;
       background-size: calc(min(var(--mc-mark-progress, 0), 1) * 100%) 75%;

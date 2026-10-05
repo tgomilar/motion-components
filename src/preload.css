@@ -28,14 +28,14 @@ motion-stagger:not(:defined) > * {
 
 motion-chart:not(:defined) {
   display: block;
-  height: var(--chart-height, 16rem);
+  height: var(--mc-chart-height, 16rem);
   overflow: hidden;
   visibility: hidden;
 }
 
 motion-pie:not(:defined) {
   display: block;
-  height: var(--chart-height, 16rem);
+  height: var(--mc-chart-height, 16rem);
   overflow: hidden;
   visibility: hidden;
 }

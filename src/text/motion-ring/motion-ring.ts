@@ -37,7 +37,7 @@ export type { MotionRingProps, RingShape, MarkTrigger } from './motion-ring.type
  *
  * @slot - The word or short phrase to circle. It stays on one line.
  *
- * @cssprop --mc-mark-color - Color of the stroke. Default `var(--color-accent, #2563eb)`.
+ * @cssprop --mc-mark-color - Color of the stroke. Default `var(--mc-color-accent, #2563eb)`.
  * @cssprop --mc-mark-thickness - Thickness of the stroke. Default `2px`.
  *
  * @example
@@ -54,7 +54,7 @@ export class MotionRing extends MarkElement implements MotionRingProps {
 
   static styles = css`
     :host {
-      --progress: min(var(--mc-mark-progress, 0), 1);
+      --mc-mark-drawn: min(var(--mc-mark-progress, 0), 1);
       display: inline-block;
       position: relative;
       white-space: nowrap;
@@ -66,12 +66,12 @@ export class MotionRing extends MarkElement implements MotionRingProps {
     }
     .stroke {
       fill: none;
-      stroke: var(--mc-mark-color, var(--color-accent, #2563eb));
+      stroke: var(--mc-mark-color, var(--mc-color-accent, #2563eb));
       stroke-width: var(--mc-mark-thickness, 2px);
       stroke-linecap: round;
       stroke-linejoin: round;
-      stroke-dasharray: var(--progress) calc(1 - var(--progress));
-      stroke-opacity: clamp(0, calc(var(--progress) * 50), 1);
+      stroke-dasharray: var(--mc-mark-drawn) calc(1 - var(--mc-mark-drawn));
+      stroke-opacity: clamp(0, calc(var(--mc-mark-drawn) * 50), 1);
     }
     ellipse.stroke {
       stroke-dashoffset: -0.58;

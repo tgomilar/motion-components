@@ -5,7 +5,7 @@ import type { StateIconName } from './motion-state-icon.types.js'
 type Keyframes = Record<string, number | number[]>
 
 export interface StateIconDef {
-  /** Shapes on a 24 px grid. `.accent` shapes use `--icon-accent`; `.dash` shapes are drawn in with `strokeDashoffset`. */
+  /** Shapes on a 24 px grid. `.accent` shapes use `--mc-icon-accent`; `.dash` shapes are drawn in with `strokeDashoffset`. */
   shapes: SVGTemplateResult
   /** Per-part targets keyed by class name, for the inactive and active state. */
   off: Record<string, Keyframes>

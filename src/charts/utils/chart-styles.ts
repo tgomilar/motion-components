@@ -1,23 +1,24 @@
 import { css } from 'lit'
 
-/** Series color `i` (zero-based): the `--chart-N` override, else the palette step for the current color scheme. */
-export const seriesColor = (i: number) => `var(--chart-${i + 1}, var(--_c${i + 1}))`
+/** Series color `i` (zero-based): the `--mc-chart-N` override, else the palette step for the current color scheme. */
+export const seriesColor = (i: number) =>
+  `var(--mc-chart-${i + 1}, var(--mc-chart-palette-${i + 1}))`
 
 /** Palette, legend, plot, tooltip and screen-reader styles shared by the chart components. */
 export const chartStyles = css`
   :host {
-    --_c1: light-dark(#2a78d6, #3987e5);
-    --_c2: light-dark(#eb6834, #d95926);
-    --_c3: light-dark(#1baf7a, #199e70);
-    --_c4: light-dark(#eda100, #c98500);
-    --_c5: light-dark(#e87ba4, #d55181);
-    --_c6: light-dark(#008300, #008300);
-    --_c7: light-dark(#4a3aa7, #9085e9);
-    --_c8: light-dark(#e34948, #e66767);
-    --_muted: color-mix(in srgb, currentColor 62%, transparent);
-    --_grid: color-mix(in srgb, currentColor 12%, transparent);
+    --mc-chart-palette-1: light-dark(#2a78d6, #3987e5);
+    --mc-chart-palette-2: light-dark(#eb6834, #d95926);
+    --mc-chart-palette-3: light-dark(#1baf7a, #199e70);
+    --mc-chart-palette-4: light-dark(#eda100, #c98500);
+    --mc-chart-palette-5: light-dark(#e87ba4, #d55181);
+    --mc-chart-palette-6: light-dark(#008300, #008300);
+    --mc-chart-palette-7: light-dark(#4a3aa7, #9085e9);
+    --mc-chart-palette-8: light-dark(#e34948, #e66767);
+    --mc-chart-muted: color-mix(in srgb, currentColor 62%, transparent);
+    --mc-chart-grid: color-mix(in srgb, currentColor 12%, transparent);
     display: block;
-    height: var(--chart-height, 16rem);
+    height: var(--mc-chart-height, 16rem);
   }
   .frame {
     display: flex;
@@ -40,7 +41,7 @@ export const chartStyles = css`
     width: 10px;
     height: 10px;
     border-radius: 2px;
-    background: var(--c);
+    background: var(--mc-chart-series);
   }
   .plot {
     position: relative;
@@ -66,9 +67,9 @@ export const chartStyles = css`
     min-width: 6rem;
     padding: 0.5rem 0.65rem;
     border-radius: 8px;
-    background: var(--chart-surface, Canvas);
+    background: var(--mc-chart-surface, Canvas);
     box-shadow:
-      0 0 0 1px var(--_grid),
+      0 0 0 1px var(--mc-chart-grid),
       0 6px 20px rgb(0 0 0 / 0.12);
     font-size: 0.8em;
     pointer-events: none;
@@ -76,7 +77,7 @@ export const chartStyles = css`
     white-space: nowrap;
   }
   .tip-label {
-    color: var(--_muted);
+    color: var(--mc-chart-muted);
     margin-bottom: 0.25rem;
   }
   .row {
@@ -88,10 +89,10 @@ export const chartStyles = css`
     width: 12px;
     height: 2px;
     border-radius: 1px;
-    background: var(--c);
+    background: var(--mc-chart-series);
   }
   .row span {
-    color: var(--_muted);
+    color: var(--mc-chart-muted);
   }
   .sr-only {
     position: absolute;

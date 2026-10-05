@@ -54,17 +54,17 @@ interface Token {
  * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
- * @cssprop [--code-keyword] - Keyword token colour.
- * @cssprop [--code-string] - String token colour.
- * @cssprop [--code-tag] - Tag and selector token colour.
- * @cssprop [--code-attr] - Attribute and property token colour.
- * @cssprop [--code-num] - Numeric token colour.
- * @cssprop [--code-comment] - Comment token colour. Falls back to `--color-muted`.
- * @cssprop [--color-surface=#ffffff] - Background of the code area.
- * @cssprop [--color-surface-2=#f0f0f8] - Background of the window and its title bar.
- * @cssprop [--color-border=#dddde8] - Window border, title bar divider and copy button border.
- * @cssprop [--color-muted=#60608a] - File name, copy button and typing cursor color.
- * @cssprop [--color-accent=#2563eb] - Copy button color on hover.
+ * @cssprop [--mc-code-keyword] - Keyword token colour.
+ * @cssprop [--mc-code-string] - String token colour.
+ * @cssprop [--mc-code-tag] - Tag and selector token colour.
+ * @cssprop [--mc-code-attr] - Attribute and property token colour.
+ * @cssprop [--mc-code-num] - Numeric token colour.
+ * @cssprop [--mc-code-comment] - Comment token colour. Falls back to `--mc-color-muted`.
+ * @cssprop [--mc-color-surface=#ffffff] - Background of the code area.
+ * @cssprop [--mc-color-surface-2=#f0f0f8] - Background of the window and its title bar.
+ * @cssprop [--mc-color-border=#dddde8] - Window border, title bar divider and copy button border.
+ * @cssprop [--mc-color-muted=#60608a] - File name, copy button and typing cursor color.
+ * @cssprop [--mc-color-accent=#2563eb] - Copy button color on hover.
  *
  * @example
  * ```html
@@ -156,8 +156,8 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       flex-direction: column;
       width: 100%;
       min-width: 0;
-      background: var(--color-surface-2, #f0f0f8);
-      border: 1px solid var(--color-border, #dddde8);
+      background: var(--mc-color-surface-2, #f0f0f8);
+      border: 1px solid var(--mc-color-border, #dddde8);
       border-radius: 16px;
       overflow: hidden;
       font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
@@ -172,7 +172,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       align-items: center;
       gap: 6px;
       padding: 0.75rem 1.25rem;
-      border-bottom: 1px solid var(--color-border, #dddde8);
+      border-bottom: 1px solid var(--mc-color-border, #dddde8);
     }
 
     :host([compact]) .chrome {
@@ -204,7 +204,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
 
     .filename {
       font-size: 0.78rem;
-      color: var(--color-muted, #60608a);
+      color: var(--mc-color-muted, #60608a);
       margin-left: 0.5rem;
       flex: 1;
     }
@@ -220,11 +220,11 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       justify-content: center;
       gap: 0.4em;
       background: transparent;
-      border: 1px solid var(--color-border, #dddde8);
+      border: 1px solid var(--mc-color-border, #dddde8);
       border-radius: 6px;
       padding: 0.3rem;
       font-size: 0.72rem;
-      color: var(--color-muted, #60608a);
+      color: var(--mc-color-muted, #60608a);
       cursor: pointer;
       font-family: inherit;
       transition:
@@ -234,8 +234,8 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     }
 
     .copy-btn:hover {
-      color: var(--color-accent, #2563eb);
-      border-color: var(--color-accent, #2563eb);
+      color: var(--mc-color-accent, #2563eb);
+      border-color: var(--mc-color-accent, #2563eb);
     }
 
     .copy-btn.has-label {
@@ -250,7 +250,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
 
     .body {
       flex: 1;
-      background: var(--color-surface, #ffffff);
+      background: var(--mc-color-surface, #ffffff);
       padding: 1.5rem 1.75rem;
       overflow-x: auto;
     }
@@ -288,7 +288,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       display: inline-block;
       width: 2px;
       height: 1em;
-      background: var(--color-muted, #60608a);
+      background: var(--mc-color-muted, #60608a);
       vertical-align: text-bottom;
       margin-left: 1px;
     }
@@ -296,22 +296,22 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     /* ── Token colours — all overridable via CSS custom properties ──────────
        Map any external theme's values to these variables on :root.           */
     .cw-comment {
-      color: var(--code-comment, var(--color-muted, #60608a));
+      color: var(--mc-code-comment, var(--mc-color-muted, #60608a));
     }
     .cw-keyword {
-      color: var(--code-keyword, #7c3aed);
+      color: var(--mc-code-keyword, #7c3aed);
     }
     .cw-string {
-      color: var(--code-string, #16a34a);
+      color: var(--mc-code-string, #16a34a);
     }
     .cw-tag {
-      color: var(--code-tag, #0369a1);
+      color: var(--mc-code-tag, #0369a1);
     }
     .cw-attr {
-      color: var(--code-attr, #be123c);
+      color: var(--mc-code-attr, #be123c);
     }
     .cw-num {
-      color: var(--code-num, #b45309);
+      color: var(--mc-code-num, #b45309);
     }
   `
 
@@ -382,17 +382,17 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     style.id = id
     style.textContent = `
       :root {
-        --code-keyword: #7c3aed; --code-string: #16a34a;
-        --code-tag:     #0369a1; --code-attr:   #be123c; --code-num: #b45309;
+        --mc-code-keyword: #7c3aed; --mc-code-string: #16a34a;
+        --mc-code-tag:     #0369a1; --mc-code-attr:   #be123c; --mc-code-num: #b45309;
       }
       [data-theme="dark"] {
-        --code-keyword: #c084fc; --code-string: #86efac;
-        --code-tag:     #7dd3fc; --code-attr:   #fda4af; --code-num: #fcd34d;
+        --mc-code-keyword: #c084fc; --mc-code-string: #86efac;
+        --mc-code-tag:     #7dd3fc; --mc-code-attr:   #fda4af; --mc-code-num: #fcd34d;
       }
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
-          --code-keyword: #c084fc; --code-string: #86efac;
-          --code-tag:     #7dd3fc; --code-attr:   #fda4af; --code-num: #fcd34d;
+          --mc-code-keyword: #c084fc; --mc-code-string: #86efac;
+          --mc-code-tag:     #7dd3fc; --mc-code-attr:   #fda4af; --mc-code-num: #fcd34d;
         }
       }
     `

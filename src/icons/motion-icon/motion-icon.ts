@@ -136,9 +136,9 @@ function fetchIcon(url: string) {
  * @fires error - When `src` cannot be loaded.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
- * @cssprop --icon-size - Width and height of the icon. Default `1.5em`.
- * @cssprop --icon-color - Icon color. Default `currentColor`.
- * @cssprop --icon-fill - Fills the inside of an outline icon. Default `none`.
+ * @cssprop --mc-icon-size - Width and height of the icon. Default `1.5em`.
+ * @cssprop --mc-icon-color - Icon color. Default `currentColor`.
+ * @cssprop --mc-icon-fill - Fills the inside of an outline icon. Default `none`.
  *
  * @csspart icon - The wrapper around the rendered `icon` SVG.
  *
@@ -173,9 +173,9 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   static styles = css`
     :host {
       display: inline-block;
-      width: var(--icon-size, 1.5em);
-      height: var(--icon-size, 1.5em);
-      color: var(--icon-color, inherit);
+      width: var(--mc-icon-size, 1.5em);
+      height: var(--mc-icon-size, 1.5em);
+      color: var(--mc-icon-color, inherit);
       line-height: 0;
       vertical-align: middle;
     }
@@ -294,7 +294,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
       container?.replaceChildren()
       this.svg = this.querySelector('svg')
     }
-    if (this.svg?.getAttribute('fill') === 'none') this.svg.style.fill = 'var(--icon-fill, none)'
+    if (this.svg?.getAttribute('fill') === 'none') this.svg.style.fill = 'var(--mc-icon-fill, none)'
     this.strokes = this.svg ? this.findStrokes(this.svg) : []
     for (const el of this.strokes) {
       el.setAttribute('pathLength', '1')

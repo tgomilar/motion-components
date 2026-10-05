@@ -16,9 +16,9 @@ const RULES: Record<string, string> = {
   'motion-swap': 'motion-swap:not(:defined){opacity:0}',
   'motion-dialog': 'motion-dialog:not(:defined){display:none}',
   'motion-chart':
-    'motion-chart:not(:defined){display:block;height:var(--chart-height,16rem);overflow:hidden;visibility:hidden}',
+    'motion-chart:not(:defined){display:block;height:var(--mc-chart-height,16rem);overflow:hidden;visibility:hidden}',
   'motion-pie':
-    'motion-pie:not(:defined){display:block;height:var(--chart-height,16rem);overflow:hidden;visibility:hidden}',
+    'motion-pie:not(:defined){display:block;height:var(--mc-chart-height,16rem);overflow:hidden;visibility:hidden}',
 }
 
 export const preloadCSS: string = Object.values(RULES).join('')

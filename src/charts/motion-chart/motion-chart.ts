@@ -73,9 +73,9 @@ function barPath(x: number, width: number, base: number, end: number) {
  * @fires motion-finish - When the entrance animation finishes.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
- * @cssprop --chart-height - Height of the chart, including the legend. Default `16rem`.
- * @cssprop --chart-1 - Color of the first series. `--chart-2` to `--chart-8` color the others.
- * @cssprop --chart-surface - Background behind the chart, used for the ring around points. Default `Canvas`.
+ * @cssprop --mc-chart-height - Height of the chart, including the legend. Default `16rem`.
+ * @cssprop --mc-chart-1 - Color of the first series. `--mc-chart-2` to `--mc-chart-8` color the others.
+ * @cssprop --mc-chart-surface - Background behind the chart, used for the ring around points. Default `Canvas`.
  *
  * @csspart legend - The legend, shown for two or more series.
  * @csspart tooltip - The tooltip.
@@ -131,11 +131,11 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
         border-radius: 1px;
       }
       .grid {
-        stroke: var(--_grid);
+        stroke: var(--mc-chart-grid);
         shape-rendering: crispEdges;
       }
       .tick {
-        fill: var(--_muted);
+        fill: var(--mc-chart-muted);
         font-size: 11px;
         font-variant-numeric: tabular-nums;
       }
@@ -146,7 +146,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
         stroke-linejoin: round;
       }
       .point {
-        stroke: var(--chart-surface, Canvas);
+        stroke: var(--mc-chart-surface, Canvas);
         stroke-width: 2;
       }
       .crosshair {
@@ -418,7 +418,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
       <div class="tip-label">${labels[a]}</div>
       ${series.map(
         (s, i) =>
-          html`<div class="row" style=${`--c:${seriesColor(i)}`}>
+          html`<div class="row" style=${`--mc-chart-series:${seriesColor(i)}`}>
             <i></i><strong>${this.fmt(this.target(i, a))}</strong>${s.name
               ? html`<span>${s.name}</span>`
               : nothing}
@@ -525,7 +525,10 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
             ${series.map(
               (s, i) =>
                 html`<span class="key"
-                  ><span class="swatch ${this.type}" style=${`--c:${seriesColor(i)}`}></span
+                  ><span
+                    class="swatch ${this.type}"
+                    style=${`--mc-chart-series:${seriesColor(i)}`}
+                  ></span
                   >${s.name}</span
                 >`,
             )}

@@ -235,7 +235,7 @@ export class MotionSlider extends BaseElement {
     })
     btn.addEventListener('focus', () => {
       if (btn.matches(':focus-visible'))
-        btn.style.outline = '2px solid var(--color-accent, #2563eb)'
+        btn.style.outline = '2px solid var(--mc-color-accent, #2563eb)'
     })
     btn.addEventListener('blur', () => {
       btn.style.outline = 'none'

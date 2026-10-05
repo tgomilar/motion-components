@@ -45,7 +45,7 @@ describe('motion-scene', () => {
   it('binds a scroll driver per progress + child on connect', async () => {
     const el = await mount()
     expect(el.playState).toBe('running')
-    // at least one driver for --progress and one per animated child
+    // at least one driver for --mc-progress and one per animated child
     expect(scrollMock.mock.calls.length).toBeGreaterThanOrEqual(2)
     const options = scrollMock.mock.calls[0][1] as { target: unknown; offset: unknown }
     expect(options.target).toBe(el)
@@ -66,7 +66,7 @@ describe('motion-scene', () => {
     const el = await mount()
     el.finish()
     await elementUpdated(el)
-    expect(el.style.getPropertyValue('--progress')).toBe('1')
+    expect(el.style.getPropertyValue('--mc-progress')).toBe('1')
     const child = el.querySelector('div') as HTMLElement
     // at progress 1: scale -> 1, y -> 0px
     expect(child.style.transform).toContain('scale(1)')

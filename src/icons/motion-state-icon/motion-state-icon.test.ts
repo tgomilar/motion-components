@@ -47,7 +47,7 @@ describe('motion-state-icon', () => {
       html`<motion-state-icon
         name="heart"
         active
-        style="--icon-accent: rgb(0, 0, 255)"
+        style="--mc-icon-accent: rgb(0, 0, 255)"
       ></motion-state-icon>`,
     )) as MotionStateIcon
     await settle()

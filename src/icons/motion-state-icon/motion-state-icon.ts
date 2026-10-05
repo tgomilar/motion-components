@@ -50,9 +50,9 @@ export type {
  *
  * @fires motion-change - When `toggle` is set and the user switches the state. `detail: { active }`.
  *
- * @cssprop --icon-size - Width and height of the icon. Default `1.5em`.
- * @cssprop --icon-color - Line color. Default `currentColor`.
- * @cssprop --icon-accent - Accent color for the filled heart and the copy and loading checks.
+ * @cssprop --mc-icon-size - Width and height of the icon. Default `1.5em`.
+ * @cssprop --mc-icon-color - Line color. Default `currentColor`.
+ * @cssprop --mc-icon-accent - Accent color for the filled heart and the copy and loading checks.
  *
  * @example
  * ```html
@@ -78,19 +78,19 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
   static styles = css`
     :host {
       display: inline-block;
-      width: var(--icon-size, 1.5em);
-      height: var(--icon-size, 1.5em);
-      color: var(--icon-color, inherit);
+      width: var(--mc-icon-size, 1.5em);
+      height: var(--mc-icon-size, 1.5em);
+      color: var(--mc-icon-color, inherit);
       line-height: 0;
       vertical-align: middle;
-      --_accent: currentColor;
+      --mc-state-accent: currentColor;
     }
     :host([name='heart']) {
-      --_accent: #e11d48;
+      --mc-state-accent: #e11d48;
     }
     :host([name='copy']),
     :host([name='loading']) {
-      --_accent: #16a34a;
+      --mc-state-accent: #16a34a;
     }
     :host([toggle]) {
       cursor: pointer;
@@ -119,10 +119,10 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
       stroke-dashoffset: 1;
     }
     .accent {
-      stroke: var(--icon-accent, var(--_accent));
+      stroke: var(--mc-icon-accent, var(--mc-state-accent));
     }
     .fill {
-      fill: var(--icon-accent, var(--_accent));
+      fill: var(--mc-icon-accent, var(--mc-state-accent));
       fill-opacity: 0;
     }
   `

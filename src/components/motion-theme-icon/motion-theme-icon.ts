@@ -78,7 +78,7 @@ let uid = 0
  *
  * @element motion-theme-icon
  *
- * @cssprop --theme-icon-size - Width and height of the icon. Default `1.5em`.
+ * @cssprop --mc-theme-icon-size - Width and height of the icon. Default `1.5em`.
  *
  * @example
  * ```html
@@ -97,8 +97,8 @@ export class MotionThemeIcon extends LitElement implements MotionThemeIconProps 
   static styles = css`
     :host {
       display: inline-block;
-      width: var(--theme-icon-size, 1.5em);
-      height: var(--theme-icon-size, 1.5em);
+      width: var(--mc-theme-icon-size, 1.5em);
+      height: var(--mc-theme-icon-size, 1.5em);
       line-height: 0;
     }
     svg {

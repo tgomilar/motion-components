@@ -220,9 +220,9 @@ describe('motion-icon', () => {
     expect(el.playState).toBe('running')
   })
 
-  it('fills outline icons with --icon-fill and fades the fill in when drawing', async () => {
+  it('fills outline icons with --mc-icon-fill and fades the fill in when drawing', async () => {
     const io = stubIntersectionObserver()
-    const el = await mount('trigger="view" style="--icon-fill: rgb(255, 0, 0)"')
+    const el = await mount('trigger="view" style="--mc-icon-fill: rgb(255, 0, 0)"')
     const svg = el.querySelector('svg')!
     expect(getComputedStyle(svg).fill).toBe('rgb(255, 0, 0)')
     expect(svg.style.fillOpacity).toBe('0')
@@ -231,7 +231,7 @@ describe('motion-icon', () => {
     expect(getComputedStyle(svg).fillOpacity).toBe('1')
   })
 
-  it('keeps outline icons hollow without --icon-fill', async () => {
+  it('keeps outline icons hollow without --mc-icon-fill', async () => {
     const el = await mount()
     expect(getComputedStyle(el.querySelector('svg')!).fill).toBe('none')
   })

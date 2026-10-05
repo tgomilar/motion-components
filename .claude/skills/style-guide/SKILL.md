@@ -33,7 +33,7 @@ Every component class must have a `/** … */` block above the class (or `@custo
 - `@property {type} name - Description.` — one per public attribute/property. Use kebab-case attribute names. Include the default value in the description.
 - `@fires <event-name> — Description.` — only if the component dispatches custom events
 - `@cssprop` — only if the component exposes CSS custom properties (rare)
-- CSS custom properties of new components are prefixed `--mc-` (for example `--mc-marker-color`, `--mc-mark-thickness`), including internal ones. Existing unprefixed properties stay until a major version.
+- Every CSS custom property is prefixed `--mc-` (for example `--mc-icon-color`, `--mc-color-accent`), including internal ones (`--mc-chart-palette-1`, `--mc-mark-progress`). Use descriptive names, not a leading underscore.
 - `@csspart` — only if the component exposes shadow parts (rare)
 - `@example` — with a ```html code block showing real usage
 
