@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-10-05
 
 ### Breaking changes
 
@@ -36,13 +36,29 @@
 ### Changed
 
 - `motion-stretch`: the default `duration` is now `0.77` instead of `0.45`. With `bounce` `0.55`, the default spring now settles like the spring before 1.0 (`stiffness` 320, `damping` 16). Set `duration="0.45"` to keep the faster settle.
+- `motion-perspective`: `oscillate` is now `loop`, the name every other repeating component uses. `oscillate` still works.
 
 ### Added
 
-- New text annotation components that draw a mark onto their text when it scrolls into view, on hover, or on mount: `motion-marker` (a highlighter stroke behind the text), `motion-underline` (`shape` is `line`, `dashed`, `dotted` or `wave`), `motion-strike` (a line through the text) and `motion-ring` (an ellipse, or a box with `shape="box"`, around a word). Marker, strike and the straight, dashed and dotted underlines follow text that wraps across lines. Colors and thickness are set with `--mc-marker-color`, `--mc-mark-color` and `--mc-mark-thickness`; new CSS custom properties now use the `--mc-` prefix.
+- New text annotation components that draw a mark onto their text when it scrolls into view, on hover, or on mount: `motion-marker` (a highlighter stroke behind the text, straight or with `shape="wave"`), `motion-underline` (`shape` is `line`, `dashed`, `dotted`, `wave` or `zigzag`), `motion-strike` (a line through the text) and `motion-ring` (an ellipse, or a box with `shape="box"`, around a word). Marker, strike and the straight, dashed and dotted underlines follow text that wraps across lines. Colors and thickness are set with `--mc-marker-color`, `--mc-mark-color` and `--mc-mark-thickness`; new CSS custom properties now use the `--mc-` prefix.
+- Loop mode for text and marks: `loop` repeats the effect with a pause between runs on `motion-counter`, `motion-font`, `motion-headline`, `motion-scramble`, `motion-split`, `motion-swap`, `motion-text-mask`, `motion-typewriter`, `motion-marker`, `motion-underline`, `motion-strike` and `motion-ring`. `hold` sets the seconds in the end state, `gap` the seconds before the next run, and `pause-on-hover` freezes the cycle while the pointer is over the element. With `trigger="view"` the loop runs while the element is on screen and starts again on the next entry; `once` is ignored. Under reduced motion the element shows its end state. `motion-typewriter` already had `loop` and `hold`, and now also has `gap` and `pause-on-hover`.
 - Usage guidance in every component's documentation comment: when to use it, when not to, accessibility, reduced motion and common mistakes. It appears in editor hovers through the custom elements manifest, and in the Markdown docs and `llms-full.txt` on the site.
 - `motion-icon`: `animation` takes `draw` plus a motion, such as `draw wiggle` or `draw pulse`, to draw the outline and move the icon at the same time. On filled icons only the motion runs.
 - `motion-code`: reads its code from a `<pre>` child, so the code is in the page HTML for search engines and readers without JavaScript.
+
+## 1.1.2 — 2026-10-04
+
+### Fixed
+
+- `motion-chart`: when the data changed to a smaller scale, the axis jumped while the bars sprang, so bars were drawn far above the chart. The axis range now springs with the bars, without bounce, and bars and lines are clipped to the chart area. Changes to `min` and `max` animate the same way.
+
+## 1.1.1 — 2026-10-03
+
+### Fixed
+
+- The CDN snippet in the README uses jsDelivr's `+esm` build. The files in `dist/` import `lit` and `motion` by bare name, which a browser cannot load from the CDN directly.
+- Every export has a `default` condition, so `require()` works on Node 20.19+, 22.12+ and 23+.
+- `motion-code` and `motion-code-inline` list the `--color-*` theme colors they read, so they appear in `custom-elements.json` and in editor completions.
 
 ## 1.1.0 — 2026-10-03
 
