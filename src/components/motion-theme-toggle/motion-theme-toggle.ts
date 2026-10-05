@@ -154,19 +154,19 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
     :host {
       display: inline-block;
       position: relative;
-      --mc-toggle-surface: var(
+      --mc-_toggle-surface: var(
         --mc-theme-toggle-surface,
         color-mix(in srgb, currentColor 6%, transparent)
       );
-      --mc-toggle-border: var(
+      --mc-_toggle-border: var(
         --mc-theme-toggle-border,
         color-mix(in srgb, currentColor 16%, transparent)
       );
-      --mc-toggle-accent: var(
+      --mc-_toggle-accent: var(
         --mc-theme-toggle-accent,
         color-mix(in srgb, currentColor 14%, transparent)
       );
-      --mc-toggle-radius: var(--mc-theme-toggle-radius, 999px);
+      --mc-_toggle-radius: var(--mc-theme-toggle-radius, 999px);
       --mc-theme-icon-size: 1.25em;
     }
     .root {
@@ -193,11 +193,11 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       place-items: center;
       width: 2.5em;
       height: 2.5em;
-      border-radius: var(--mc-toggle-radius);
+      border-radius: var(--mc-_toggle-radius);
     }
     .trigger {
-      background: var(--mc-toggle-surface);
-      box-shadow: inset 0 0 0 1px var(--mc-toggle-border);
+      background: var(--mc-_toggle-surface);
+      box-shadow: inset 0 0 0 1px var(--mc-_toggle-border);
     }
     fieldset {
       border: 0;
@@ -215,9 +215,9 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       position: relative;
       display: inline-flex;
       padding: 3px;
-      border-radius: var(--mc-toggle-radius);
-      background: var(--mc-toggle-surface);
-      box-shadow: inset 0 0 0 1px var(--mc-toggle-border);
+      border-radius: var(--mc-_toggle-radius);
+      background: var(--mc-_toggle-surface);
+      box-shadow: inset 0 0 0 1px var(--mc-_toggle-border);
     }
     .indicator {
       position: absolute;
@@ -225,8 +225,8 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       bottom: 3px;
       left: 0;
       width: 0;
-      border-radius: var(--mc-toggle-radius);
-      background: var(--mc-toggle-accent);
+      border-radius: var(--mc-_toggle-radius);
+      background: var(--mc-_toggle-accent);
     }
     .segment {
       position: relative;
@@ -234,7 +234,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       align-items: center;
       gap: 0.4em;
       padding: 0.4em 0.85em;
-      border-radius: var(--mc-toggle-radius);
+      border-radius: var(--mc-_toggle-radius);
       cursor: pointer;
       user-select: none;
     }
@@ -271,9 +271,9 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       position: relative;
       width: 3.5em;
       height: 2em;
-      border-radius: var(--mc-toggle-radius);
-      background: var(--mc-toggle-surface);
-      box-shadow: inset 0 0 0 1px var(--mc-toggle-border);
+      border-radius: var(--mc-_toggle-radius);
+      background: var(--mc-_toggle-surface);
+      box-shadow: inset 0 0 0 1px var(--mc-_toggle-border);
     }
     .thumb {
       position: absolute;
@@ -283,8 +283,8 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       place-items: center;
       width: calc(2em - 6px);
       height: calc(2em - 6px);
-      border-radius: var(--mc-toggle-radius);
-      background: var(--mc-toggle-accent);
+      border-radius: var(--mc-_toggle-radius);
+      background: var(--mc-_toggle-accent);
       --mc-theme-icon-size: 1em;
     }
     .menu {
@@ -302,7 +302,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       background: var(--mc-theme-toggle-menu-bg, Canvas);
       box-shadow:
         0 8px 24px rgba(0, 0, 0, 0.16),
-        0 0 0 1px var(--mc-toggle-border);
+        0 0 0 1px var(--mc-_toggle-border);
       transform-origin: top right;
     }
     .panel[hidden] {
@@ -318,11 +318,11 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
     }
     .item:hover,
     .item:focus-visible {
-      background: var(--mc-toggle-surface);
+      background: var(--mc-_toggle-surface);
       outline: none;
     }
     .item[aria-checked='true'] {
-      background: var(--mc-toggle-accent);
+      background: var(--mc-_toggle-accent);
     }
     .remember {
       display: inline-flex;

@@ -33,7 +33,7 @@ Every component class must have a `/** … */` block above the class (or `@custo
 - `@property {type} name - Description.` — one per public attribute/property. Use kebab-case attribute names. Include the default value in the description.
 - `@fires <event-name> — Description.` — only if the component dispatches custom events
 - `@cssprop` — only if the component exposes CSS custom properties (rare)
-- Every CSS custom property is prefixed `--mc-` (for example `--mc-icon-color`, `--mc-color-accent`), including internal ones (`--mc-chart-palette-1`, `--mc-mark-progress`). Use descriptive names, not a leading underscore.
+- Every CSS custom property is prefixed `--mc-` (for example `--mc-icon-color`, `--mc-color-accent`). Internal ones that are not API use `--mc-_` (for example `--mc-_chart-grid`, `--mc-_mark-progress`), so nobody mistakes them for settings. Every public one has an `@cssprop` tag, including theme colors a component reads, such as `--mc-color-accent` for a focus ring.
 - `@csspart` — only if the component exposes shadow parts (rare)
 - `@example` — with a ```html code block showing real usage
 
@@ -48,7 +48,7 @@ For **plain HTMLElement** components (no `@property` decorator): list every obse
 ## Component architecture
 
 - File layout: `src/<category>/<tag>/<tag>.ts` plus `<tag>.types.ts`. One component per directory.
-- Categories: `primitives` (interactive wrappers), `text` (typography effects), `scroll` (scroll-driven), `interaction` (discrete widgets), `code` (code rendering).
+- Categories match the docs sections: `reveal` (entrance effects), `respond` (input-driven wrappers), `text` (typography effects), `icons` (animated icons), `scroll` (scroll-driven), `components` (interactive widgets), `charts` (data visualization), `code` (code rendering).
 - `LitElement` subclass with `@customElement('motion-tag')` and `@property` for every attribute.
 - Use `attribute: 'kebab-case'` mapping when JS name differs from attribute. Add `reflect: true` if the attribute selector needs to match values set via JS.
 - Public methods (e.g. `replay()`) are part of the API — document them in JSDoc and the docs page.

@@ -131,11 +131,11 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
         border-radius: 1px;
       }
       .grid {
-        stroke: var(--mc-chart-grid);
+        stroke: var(--mc-_chart-grid);
         shape-rendering: crispEdges;
       }
       .tick {
-        fill: var(--mc-chart-muted);
+        fill: var(--mc-_chart-muted);
         font-size: 11px;
         font-variant-numeric: tabular-nums;
       }
@@ -418,7 +418,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
       <div class="tip-label">${labels[a]}</div>
       ${series.map(
         (s, i) =>
-          html`<div class="row" style=${`--mc-chart-series:${seriesColor(i)}`}>
+          html`<div class="row" style=${`--mc-_chart-series:${seriesColor(i)}`}>
             <i></i><strong>${this.fmt(this.target(i, a))}</strong>${s.name
               ? html`<span>${s.name}</span>`
               : nothing}
@@ -527,7 +527,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
                 html`<span class="key"
                   ><span
                     class="swatch ${this.type}"
-                    style=${`--mc-chart-series:${seriesColor(i)}`}
+                    style=${`--mc-_chart-series:${seriesColor(i)}`}
                   ></span
                   >${s.name}</span
                 >`,

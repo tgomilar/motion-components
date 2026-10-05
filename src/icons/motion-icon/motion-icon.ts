@@ -96,12 +96,13 @@ function fetchIcon(url: string) {
 }
 
 /**
- * Animates any SVG icon: draws its strokes in, or pops, bounces, rotates,
- * wiggles or pulses it on a spring, or both at once with `draw wiggle`. Works
- * with stroke sets such as Lucide, Tabler, Heroicons and Iconoir; filled icons
- * (Phosphor, Bootstrap) fall back from `draw` to `pop`. Pass the icon as a URL in `src`, as an SVG string in
- * `icon`, or as a child `<svg>`. The icon inherits `currentColor`. Inside a
- * button or link, `hover` and `click` follow that button or link.
+ * Animates any SVG icon on a spring: it draws the strokes in, or makes the
+ * icon pop, bounce, rotate, wiggle or pulse. It can also do both at once, as in
+ * `animation="draw wiggle"`. Pass the icon as a URL in `src`, as an SVG
+ * string in `icon`, or as a child `<svg>`. Stroke sets such as Lucide,
+ * Tabler, Heroicons and Iconoir can draw; filled icons such as Phosphor and
+ * Bootstrap pop instead. The icon takes `currentColor`. Inside a button or
+ * link, `hover` and `click` follow that button or link.
  *
  * **Use it for:** icons that draw in or move when people hover or click a
  * button or link, when they scroll into view, or once when the page loads.

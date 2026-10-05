@@ -39,6 +39,8 @@ export type { MotionImageCompareProps, CompareOrientation } from './motion-image
  * @slot before - The left/top image (visible behind the clip).
  * @slot after  - The right/bottom image (revealed by dragging).
  *
+ * @cssprop [--mc-color-accent=#2563eb] - Color of the keyboard focus ring on the knob.
+ *
  * @example
  * ```html
  * <motion-image-compare start="50">
