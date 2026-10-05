@@ -41,13 +41,13 @@ export type { MotionDialogProps } from './motion-dialog.types.js'
  *
  * @fires motion-close - Dispatched after the close animation completes.
  *
- * @cssprop --mc-dialog-bg - Panel background. Default `Canvas`.
- * @cssprop --mc-dialog-color - Panel text color. Default `CanvasText`.
+ * @cssprop --mc-dialog-bg - Panel background. Default `var(--mc-color-surface, Canvas)`.
+ * @cssprop --mc-dialog-color - Panel text color. Default `var(--mc-color-text, CanvasText)`.
  * @cssprop --mc-dialog-radius - Panel corner radius. Default `16px`.
  * @cssprop --mc-dialog-padding - Panel padding. Default `2rem`.
  * @cssprop --mc-dialog-max-width - Maximum panel width. Default `min(560px, 100vw - 2rem)`.
  * @cssprop --mc-dialog-max-height - Maximum panel height. Default `100dvh - 4rem`.
- * @cssprop --mc-dialog-shadow - Panel box shadow.
+ * @cssprop --mc-dialog-shadow - Panel box shadow. The default ends with a 1px ring in `var(--mc-color-border, rgba(0, 0, 0, 0.08))`.
  * @cssprop --mc-dialog-backdrop-color - Backdrop overlay color. Default `rgba(0, 0, 0, 0.48)`.
  * @cssprop --mc-dialog-backdrop-blur - Backdrop `backdrop-filter`. Default `blur(6px)`.
  *

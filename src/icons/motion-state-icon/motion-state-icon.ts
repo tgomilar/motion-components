@@ -83,14 +83,14 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
       color: var(--mc-icon-color, inherit);
       line-height: 0;
       vertical-align: middle;
-      --mc-state-accent: currentColor;
+      --mc-_state-accent: currentColor;
     }
     :host([name='heart']) {
-      --mc-state-accent: #e11d48;
+      --mc-_state-accent: #e11d48;
     }
     :host([name='copy']),
     :host([name='loading']) {
-      --mc-state-accent: #16a34a;
+      --mc-_state-accent: #16a34a;
     }
     :host([toggle]) {
       cursor: pointer;
@@ -119,10 +119,10 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
       stroke-dashoffset: 1;
     }
     .accent {
-      stroke: var(--mc-icon-accent, var(--mc-state-accent));
+      stroke: var(--mc-icon-accent, var(--mc-_state-accent));
     }
     .fill {
-      fill: var(--mc-icon-accent, var(--mc-state-accent));
+      fill: var(--mc-icon-accent, var(--mc-_state-accent));
       fill-opacity: 0;
     }
   `

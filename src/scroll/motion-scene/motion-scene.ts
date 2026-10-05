@@ -51,6 +51,8 @@ interface SceneRange {
  * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
+ * @cssprop --mc-progress - Set by the scene on itself: scroll progress from `0` to `1`. Read it in your own CSS, for example `calc(var(--mc-progress) * 200)`.
+ *
  * @slot - Content rendered inside the sticky viewport-stage. Any child with
  *   `data-from` and `data-to` attributes will be animated on scroll.
  *
@@ -83,7 +85,7 @@ export class MotionScene extends Controllable(LitElement) implements MotionScene
     .inner {
       position: sticky;
       top: 0;
-      height: var(--mc-scene-stage-height, 100vh);
+      height: var(--mc-_scene-stage-height, 100vh);
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -171,7 +173,7 @@ export class MotionScene extends Controllable(LitElement) implements MotionScene
     const source = this.resolveContainer()
 
     const stageHeight = source ? `${source.clientHeight}px` : '100vh'
-    this.style.setProperty('--mc-scene-stage-height', stageHeight)
+    this.style.setProperty('--mc-_scene-stage-height', stageHeight)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const scrollOptions: any = { target: this, offset: ['start start', 'end end'] }
     if (source) scrollOptions.container = source

@@ -125,7 +125,7 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
         font-variant-numeric: tabular-nums;
       }
       .center-label {
-        fill: var(--mc-chart-muted);
+        fill: var(--mc-_chart-muted);
       }
     `,
   ]
@@ -321,7 +321,7 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
     const a = Math.max(0, this.active)
     return html`<div class="tip" part="tooltip">
       <div class="tip-label">${this.model.labels[a]}</div>
-      <div class="row" style=${`--mc-chart-series:${seriesColor(a)}`}>
+      <div class="row" style=${`--mc-_chart-series:${seriesColor(a)}`}>
         <i></i><strong>${this.fmt(this.model.values[a] ?? 0)}</strong>${this.format === 'percent'
           ? nothing
           : html`<span>${this.share(a)}</span>`}
@@ -421,7 +421,7 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
             ${labels.map(
               (name, i) =>
                 html`<span class="key"
-                  ><span class="swatch" style=${`--mc-chart-series:${seriesColor(i)}`}></span
+                  ><span class="swatch" style=${`--mc-_chart-series:${seriesColor(i)}`}></span
                   >${name}<span class="share">${this.share(i)}</span></span
                 >`,
             )}

@@ -44,6 +44,8 @@ export type { MotionSliderProps } from './motion-slider.types.js'
  * @attr {boolean} [arrows=true] - Show prev/next arrow buttons. Set `"false"` to hide them.
  *
  * @fires motion-change - Dispatched when the active slide index changes. `detail: { index }`.
+ *
+ * @cssprop [--mc-color-accent=#2563eb] - Color of the keyboard focus ring on the arrows.
  *   `event.detail.index` contains the new index.
  *
  * @example
