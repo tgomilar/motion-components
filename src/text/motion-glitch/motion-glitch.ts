@@ -53,7 +53,7 @@ export type { MotionGlitchProps, GlitchTrigger } from './motion-glitch.types.js'
 export class MotionGlitch extends Controllable(LitElement) implements MotionGlitchProps {
   /** Maximum horizontal displacement of the RGB layers, in pixels. */
   @property({ type: Number }) intensity = 5
-  /** When the glitch fires: `'hover'`, `'mount'` (once on load), or `'loop'`. */
+  /** When the glitch fires: `'hover'`, `'mount'` (once on load), or `'loop'` (keep firing). This is a trigger mode, not the boolean `loop` other components use. */
   @property({ type: String, reflect: true }) trigger: GlitchTrigger = 'loop'
   /** Time between glitch bursts when `trigger="loop"`, in seconds. */
   @property({ type: Number }) interval = 2

@@ -3,6 +3,8 @@ import { property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
+import { pauseOnHover } from '../utils/loop.js'
+import type { LoopProps } from '../utils/loop.js'
 import type { MotionTypewriterProps } from './motion-typewriter.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
@@ -49,7 +51,10 @@ export type { MotionTypewriterProps } from './motion-typewriter.types.js'
  * ```
  */
 @customElement('motion-typewriter')
-export class MotionTypewriter extends Controllable(LitElement) implements MotionTypewriterProps {
+export class MotionTypewriter
+  extends Controllable(LitElement)
+  implements MotionTypewriterProps, LoopProps
+{
   /** Time between characters while typing, in seconds. */
   @property({ type: Number }) interval = 0.05
   /** Delay before typing starts after viewport entry, in seconds. */
@@ -58,6 +63,10 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
   @property({ type: Number }) hold = 1.8
   /** When `true`, type → hold → erase → retype on repeat. */
   @property({ type: Boolean, converter: flag }) loop = false
+  /** With `loop`, seconds the line stays empty after erasing before it retypes. */
+  @property({ type: Number }) gap = 0.5
+  /** Pause the loop while the pointer is over the text. */
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
   /** When `true`, render a blinking caret after the typed text. Set `cursor="false"` to hide it. */
   @property({ type: Boolean, converter: flag }) cursor = true
 
@@ -96,6 +105,7 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
   private remaining = 0
   private resolveRun: (() => void) | null = null
   private blink: AnimationPlaybackControls | null = null
+  private detachPauseOnHover: (() => void) | null = null
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -156,11 +166,19 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
       { threshold: 0.2 },
     )
     this.observer.observe(this)
+    this.detachPauseOnHover = pauseOnHover(
+      this,
+      () => this.loop && this.pauseOnHover,
+      () => this.pause(),
+      () => this.play(),
+    )
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
     this.observer?.disconnect()
+    this.detachPauseOnHover?.()
+    this.detachPauseOnHover = null
     this.stopTimer()
     this.stopBlink()
   }
@@ -218,7 +236,7 @@ export class MotionTypewriter extends Controllable(LitElement) implements Motion
 
   private erase() {
     if (this.index <= 0) {
-      this.schedule(() => this.type(), this.interval * 4000)
+      this.schedule(() => this.type(), this.gap * 1000)
       return
     }
     this.index--

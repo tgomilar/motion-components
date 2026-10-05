@@ -2,7 +2,9 @@ import { LitElement, html, css } from 'lit'
 import { property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
-import { useIntersect } from '../utils/use-intersect.js'
+import type { PlaybackRun } from '../../utils/playback.js'
+import { LoopCycle, LoopTrigger, pauseOnHover } from '../utils/loop.js'
+import type { LoopProps } from '../utils/loop.js'
 import type { MotionCounterProps } from './motion-counter.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
@@ -46,7 +48,10 @@ export type { MotionCounterProps } from './motion-counter.types.js'
  * ```
  */
 @customElement('motion-counter')
-export class MotionCounter extends Controllable(LitElement) implements MotionCounterProps {
+export class MotionCounter
+  extends Controllable(LitElement)
+  implements MotionCounterProps, LoopProps
+{
   /** Starting value of the counter. */
   @property({ type: Number }) from = 0
   /** Target value to count up (or down) to. */
@@ -59,8 +64,16 @@ export class MotionCounter extends Controllable(LitElement) implements MotionCou
   @property({ type: String }) prefix = ''
   /** Text rendered after the number (e.g. `"%"`). */
   @property({ type: String }) suffix = ''
-  /** When `true`, only count the first time the element enters view. Set `once="false"` to turn it off. */
+  /** When `true`, only count the first time the element enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
+  /** Count to `to`, hold, snap back to `from`, wait, then count again on repeat. */
+  @property({ type: Boolean, converter: flag }) loop = false
+  /** With `loop`, seconds the counter stays at `to` before it snaps back to `from`. */
+  @property({ type: Number }) hold = 1.6
+  /** With `loop`, seconds the counter stays at `from` before it counts again. */
+  @property({ type: Number }) gap = 0.5
+  /** Pause the loop while the pointer is over the counter. */
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   @state() private value = 0
 
@@ -71,60 +84,81 @@ export class MotionCounter extends Controllable(LitElement) implements MotionCou
     }
   `
 
-  private disconnectIntersect: (() => void) | null = null
-  private animated = false
-
   playback: PlaybackController = new PlaybackController(this, {
-    start: () => {
-      const counter = { value: this.from }
-      return controlsRun(
-        animate(
-          counter,
-          { value: this.to },
-          {
-            duration: this.duration,
-            type: 'spring',
-            bounce: 0.05,
-            onUpdate: () => {
-              this.value = counter.value
-            },
-            onComplete: () => {
-              this.value = this.to
-            },
-          },
-        ),
-      )
-    },
+    start: () => (this.loop ? { handle: this.cycle.start() } : this.count()),
     applyFinalState: () => {
+      this.cycle.stop()
       this.value = this.to
     },
     applyInitialState: () => {
+      this.cycle.stop()
       this.value = this.from
     },
   })
 
+  private cycle: LoopCycle = new LoopCycle({
+    leg: (out) => {
+      if (out) {
+        this.value = this.from
+        return null
+      }
+      return this.count()
+    },
+    hold: () => this.hold,
+    gap: () => this.gap,
+  })
+
+  private viewport = new LoopTrigger(this, {
+    threshold: () => 0.2,
+    once: () => this.once,
+    loop: () => this.loop,
+  })
+
+  private detachPauseOnHover: (() => void) | null = null
+
+  private count(): PlaybackRun {
+    const counter = { value: this.from }
+    return controlsRun(
+      animate(
+        counter,
+        { value: this.to },
+        {
+          duration: this.duration,
+          type: 'spring',
+          bounce: 0.05,
+          onUpdate: () => {
+            this.value = counter.value
+          },
+          onComplete: () => {
+            this.value = this.to
+          },
+        },
+      ),
+    )
+  }
+
   connectedCallback() {
     super.connectedCallback()
     this.value = this.from
-    this.disconnectIntersect = useIntersect(this, 0.2, () => {
-      if (!this.animated && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.animated = true
-          this.disconnectIntersect?.()
-        }
-      }
-    })
+    this.viewport.arm()
+    this.detachPauseOnHover = pauseOnHover(
+      this,
+      () => this.loop && this.pauseOnHover,
+      () => this.pause(),
+      () => this.play(),
+    )
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.disconnectIntersect?.()
+    this.viewport.disarm()
+    this.detachPauseOnHover?.()
+    this.detachPauseOnHover = null
   }
 
   /** Resets the counter to `from` and re-runs the count animation. */
   replay() {
-    this.animated = false
+    this.viewport.reset()
     this.cancel()
     void this.play()
   }

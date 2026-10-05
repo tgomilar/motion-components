@@ -1,6 +1,8 @@
+import type { LoopProps } from '../utils/loop.js'
+
 export type FontTrigger = 'view' | 'hover' | 'scroll'
 
-export interface MotionFontProps {
+export interface MotionFontProps extends LoopProps {
   axis: string
   axes: string
   from: number

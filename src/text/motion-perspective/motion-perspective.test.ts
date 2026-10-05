@@ -87,18 +87,26 @@ describe('motion-perspective', () => {
     expect(sizes(el)).toEqual([1, 0.75, 0.5])
   })
 
-  it('oscillate="false" stays static', async () => {
+  it('loop="false" stays static', async () => {
     const el = (await fixture(
-      html`<motion-perspective text="ABC" depth="0.5" oscillate="false"></motion-perspective>`,
+      html`<motion-perspective text="ABC" depth="0.5" loop="false"></motion-perspective>`,
     )) as MotionPerspective
-    expect(el.oscillate).toBe(false)
+    expect(el.loop).toBe(false)
     expect(el.playState).toBe('idle')
     expect(sizes(el)).toEqual([0.5, 0.75, 1])
   })
 
-  it('oscillate starts the loop with a default cycle of 0.667 seconds', async () => {
+  it('oscillate is kept as an alias for loop', async () => {
     const el = (await fixture(
-      html`<motion-perspective text="ABC" oscillate></motion-perspective>`,
+      html`<motion-perspective text="ABC" loop></motion-perspective>`,
+    )) as MotionPerspective
+    expect(el.loop).toBe(true)
+    expect(el.playState).toBe('running')
+  })
+
+  it('loop starts the oscillation with a default cycle of 0.667 seconds', async () => {
+    const el = (await fixture(
+      html`<motion-perspective text="ABC" loop></motion-perspective>`,
     )) as MotionPerspective
     expect(el.duration).toBe(0.667)
     expect(el.playState).toBe('running')
@@ -107,7 +115,7 @@ describe('motion-perspective', () => {
 
   it('advances one oscillation cycle per duration seconds', async () => {
     const el = (await fixture(
-      html`<motion-perspective text="ABC" depth="0.5" oscillate duration="1"></motion-perspective>`,
+      html`<motion-perspective text="ABC" depth="0.5" loop duration="1"></motion-perspective>`,
     )) as MotionPerspective
     restartAt(el, 1000)
     frames.step(1000)
@@ -121,7 +129,7 @@ describe('motion-perspective', () => {
 
   it('a longer duration slows the oscillation', async () => {
     const el = (await fixture(
-      html`<motion-perspective text="ABC" depth="0.5" oscillate duration="2"></motion-perspective>`,
+      html`<motion-perspective text="ABC" depth="0.5" loop duration="2"></motion-perspective>`,
     )) as MotionPerspective
     restartAt(el, 1000)
     frames.step(1500)
@@ -130,7 +138,7 @@ describe('motion-perspective', () => {
 
   it('pause-on-hover stops the loop and resumes on leave', async () => {
     const el = (await fixture(
-      html`<motion-perspective text="ABC" oscillate pause-on-hover></motion-perspective>`,
+      html`<motion-perspective text="ABC" loop pause-on-hover></motion-perspective>`,
     )) as MotionPerspective
     el.dispatchEvent(new MouseEvent('mouseenter'))
     expect(el.playState).toBe('paused')
@@ -142,7 +150,7 @@ describe('motion-perspective', () => {
 
   it('pause-on-hover="false" keeps oscillating on hover', async () => {
     const el = (await fixture(
-      html`<motion-perspective text="ABC" oscillate pause-on-hover="false"></motion-perspective>`,
+      html`<motion-perspective text="ABC" loop pause-on-hover="false"></motion-perspective>`,
     )) as MotionPerspective
     el.dispatchEvent(new MouseEvent('mouseenter'))
     expect(el.playState).toBe('running')
@@ -150,7 +158,7 @@ describe('motion-perspective', () => {
 
   it('pause / play / finish / cancel control the oscillation', async () => {
     const el = (await fixture(
-      html`<motion-perspective text="ABC" depth="0.5" oscillate duration="1"></motion-perspective>`,
+      html`<motion-perspective text="ABC" depth="0.5" loop duration="1"></motion-perspective>`,
     )) as MotionPerspective
     restartAt(el, 1000)
     frames.step(1500)
@@ -174,7 +182,7 @@ describe('motion-perspective', () => {
   it('reduced motion shows the static recession instead of oscillating', async () => {
     stubReducedMotion(true)
     const el = (await fixture(
-      html`<motion-perspective text="ABC" depth="0.5" oscillate></motion-perspective>`,
+      html`<motion-perspective text="ABC" depth="0.5" loop></motion-perspective>`,
     )) as MotionPerspective
     expect(el.playState).toBe('idle')
     expect(frames.pending).toBe(0)

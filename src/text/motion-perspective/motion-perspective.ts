@@ -4,7 +4,7 @@ import { Controllable, PlaybackController, frameLoop } from '../../utils/playbac
 import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionPerspectiveProps, VanishDirection } from './motion-perspective.types.js'
 import { customElement } from '../../utils/define.js'
-import { flag } from '../../utils/attributes.js'
+import { flag, parseFlag } from '../../utils/attributes.js'
 
 export type { MotionPerspectiveProps, VanishDirection } from './motion-perspective.types.js'
 
@@ -19,7 +19,7 @@ export type { MotionPerspectiveProps, VanishDirection } from './motion-perspecti
  *
  * **Use it for:** a short word or title that should look as if it goes back
  * into the distance, either still or with a slow back-and-forth depth motion
- * (`oscillate`).
+ * (`loop`, previously `oscillate`).
  *
  * **Avoid it for:** long text or sentences, because the characters sit on
  * one line and never wrap. For content that should tilt in 3D toward the
@@ -28,13 +28,13 @@ export type { MotionPerspectiveProps, VanishDirection } from './motion-perspecti
  * **Accessibility:** the full text is in a visually hidden span and the
  * character spans have `aria-hidden`, so screen readers read the text once,
  * as normal words. The far characters are smaller and fainter, so check that
- * they are still readable, or lower `depth`. With `oscillate`, the motion
+ * they are still readable, or lower `depth`. With `loop`, the motion
  * starts at once and does not end on its own. `pause-on-hover` reacts to the
  * mouse only, so give other users a way to stop it, for example a button
  * that calls `pause()`.
  *
- * **Reduced motion:** with `oscillate`, the oscillation does not start and
- * the text keeps the still perspective layout. Without `oscillate` nothing
+ * **Reduced motion:** with `loop`, the oscillation does not start and
+ * the text keeps the still perspective layout. Without `loop` nothing
  * changes, because that layout does not move.
  *
  * **Common mistakes:** placing an oscillating `motion-perspective` inside
@@ -50,7 +50,7 @@ export type { MotionPerspectiveProps, VanishDirection } from './motion-perspecti
  *
  * @example
  * ```html
- * <motion-perspective depth="0.7" vanish="right" oscillate>HORIZON</motion-perspective>
+ * <motion-perspective depth="0.7" vanish="right" loop>HORIZON</motion-perspective>
  * ```
  */
 @customElement('motion-perspective')
@@ -61,12 +61,22 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   @property({ type: Number }) depth = 0.65
   /** Direction the text recedes towards: `'left'` or `'right'`. */
   @property({ type: String }) vanish: VanishDirection = 'left'
-  /** When `true`, animate a back-and-forth depth oscillation. */
-  @property({ type: Boolean, converter: flag }) oscillate = false
-  /** Seconds per oscillation cycle when `oscillate` is set. Lower is faster. */
+  /** When `true`, animate a back-and-forth depth oscillation on repeat. `oscillate` is kept as an alias for `loop`. */
+  @property({ type: Boolean, converter: flag, attribute: 'loop' }) loop = false
+  /** Seconds per oscillation cycle when `loop` is set. Lower is faster. */
   @property({ type: Number }) duration = 0.667
   /** When `true`, pause the oscillation while the cursor is over the element. */
   @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
+
+  /** @internal Deprecated alias for `loop`, kept so existing markup keeps working. */
+  static get observedAttributes() {
+    return [...super.observedAttributes, 'oscillate']
+  }
+
+  attributeChangedCallback(name: string, old: string | null, value: string | null) {
+    super.attributeChangedCallback(name, old, value)
+    if (name === 'oscillate') this.loop = parseFlag(value)
+  }
 
   static styles = css`
     .sr-only {
@@ -99,25 +109,25 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
     }
   `
 
-  private loop: FrameLoop | null = null
+  private ticker: FrameLoop | null = null
   private phase = 0
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
-      this.loop = frameLoop((dt) => this.tick(dt / 1000))
-      this.loop.start()
+      this.ticker = frameLoop((dt) => this.tick(dt / 1000))
+      this.ticker.start()
       return {
         handle: {
-          pause: () => this.loop?.stop(),
-          resume: () => this.loop?.start(),
+          pause: () => this.ticker?.stop(),
+          resume: () => this.ticker?.start(),
           finish: () => {
-            this.loop?.stop()
-            this.loop = null
+            this.ticker?.stop()
+            this.ticker = null
             this.applyNeutral()
           },
           cancel: () => {
-            this.loop?.stop()
-            this.loop = null
+            this.ticker?.stop()
+            this.ticker = null
           },
         },
       }
@@ -156,7 +166,7 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
       changed.has('text') ||
       changed.has('depth') ||
       changed.has('vanish') ||
-      changed.has('oscillate') ||
+      changed.has('loop') ||
       changed.has('duration')
 
     if (needsRestart) this.setup()
@@ -165,7 +175,7 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   private setup() {
     this.cancel()
 
-    if (!this.oscillate) {
+    if (!this.loop) {
       this.applyStatic()
       return
     }

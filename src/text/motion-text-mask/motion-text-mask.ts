@@ -2,7 +2,9 @@ import { LitElement, html, css } from 'lit'
 import { property, query } from 'lit/decorators.js'
 import { animate } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
-import { useIntersect } from '../utils/use-intersect.js'
+import type { PlaybackRun } from '../../utils/playback.js'
+import { LoopCycle, LoopTrigger, pauseOnHover } from '../utils/loop.js'
+import type { LoopProps } from '../utils/loop.js'
 import type { MotionTextMaskProps } from './motion-text-mask.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
@@ -47,15 +49,26 @@ export type { MotionTextMaskProps } from './motion-text-mask.types.js'
  * ```
  */
 @customElement('motion-text-mask')
-export class MotionTextMask extends Controllable(LitElement) implements MotionTextMaskProps {
+export class MotionTextMask
+  extends Controllable(LitElement)
+  implements MotionTextMaskProps, LoopProps
+{
   /** Spring duration of the slide-up reveal, in seconds. */
   @property({ type: Number }) duration = 0.9
   /** Delay before the reveal starts, in seconds. */
   @property({ type: Number }) delay = 0
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.2
-  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. */
+  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
+  /** Slide the content in, hold, slide it back out, then repeat. */
+  @property({ type: Boolean, converter: flag }) loop = false
+  /** With `loop`, seconds the content stays visible before it slides back out. */
+  @property({ type: Number }) hold = 1.6
+  /** With `loop`, seconds the content stays hidden before it slides in again. */
+  @property({ type: Number }) gap = 0.5
+  /** Pause the loop while the pointer is over the mask. */
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   static styles = css`
     :host {
@@ -71,29 +84,47 @@ export class MotionTextMask extends Controllable(LitElement) implements MotionTe
 
   @query('.inner') private inner!: HTMLElement
 
-  private disconnectIntersect: (() => void) | null = null
-  private revealed = false
+  private detachPauseOnHover: (() => void) | null = null
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
+  private cycle: LoopCycle = new LoopCycle({
+    leg: (out) => this.slide(out, 0),
+    hold: () => this.hold,
+    gap: () => this.gap,
+    delay: () => this.delay,
+  })
+
+  private viewport = new LoopTrigger(this, {
+    threshold: () => this.threshold,
+    once: () => this.once,
+    loop: () => this.loop,
+  })
+
   playback: PlaybackController = new PlaybackController(this, {
-    start: () =>
-      controlsRun(
-        animate(
-          this.inner,
-          { y: ['110%', '0%'] },
-          { duration: this.duration, delay: this.delay, type: 'spring', bounce: 0.05 },
-        ),
-      ),
+    start: () => (this.loop ? { handle: this.cycle.start() } : this.slide(false)),
     applyFinalState: () => {
+      this.cycle.stop()
       this.inner.style.transform = ''
     },
     applyInitialState: () => {
+      this.cycle.stop()
       this.inner.style.transform = 'translateY(110%)'
     },
   })
+
+  private slide(out: boolean, startDelay = this.delay): PlaybackRun {
+    return controlsRun(
+      animate(this.inner, out ? { y: ['0%', '110%'] } : { y: ['110%', '0%'] }, {
+        duration: this.duration,
+        ...(out ? {} : { delay: startDelay }),
+        type: 'spring',
+        bounce: 0.05,
+      }),
+    )
+  }
 
   connectedCallback() {
     super.connectedCallback()
@@ -104,32 +135,25 @@ export class MotionTextMask extends Controllable(LitElement) implements MotionTe
       this.inner.style.transform = 'translateY(110%)'
     }
 
-    this.disconnectIntersect = useIntersect(
+    this.viewport.arm()
+    this.detachPauseOnHover = pauseOnHover(
       this,
-      this.threshold,
-      () => {
-        if (!this.revealed && this.playState === 'idle') {
-          void this.play()
-          if (this.once) {
-            this.revealed = true
-            this.disconnectIntersect?.()
-          }
-        }
-      },
-      () => {
-        if (!this.once && this.playState !== 'idle') this.cancel()
-      },
+      () => this.loop && this.pauseOnHover,
+      () => this.pause(),
+      () => this.play(),
     )
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.disconnectIntersect?.()
+    this.viewport.disarm()
+    this.detachPauseOnHover?.()
+    this.detachPauseOnHover = null
   }
 
   /** Resets the inner mask offset and re-runs the reveal. */
   replay() {
-    this.revealed = false
+    this.viewport.reset()
     this.cancel()
     void this.play()
   }

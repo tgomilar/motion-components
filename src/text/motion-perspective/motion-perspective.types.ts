@@ -1,10 +1,10 @@
+import type { LoopProps } from '../utils/loop.js'
+
 export type VanishDirection = 'left' | 'right'
 
-export interface MotionPerspectiveProps {
+export interface MotionPerspectiveProps extends Pick<LoopProps, 'loop' | 'pauseOnHover'> {
   text?: string
   depth: number
   vanish: VanishDirection
-  oscillate: boolean
   duration: number
-  pauseOnHover: boolean
 }

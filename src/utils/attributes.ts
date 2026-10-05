@@ -1,6 +1,7 @@
 import type { ComplexAttributeConverter } from 'lit'
 
-const parseFlag = (value: string | null) => value !== null && value !== 'false'
+/** Reads a boolean attribute value, where a present attribute means `true` unless it is `"false"`. */
+export const parseFlag = (value: string | null) => value !== null && value !== 'false'
 
 /**
  * Boolean attribute converter where `attr="false"` means false. Plain Lit

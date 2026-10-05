@@ -86,6 +86,15 @@ export function stubIntersectionObserver(): IntersectionHandle {
   }
 }
 
+/** Resolve once `predicate` is true, or reject after `timeout`. */
+export async function waitFor(predicate: () => boolean, message: string, timeout = 3000) {
+  const start = performance.now()
+  while (!predicate()) {
+    if (performance.now() - start > timeout) throw new Error(message)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  }
+}
+
 /** Resolve on the next dispatch of `name` from `el`. */
 export function waitForEvent(el: EventTarget, name: string): Promise<Event> {
   return new Promise((resolve) => el.addEventListener(name, resolve, { once: true }))
