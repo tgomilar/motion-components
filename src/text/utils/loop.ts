@@ -266,27 +266,35 @@ export class LoopTrigger {
 }
 
 /**
- * Wires `pause-on-hover` for a loop: freezes the cycle on pointer enter and
- * resumes it on leave. `enabled` is read per event, so toggling the attribute
- * after the first render takes effect without re-setup. Returns a detach
- * function for teardown.
+ * Wires `pause-on-hover` for a loop: freezes a running cycle when the pointer
+ * moves over the host and resumes it on leave. Browsers also send
+ * `pointerenter` when content appears under a resting pointer, which would
+ * freeze the loop before it shows anything, so only a moving pointer pauses.
+ * Leave resumes only a pause made here, never an idle or cancelled run.
+ * `enabled` is read per event, so toggling the attribute after the first
+ * render takes effect without re-setup. Returns a detach function for teardown.
  */
 export function pauseOnHover(
-  host: HTMLElement,
+  host: HTMLElement & { readonly playState: PlaybackState },
   enabled: () => boolean,
   pause: () => void,
   resume: () => void,
 ): () => void {
-  const onEnter = () => {
-    if (enabled()) pause()
+  let held = false
+  const onMove = () => {
+    if (held || !enabled() || host.playState !== 'running') return
+    held = true
+    pause()
   }
   const onLeave = () => {
-    if (enabled()) resume()
+    if (!held) return
+    held = false
+    if (host.playState === 'paused') resume()
   }
-  host.addEventListener('pointerenter', onEnter)
+  host.addEventListener('pointermove', onMove)
   host.addEventListener('pointerleave', onLeave)
   return () => {
-    host.removeEventListener('pointerenter', onEnter)
+    host.removeEventListener('pointermove', onMove)
     host.removeEventListener('pointerleave', onLeave)
   }
 }

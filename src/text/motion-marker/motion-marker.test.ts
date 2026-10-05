@@ -185,7 +185,7 @@ describe('motion-marker', () => {
     const el = await mount('loop duration="0.6" pause-on-hover', 'x')
     io.enter()
     await wait(120)
-    el.dispatchEvent(new PointerEvent('pointerenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('paused')
     const frozen = progress(el)
     await wait(400)

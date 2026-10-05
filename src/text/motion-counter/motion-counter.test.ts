@@ -108,7 +108,7 @@ describe('motion-counter', () => {
     io.enter()
     await waitFor(() => text(el) === '100', 'never reached `to`')
 
-    el.dispatchEvent(new Event('pointerenter'))
+    el.dispatchEvent(new Event('pointermove'))
     expect(el.playState).toBe('paused')
     const held = text(el)
     await wait(150)
@@ -123,7 +123,7 @@ describe('motion-counter', () => {
       html`<motion-counter from="0" to="100" pause-on-hover></motion-counter>`,
     )) as MotionCounter
     io.enter()
-    el.dispatchEvent(new Event('pointerenter'))
+    el.dispatchEvent(new Event('pointermove'))
     expect(el.playState).toBe('running')
   })
 

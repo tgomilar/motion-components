@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { LoopCycle, delayedRun } from './loop.js'
-import type { PlaybackRun } from '../../utils/playback.js'
+import { LoopCycle, delayedRun, pauseOnHover } from './loop.js'
+import type { PlaybackRun, PlaybackState } from '../../utils/playback.js'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -238,5 +238,81 @@ describe('delayedRun', () => {
     resolveDone()
     await vi.advanceTimersByTimeAsync(0)
     expect(settled).toHaveBeenCalled()
+  })
+})
+
+describe('pauseOnHover', () => {
+  const host = (state: PlaybackState) => {
+    const el = document.createElement('div') as HTMLDivElement & { playState: PlaybackState }
+    el.playState = state
+    return el
+  }
+
+  it('pauses a running loop when the pointer moves over it, not on enter alone', () => {
+    const el = host('running')
+    const pause = vi.fn(() => (el.playState = 'paused'))
+    pauseOnHover(el, () => true, pause, vi.fn())
+
+    el.dispatchEvent(new Event('pointerenter'))
+    expect(pause).not.toHaveBeenCalled()
+
+    el.dispatchEvent(new Event('pointermove'))
+    el.dispatchEvent(new Event('pointermove'))
+    expect(pause).toHaveBeenCalledTimes(1)
+  })
+
+  it('resumes on leave only what it paused', () => {
+    const el = host('running')
+    const resume = vi.fn(() => (el.playState = 'running'))
+    pauseOnHover(
+      el,
+      () => true,
+      () => (el.playState = 'paused'),
+      resume,
+    )
+
+    el.dispatchEvent(new Event('pointerleave'))
+    expect(resume).not.toHaveBeenCalled()
+
+    el.dispatchEvent(new Event('pointermove'))
+    el.dispatchEvent(new Event('pointerleave'))
+    expect(resume).toHaveBeenCalledTimes(1)
+  })
+
+  it('never pauses or starts an idle loop', () => {
+    const el = host('idle')
+    const pause = vi.fn()
+    const resume = vi.fn()
+    pauseOnHover(el, () => true, pause, resume)
+
+    el.dispatchEvent(new Event('pointermove'))
+    el.dispatchEvent(new Event('pointerleave'))
+    expect(pause).not.toHaveBeenCalled()
+    expect(resume).not.toHaveBeenCalled()
+  })
+
+  it('does not resume a loop that was cancelled while paused', () => {
+    const el = host('running')
+    const resume = vi.fn()
+    pauseOnHover(
+      el,
+      () => true,
+      () => (el.playState = 'paused'),
+      resume,
+    )
+
+    el.dispatchEvent(new Event('pointermove'))
+    el.playState = 'idle'
+    el.dispatchEvent(new Event('pointerleave'))
+    expect(resume).not.toHaveBeenCalled()
+  })
+
+  it('does nothing while disabled', () => {
+    const el = host('running')
+    const pause = vi.fn()
+    pauseOnHover(el, () => false, pause, vi.fn())
+
+    el.dispatchEvent(new Event('pointermove'))
+    expect(pause).not.toHaveBeenCalled()
   })
 })

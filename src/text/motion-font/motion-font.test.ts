@@ -298,7 +298,7 @@ describe('motion-font', () => {
     io.enter()
     await wait(20)
 
-    el.dispatchEvent(new Event('pointerenter'))
+    el.dispatchEvent(new Event('pointermove'))
     expect(el.playState).toBe('paused')
     const callsWhilePaused = animateMock.mock.calls.length
     await wait(150)

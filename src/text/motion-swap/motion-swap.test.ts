@@ -172,7 +172,7 @@ describe('motion-swap', () => {
     io.enter()
     await wait(40)
 
-    el.dispatchEvent(new Event('pointerenter'))
+    el.dispatchEvent(new Event('pointermove'))
     expect(el.playState).toBe('paused')
 
     el.dispatchEvent(new Event('pointerleave'))
