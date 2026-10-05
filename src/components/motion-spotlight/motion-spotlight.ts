@@ -28,18 +28,18 @@ export type { MotionSpotlightProps } from './motion-spotlight.types.js'
  *
  * **Common mistakes:** setting `border-radius` on the inner card only; the
  * glow copies the radius of `motion-spotlight`, so round the host too. Using
- * a strong `--spotlight-color` over text; the glow sits on top of the
+ * a strong `--mc-spotlight-color` over text; the glow sits on top of the
  * content and can lower the text contrast.
  *
  * @element motion-spotlight
  *
  * @slot - The content the spotlight overlays.
  *
- * @cssprop --spotlight-color - Center color of the radial gradient. Default `rgba(255,255,255,0.18)`.
+ * @cssprop --mc-spotlight-color - Center color of the radial gradient. Default `rgba(255,255,255,0.18)`.
  *
  * @example
  * ```html
- * <motion-spotlight size="500" style="--spotlight-color: rgba(96,165,250,0.25)">
+ * <motion-spotlight size="500" style="--mc-spotlight-color: rgba(96,165,250,0.25)">
  *   <div class="card">…</div>
  * </motion-spotlight>
  * ```
@@ -156,7 +156,7 @@ export class MotionSpotlight extends LitElement implements MotionSpotlightProps 
 
   private paint = () => {
     if (!this.spot) return
-    this.spot.style.background = `radial-gradient(${this.size}px circle at ${this.x.get()}px ${this.y.get()}px, var(--spotlight-color, rgba(255,255,255,0.18)), transparent 60%)`
+    this.spot.style.background = `radial-gradient(${this.size}px circle at ${this.x.get()}px ${this.y.get()}px, var(--mc-spotlight-color, rgba(255,255,255,0.18)), transparent 60%)`
   }
 
   render() {

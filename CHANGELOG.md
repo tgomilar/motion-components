@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking changes
+
+- Every CSS custom property now has the `--mc-` prefix, and the old names no longer work. Add `mc-` after the two dashes: `--icon-color` is now `--mc-icon-color`, `--chart-1` is `--mc-chart-1`, `--dialog-bg` is `--mc-dialog-bg`. This includes the theme colors that `motion-code`, `motion-code-inline`, `motion-dialog`, `motion-image-compare`, `motion-progress`, `motion-ring` and `motion-slider` read (`--mc-color-accent`, `--mc-color-accent-dim`, `--mc-color-muted`, `--mc-color-border`, `--mc-color-surface`, `--mc-color-surface-2` and `--mc-color-text`), and the scroll value `motion-scene` sets for its children: `--progress` is now `--mc-progress`.
+
 ### Fixed
 
 - `motion-dialog`: with `light-dismiss`, pressing Enter or Space on a button inside the panel closed the dialog. Only clicks outside the panel close it now.

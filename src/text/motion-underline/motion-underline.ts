@@ -54,10 +54,10 @@ export class MotionUnderline extends MarkElement implements MotionUnderlineProps
 
   static styles = css`
     :host {
-      --mark: var(--mc-mark-color, currentColor);
+      --mc-mark-ink: var(--mc-mark-color, currentColor);
       display: inline;
       padding-bottom: 0.08em;
-      background-image: linear-gradient(var(--mark), var(--mark));
+      background-image: linear-gradient(var(--mc-mark-ink), var(--mc-mark-ink));
       background-repeat: no-repeat;
       background-position: 0 100%;
       background-size: calc(min(var(--mc-mark-progress, 0), 1) * 100%) var(--mc-mark-thickness, 2px);
@@ -67,20 +67,20 @@ export class MotionUnderline extends MarkElement implements MotionUnderlineProps
     :host([shape='dashed']) {
       background-image: repeating-linear-gradient(
         90deg,
-        var(--mark) 0 0.35em,
+        var(--mc-mark-ink) 0 0.35em,
         transparent 0 0.55em
       );
     }
     :host([shape='dotted']) {
-      --dot: var(--mc-mark-thickness, 2px);
+      --mc-mark-dot: var(--mc-mark-thickness, 2px);
       background-image: repeating-linear-gradient(
         90deg,
-        var(--mark) 0 var(--dot),
-        transparent 0 calc(var(--dot) * 2.5)
+        var(--mc-mark-ink) 0 var(--mc-mark-dot),
+        transparent 0 calc(var(--mc-mark-dot) * 2.5)
       );
     }
     :host([shape='wave']) {
-      --progress: min(var(--mc-mark-progress, 0), 1);
+      --mc-mark-drawn: min(var(--mc-mark-progress, 0), 1);
       display: inline-block;
       position: relative;
       white-space: nowrap;
@@ -95,12 +95,12 @@ export class MotionUnderline extends MarkElement implements MotionUnderlineProps
     }
     path {
       fill: none;
-      stroke: var(--mark);
+      stroke: var(--mc-mark-ink);
       stroke-width: var(--mc-mark-thickness, 2px);
       stroke-linecap: round;
       stroke-linejoin: round;
-      stroke-dasharray: var(--progress) calc(1 - var(--progress));
-      stroke-opacity: clamp(0, calc(var(--progress) * 50), 1);
+      stroke-dasharray: var(--mc-mark-drawn) calc(1 - var(--mc-mark-drawn));
+      stroke-opacity: clamp(0, calc(var(--mc-mark-drawn) * 50), 1);
     }
   `
 

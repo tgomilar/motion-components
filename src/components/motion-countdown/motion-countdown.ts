@@ -63,11 +63,11 @@ const STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
  * @fires motion-finish - Once when the time is up, or when `finish()` jumps to the end.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
- * @cssprop --countdown-size - Font size of the digits. Default `3.5rem`.
- * @cssprop --countdown-color - Digit color. Default `currentColor`.
- * @cssprop --countdown-gap - Space between units. Default `0.75rem`.
- * @cssprop --countdown-label-size - Font size of the unit labels. Default `0.65rem`.
- * @cssprop --countdown-label-color - Unit label color. Default `currentColor`.
+ * @cssprop --mc-countdown-size - Font size of the digits. Default `3.5rem`.
+ * @cssprop --mc-countdown-color - Digit color. Default `currentColor`.
+ * @cssprop --mc-countdown-gap - Space between units. Default `0.75rem`.
+ * @cssprop --mc-countdown-label-size - Font size of the unit labels. Default `0.65rem`.
+ * @cssprop --mc-countdown-label-color - Unit label color. Default `currentColor`.
  *
  * @example
  * ```html
@@ -104,7 +104,7 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
     :host {
       display: inline-flex;
       align-items: flex-start;
-      gap: var(--countdown-gap, 0.75rem);
+      gap: var(--mc-countdown-gap, 0.75rem);
       font-variant-numeric: tabular-nums;
     }
 
@@ -113,7 +113,7 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
       flex-direction: column;
       align-items: center;
       gap: 0.5rem;
-      font-size: var(--countdown-size, 3.5rem);
+      font-size: var(--mc-countdown-size, 3.5rem);
     }
 
     .digits {
@@ -146,7 +146,7 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
       display: block;
       font-size: 1em;
       font-weight: 800;
-      color: var(--countdown-color, currentColor);
+      color: var(--mc-countdown-color, currentColor);
       letter-spacing: -0.04em;
       line-height: 1;
       user-select: none;
@@ -162,18 +162,18 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
     }
 
     .label {
-      font-size: var(--countdown-label-size, 0.65rem);
+      font-size: var(--mc-countdown-label-size, 0.65rem);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: var(--countdown-label-color, currentColor);
+      color: var(--mc-countdown-label-color, currentColor);
       opacity: 0.4;
     }
 
     .sep {
-      font-size: var(--countdown-size, 3.5rem);
+      font-size: var(--mc-countdown-size, 3.5rem);
       font-weight: 800;
-      color: var(--countdown-color, currentColor);
+      color: var(--mc-countdown-color, currentColor);
       opacity: 0.2;
       line-height: 1;
       align-self: flex-start;

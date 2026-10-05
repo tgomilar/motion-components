@@ -44,10 +44,10 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
  * @fires motion-finish - When the draw-in finishes.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
- * @cssprop --sparkline-width - Width. Default `6em`.
- * @cssprop --sparkline-height - Height. Default `1.5em`.
- * @cssprop --sparkline-color - Line color. Default `currentColor`.
- * @cssprop --sparkline-accent - Color of the dot on the last value. Default the line color.
+ * @cssprop --mc-sparkline-width - Width. Default `6em`.
+ * @cssprop --mc-sparkline-height - Height. Default `1.5em`.
+ * @cssprop --mc-sparkline-color - Line color. Default `currentColor`.
+ * @cssprop --mc-sparkline-accent - Color of the dot on the last value. Default the line color.
  *
  * @example
  * ```html
@@ -74,10 +74,10 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
   static styles = css`
     :host {
       display: inline-block;
-      width: var(--sparkline-width, 6em);
-      height: var(--sparkline-height, 1.5em);
+      width: var(--mc-sparkline-width, 6em);
+      height: var(--mc-sparkline-height, 1.5em);
       vertical-align: middle;
-      color: var(--sparkline-color, currentColor);
+      color: var(--mc-sparkline-color, currentColor);
     }
     svg {
       display: block;
@@ -97,7 +97,7 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
       fill-opacity: 0.1;
     }
     .dot {
-      fill: var(--sparkline-accent, currentColor);
+      fill: var(--mc-sparkline-accent, currentColor);
     }
   `
 

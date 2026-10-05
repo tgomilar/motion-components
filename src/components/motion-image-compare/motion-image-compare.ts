@@ -128,7 +128,7 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
       transform: translate(-50%, -50%);
     }
     .knob:focus-visible {
-      outline: 2px solid var(--color-accent, #2563eb);
+      outline: 2px solid var(--mc-color-accent, #2563eb);
       outline-offset: 3px;
     }
   `

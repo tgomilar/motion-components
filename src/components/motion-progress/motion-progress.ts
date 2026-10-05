@@ -38,11 +38,11 @@ export type { MotionProgressProps, ProgressPosition } from './motion-progress.ty
  * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
- * @cssprop --progress-color - Bar color. Default `var(--color-accent, #2563eb)`.
+ * @cssprop --mc-progress-color - Bar color. Default `var(--mc-color-accent, #2563eb)`.
  *
  * @example
  * ```html
- * <motion-progress thickness="3" style="--progress-color: #60a5fa"></motion-progress>
+ * <motion-progress thickness="3" style="--mc-progress-color: #60a5fa"></motion-progress>
  * <motion-progress target="#article" position="bottom"></motion-progress>
  * ```
  */
@@ -123,7 +123,7 @@ export class MotionProgress extends Controllable(LitElement) implements MotionPr
 
   private apply() {
     if (!this.bar) return
-    this.bar.style.background = 'var(--progress-color, var(--color-accent, #2563eb))'
+    this.bar.style.background = 'var(--mc-progress-color, var(--mc-color-accent, #2563eb))'
     this.bar.style.height = `${this.thickness}px`
     this.bar.style.top = this.position === 'top' ? '0' : 'auto'
     this.bar.style.bottom = this.position === 'bottom' ? '0' : 'auto'

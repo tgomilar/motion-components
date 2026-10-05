@@ -68,9 +68,9 @@ function arcPath(cx: number, cy: number, r: number, inner: number, a0: number, a
  * @fires motion-finish - When the sweep-in finishes.
  * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
- * @cssprop --chart-height - Height of the chart, including the legend. Default `16rem`.
- * @cssprop --chart-1 - Color of the first slice. `--chart-2` to `--chart-6` color the others.
- * @cssprop --chart-surface - Background behind the chart, used for the gap between slices. Default `Canvas`.
+ * @cssprop --mc-chart-height - Height of the chart, including the legend. Default `16rem`.
+ * @cssprop --mc-chart-1 - Color of the first slice. `--mc-chart-2` to `--mc-chart-6` color the others.
+ * @cssprop --mc-chart-surface - Background behind the chart, used for the gap between slices. Default `Canvas`.
  *
  * @csspart legend - The legend.
  * @csspart tooltip - The tooltip.
@@ -115,7 +115,7 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
     chartStyles,
     css`
       .slice {
-        stroke: var(--chart-surface, Canvas);
+        stroke: var(--mc-chart-surface, Canvas);
         stroke-width: 2;
         stroke-linejoin: round;
       }
@@ -125,7 +125,7 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
         font-variant-numeric: tabular-nums;
       }
       .center-label {
-        fill: var(--_muted);
+        fill: var(--mc-chart-muted);
       }
     `,
   ]
@@ -321,7 +321,7 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
     const a = Math.max(0, this.active)
     return html`<div class="tip" part="tooltip">
       <div class="tip-label">${this.model.labels[a]}</div>
-      <div class="row" style=${`--c:${seriesColor(a)}`}>
+      <div class="row" style=${`--mc-chart-series:${seriesColor(a)}`}>
         <i></i><strong>${this.fmt(this.model.values[a] ?? 0)}</strong>${this.format === 'percent'
           ? nothing
           : html`<span>${this.share(a)}</span>`}
@@ -421,10 +421,8 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
             ${labels.map(
               (name, i) =>
                 html`<span class="key"
-                  ><span class="swatch" style=${`--c:${seriesColor(i)}`}></span>${name}<span
-                    class="share"
-                    >${this.share(i)}</span
-                  ></span
+                  ><span class="swatch" style=${`--mc-chart-series:${seriesColor(i)}`}></span
+                  >${name}<span class="share">${this.share(i)}</span></span
                 >`,
             )}
           </div>`

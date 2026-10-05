@@ -83,7 +83,7 @@ export class MotionScene extends Controllable(LitElement) implements MotionScene
     .inner {
       position: sticky;
       top: 0;
-      height: var(--scene-stage-height, 100vh);
+      height: var(--mc-scene-stage-height, 100vh);
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -115,7 +115,7 @@ export class MotionScene extends Controllable(LitElement) implements MotionScene
     },
     applyFinalState: () => this.applyProgress(1),
     applyInitialState: () => {
-      this.style.removeProperty('--progress')
+      this.style.removeProperty('--mc-progress')
       for (const el of [...this.querySelectorAll<HTMLElement>('[data-from]')]) {
         const range = this.parseChild(el)
         if (!range) continue
@@ -171,13 +171,13 @@ export class MotionScene extends Controllable(LitElement) implements MotionScene
     const source = this.resolveContainer()
 
     const stageHeight = source ? `${source.clientHeight}px` : '100vh'
-    this.style.setProperty('--scene-stage-height', stageHeight)
+    this.style.setProperty('--mc-scene-stage-height', stageHeight)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const scrollOptions: any = { target: this, offset: ['start start', 'end end'] }
     if (source) scrollOptions.container = source
 
     const progressCleanup = scroll((progress: number) => {
-      this.style.setProperty('--progress', String(progress))
+      this.style.setProperty('--mc-progress', String(progress))
     }, scrollOptions)
     this.cleanups.push(progressCleanup)
 
@@ -230,7 +230,7 @@ export class MotionScene extends Controllable(LitElement) implements MotionScene
   }
 
   private applyProgress(progress: number) {
-    this.style.setProperty('--progress', String(progress))
+    this.style.setProperty('--mc-progress', String(progress))
     for (const el of [...this.querySelectorAll<HTMLElement>('[data-from]')]) {
       const range = this.parseChild(el)
       if (range) this.applyChild(el, range, progress)

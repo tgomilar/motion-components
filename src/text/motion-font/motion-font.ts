@@ -105,7 +105,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
 
   constructor() {
     super()
-    this.baseProp = `--mf-${_instanceCount++}`
+    this.baseProp = `--mc-font-${_instanceCount++}`
   }
 
   private get reduced() {

@@ -41,15 +41,15 @@ export type { MotionDialogProps } from './motion-dialog.types.js'
  *
  * @fires motion-close - Dispatched after the close animation completes.
  *
- * @cssprop --dialog-bg - Panel background. Default `Canvas`.
- * @cssprop --dialog-color - Panel text color. Default `CanvasText`.
- * @cssprop --dialog-radius - Panel corner radius. Default `16px`.
- * @cssprop --dialog-padding - Panel padding. Default `2rem`.
- * @cssprop --dialog-max-width - Maximum panel width. Default `min(560px, 100vw - 2rem)`.
- * @cssprop --dialog-max-height - Maximum panel height. Default `100dvh - 4rem`.
- * @cssprop --dialog-shadow - Panel box shadow.
- * @cssprop --dialog-backdrop-color - Backdrop overlay color. Default `rgba(0, 0, 0, 0.48)`.
- * @cssprop --dialog-backdrop-blur - Backdrop `backdrop-filter`. Default `blur(6px)`.
+ * @cssprop --mc-dialog-bg - Panel background. Default `Canvas`.
+ * @cssprop --mc-dialog-color - Panel text color. Default `CanvasText`.
+ * @cssprop --mc-dialog-radius - Panel corner radius. Default `16px`.
+ * @cssprop --mc-dialog-padding - Panel padding. Default `2rem`.
+ * @cssprop --mc-dialog-max-width - Maximum panel width. Default `min(560px, 100vw - 2rem)`.
+ * @cssprop --mc-dialog-max-height - Maximum panel height. Default `100dvh - 4rem`.
+ * @cssprop --mc-dialog-shadow - Panel box shadow.
+ * @cssprop --mc-dialog-backdrop-color - Backdrop overlay color. Default `rgba(0, 0, 0, 0.48)`.
+ * @cssprop --mc-dialog-backdrop-blur - Backdrop `backdrop-filter`. Default `blur(6px)`.
  *
  * @example
  * ```html
@@ -91,26 +91,26 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
       position: fixed;
       inset: 0;
       z-index: 9998;
-      background: var(--dialog-backdrop-color, rgba(0, 0, 0, 0.48));
-      backdrop-filter: var(--dialog-backdrop-blur, blur(6px));
-      -webkit-backdrop-filter: var(--dialog-backdrop-blur, blur(6px));
+      background: var(--mc-dialog-backdrop-color, rgba(0, 0, 0, 0.48));
+      backdrop-filter: var(--mc-dialog-backdrop-blur, blur(6px));
+      -webkit-backdrop-filter: var(--mc-dialog-backdrop-blur, blur(6px));
       opacity: 0;
       pointer-events: none;
     }
 
     dialog {
       border: none;
-      border-radius: var(--dialog-radius, 16px);
-      padding: var(--dialog-padding, 2rem);
-      max-width: var(--dialog-max-width, min(560px, calc(100vw - 2rem)));
-      max-height: var(--dialog-max-height, calc(100dvh - 4rem));
+      border-radius: var(--mc-dialog-radius, 16px);
+      padding: var(--mc-dialog-padding, 2rem);
+      max-width: var(--mc-dialog-max-width, min(560px, calc(100vw - 2rem)));
+      max-height: var(--mc-dialog-max-height, calc(100dvh - 4rem));
       overflow: auto;
-      background: var(--dialog-bg, var(--color-surface, Canvas));
-      color: var(--dialog-color, var(--color-text, CanvasText));
+      background: var(--mc-dialog-bg, var(--mc-color-surface, Canvas));
+      color: var(--mc-dialog-color, var(--mc-color-text, CanvasText));
       box-shadow: var(
-        --dialog-shadow,
+        --mc-dialog-shadow,
         0 8px 32px rgba(0, 0, 0, 0.18),
-        0 0 0 1px var(--color-border, rgba(0, 0, 0, 0.08))
+        0 0 0 1px var(--mc-color-border, rgba(0, 0, 0, 0.08))
       );
       opacity: 0;
     }

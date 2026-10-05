@@ -83,13 +83,13 @@ describe('motion-spotlight', () => {
     expect(spot(el).style.background).toContain('circle at 30px 20px')
   })
 
-  it('reflects size and reads the color from --spotlight-color', async () => {
+  it('reflects size and reads the color from --mc-spotlight-color', async () => {
     const el = await mount()
     await elementUpdated(el)
     expect(el.getAttribute('size')).toBe('500')
     el.dispatchEvent(new PointerEvent('pointermove', { clientX: 10, clientY: 10 }))
     const spot = el.shadowRoot!.querySelector<HTMLElement>('.spot')!
-    expect(spot.style.background).toContain('var(--spotlight-color')
+    expect(spot.style.background).toContain('var(--mc-spotlight-color')
   })
 
   it('follows the pointer with a spring after the first move', async () => {

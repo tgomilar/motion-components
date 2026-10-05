@@ -81,12 +81,12 @@ let uid = 0
  * @fires colorschemechange - When the mode or applied color scheme changes. `detail: { colorScheme, mode }`.
  * @fires permanentcolorschemechange - When `permanent` changes. `detail: { permanent }`.
  *
- * @cssprop --theme-toggle-surface - Background of the switch track, segmented group and menu trigger.
- * @cssprop --theme-toggle-border - Border color of the controls.
- * @cssprop --theme-toggle-accent - Selected segment, switch thumb and active menu item background.
- * @cssprop --theme-toggle-menu-bg - Drop-down menu background. Default `Canvas`.
- * @cssprop --theme-toggle-radius - Corner radius of the controls. Default `999px`.
- * @cssprop --theme-icon-size - Icon size. Default `1.25em`.
+ * @cssprop --mc-theme-toggle-surface - Background of the switch track, segmented group and menu trigger.
+ * @cssprop --mc-theme-toggle-border - Border color of the controls.
+ * @cssprop --mc-theme-toggle-accent - Selected segment, switch thumb and active menu item background.
+ * @cssprop --mc-theme-toggle-menu-bg - Drop-down menu background. Default `Canvas`.
+ * @cssprop --mc-theme-toggle-radius - Corner radius of the controls. Default `999px`.
+ * @cssprop --mc-theme-icon-size - Icon size. Default `1.25em`.
  *
  * @csspart button - The icon button (`icon`) or menu trigger (`menu`).
  * @csspart track - The switch track (`switch`).
@@ -154,11 +154,20 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
     :host {
       display: inline-block;
       position: relative;
-      --_surface: var(--theme-toggle-surface, color-mix(in srgb, currentColor 6%, transparent));
-      --_border: var(--theme-toggle-border, color-mix(in srgb, currentColor 16%, transparent));
-      --_accent: var(--theme-toggle-accent, color-mix(in srgb, currentColor 14%, transparent));
-      --_radius: var(--theme-toggle-radius, 999px);
-      --theme-icon-size: 1.25em;
+      --mc-toggle-surface: var(
+        --mc-theme-toggle-surface,
+        color-mix(in srgb, currentColor 6%, transparent)
+      );
+      --mc-toggle-border: var(
+        --mc-theme-toggle-border,
+        color-mix(in srgb, currentColor 16%, transparent)
+      );
+      --mc-toggle-accent: var(
+        --mc-theme-toggle-accent,
+        color-mix(in srgb, currentColor 14%, transparent)
+      );
+      --mc-toggle-radius: var(--mc-theme-toggle-radius, 999px);
+      --mc-theme-icon-size: 1.25em;
     }
     .root {
       display: inline-flex;
@@ -184,11 +193,11 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       place-items: center;
       width: 2.5em;
       height: 2.5em;
-      border-radius: var(--_radius);
+      border-radius: var(--mc-toggle-radius);
     }
     .trigger {
-      background: var(--_surface);
-      box-shadow: inset 0 0 0 1px var(--_border);
+      background: var(--mc-toggle-surface);
+      box-shadow: inset 0 0 0 1px var(--mc-toggle-border);
     }
     fieldset {
       border: 0;
@@ -206,9 +215,9 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       position: relative;
       display: inline-flex;
       padding: 3px;
-      border-radius: var(--_radius);
-      background: var(--_surface);
-      box-shadow: inset 0 0 0 1px var(--_border);
+      border-radius: var(--mc-toggle-radius);
+      background: var(--mc-toggle-surface);
+      box-shadow: inset 0 0 0 1px var(--mc-toggle-border);
     }
     .indicator {
       position: absolute;
@@ -216,8 +225,8 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       bottom: 3px;
       left: 0;
       width: 0;
-      border-radius: var(--_radius);
-      background: var(--_accent);
+      border-radius: var(--mc-toggle-radius);
+      background: var(--mc-toggle-accent);
     }
     .segment {
       position: relative;
@@ -225,7 +234,7 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       align-items: center;
       gap: 0.4em;
       padding: 0.4em 0.85em;
-      border-radius: var(--_radius);
+      border-radius: var(--mc-toggle-radius);
       cursor: pointer;
       user-select: none;
     }
@@ -262,9 +271,9 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       position: relative;
       width: 3.5em;
       height: 2em;
-      border-radius: var(--_radius);
-      background: var(--_surface);
-      box-shadow: inset 0 0 0 1px var(--_border);
+      border-radius: var(--mc-toggle-radius);
+      background: var(--mc-toggle-surface);
+      box-shadow: inset 0 0 0 1px var(--mc-toggle-border);
     }
     .thumb {
       position: absolute;
@@ -274,9 +283,9 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       place-items: center;
       width: calc(2em - 6px);
       height: calc(2em - 6px);
-      border-radius: var(--_radius);
-      background: var(--_accent);
-      --theme-icon-size: 1em;
+      border-radius: var(--mc-toggle-radius);
+      background: var(--mc-toggle-accent);
+      --mc-theme-icon-size: 1em;
     }
     .menu {
       position: relative;
@@ -290,10 +299,10 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
       min-width: 10em;
       padding: 4px;
       border-radius: 12px;
-      background: var(--theme-toggle-menu-bg, Canvas);
+      background: var(--mc-theme-toggle-menu-bg, Canvas);
       box-shadow:
         0 8px 24px rgba(0, 0, 0, 0.16),
-        0 0 0 1px var(--_border);
+        0 0 0 1px var(--mc-toggle-border);
       transform-origin: top right;
     }
     .panel[hidden] {
@@ -309,11 +318,11 @@ export class MotionThemeToggle extends LitElement implements MotionThemeTogglePr
     }
     .item:hover,
     .item:focus-visible {
-      background: var(--_surface);
+      background: var(--mc-toggle-surface);
       outline: none;
     }
     .item[aria-checked='true'] {
-      background: var(--_accent);
+      background: var(--mc-toggle-accent);
     }
     .remember {
       display: inline-flex;

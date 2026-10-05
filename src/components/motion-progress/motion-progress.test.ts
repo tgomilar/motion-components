@@ -54,12 +54,12 @@ describe('motion-progress', () => {
     expect(el.playState).toBe('running')
   })
 
-  it('reflects position and thickness onto the bar and colors it from --progress-color', async () => {
+  it('reflects position and thickness onto the bar and colors it from --mc-progress-color', async () => {
     const el = (await fixture(
       html`<motion-progress
         position="bottom"
         thickness="5"
-        style="--progress-color: #ff0000"
+        style="--mc-progress-color: #ff0000"
       ></motion-progress>`,
     )) as MotionProgress
     await elementUpdated(el)
