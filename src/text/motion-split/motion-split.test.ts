@@ -293,7 +293,7 @@ describe('motion-split', () => {
     const el = await mount(html`<motion-split loop hold="0.1" pause-on-hover>Hi</motion-split>`)
     io.enter()
     await waitFor(() => controls.length > 0, 'the first loop leg never started')
-    el.dispatchEvent(new Event('pointerenter'))
+    el.dispatchEvent(new Event('pointermove'))
     expect(controls[controls.length - 1].pause).toHaveBeenCalled()
 
     el.dispatchEvent(new Event('pointerleave'))

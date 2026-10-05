@@ -306,7 +306,7 @@ describe('motion-headline', () => {
     )
     io.enter()
     await waitFor(() => controls.length > 0, 'the first loop leg never started')
-    el.dispatchEvent(new Event('pointerenter'))
+    el.dispatchEvent(new Event('pointermove'))
     expect(el.playState).toBe('paused')
     expect(controls[controls.length - 1].pause).toHaveBeenCalled()
 
