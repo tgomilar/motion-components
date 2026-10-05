@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
-import { stubReducedMotion, stubIntersectionObserver, waitForEvent } from '../../test/helpers.js'
+import {
+  stubReducedMotion,
+  stubIntersectionObserver,
+  waitFor,
+  waitForEvent,
+} from '../../test/helpers.js'
 import type { IntersectionHandle } from '../../test/helpers.js'
 
 // The slide-up runs through Motion's spring; the contract is the keyframes
@@ -205,7 +210,7 @@ describe('motion-text-mask', () => {
       html`<motion-text-mask loop hold="0.1" pause-on-hover>Reveal</motion-text-mask>`,
     )
     io.enter()
-    await wait(20)
+    await waitFor(() => controls.length > 0, 'the first loop leg never started')
     el.dispatchEvent(new Event('pointerenter'))
     expect(el.playState).toBe('paused')
     expect(controls[controls.length - 1].pause).toHaveBeenCalled()
