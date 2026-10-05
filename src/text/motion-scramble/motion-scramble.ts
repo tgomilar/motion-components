@@ -1,6 +1,9 @@
 import { LitElement, html, css } from 'lit'
 import { property, state } from 'lit/decorators.js'
 import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
+import type { PlaybackRun } from '../../utils/playback.js'
+import { LoopCycle, LoopTrigger, delayedRun, pauseOnHover } from '../utils/loop.js'
+import type { LoopProps } from '../utils/loop.js'
 import type { MotionScrambleProps, ScrambleTrigger } from './motion-scramble.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
@@ -13,33 +16,7 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
  * Decode-style text scramble. Cycles each character through random glyphs,
  * locking them in left-to-right until the original text resolves.
  *
- * **Use it for:** short labels, codes or headings that should decode into
- * place when they scroll into view, or when the mouse moves over them
- * (`trigger="hover"`).
- *
- * **Avoid it for:** body text, long sentences and text with links or other
- * markup. For a number that counts up to a value, use `motion-counter`.
- *
- * **Accessibility:** the component adds no ARIA. The real text is in place
- * before the effect starts and after it ends, but while it runs the text
- * changes to random characters, and a screen reader that reads it at that
- * moment reads those characters. Use it only for short text where that is
- * acceptable. The hover trigger reacts to the mouse only, not to keyboard
- * focus.
- *
- * **Reduced motion:** the scramble never starts. The text shows as normal,
- * still text.
- *
- * **Common mistakes:** putting links or `<strong>` inside: the content is
- * read once as plain text and all markup is removed. Using a proportional
- * font: the random characters have different widths, so the line jumps
- * while it runs; a monospace font keeps it steady.
- *
  * @element motion-scramble
- *
- * @fires motion-start - When a run starts.
- * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
- * @fires motion-cancel - When `cancel()` stops a run and resets it.
  *
  * @slot - The text to scramble. Plain text only — read once on connect.
  *
@@ -51,15 +28,26 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
  * ```
  */
 @customElement('motion-scramble')
-export class MotionScramble extends Controllable(LitElement) implements MotionScrambleProps {
+export class MotionScramble
+  extends Controllable(LitElement)
+  implements MotionScrambleProps, LoopProps
+{
   /** Time between glyph swaps, in seconds. */
   @property({ type: Number }) interval = 0.04
   /** Delay before scrambling starts, in seconds. */
   @property({ type: Number }) delay = 0
   /** Number of random-glyph frames per character before locking in. */
   @property({ type: Number }) iterations = 2
-  /** When `true`, only scramble the first time the element enters view. Set `once="false"` to turn it off. */
+  /** When `true`, only scramble the first time the element enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
+  /** Scramble to the original text, hold, wait, then scramble again on repeat. */
+  @property({ type: Boolean, converter: flag }) loop = false
+  /** With `loop`, seconds the resolved text stays visible before it scrambles again. */
+  @property({ type: Number }) hold = 1.6
+  /** With `loop`, seconds between cycles, while the text is already resolved. */
+  @property({ type: Number }) gap = 0.5
+  /** Pause the loop while the pointer is over the text. */
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
   /** What starts the scramble: `'view'` (when scrolled into view) or `'hover'`. */
   @property({ type: String, reflect: true }) trigger: ScrambleTrigger = 'view'
 
@@ -76,46 +64,67 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
   private frame = 0
   private iter = 0
   private elapsed = 0
-  private observer: IntersectionObserver | null = null
-  private triggered = false
-  private resolveSettled: (() => void) | null = null
-
-  private loop = frameLoop((dt) => {
+  private ticker = frameLoop((dt) => {
     this.elapsed += dt
     if (this.elapsed < this.interval * 1000) return
     this.elapsed = 0
     this.scramble()
   })
+  private resolveSettled: (() => void) | null = null
+  private detachPauseOnHover: (() => void) | null = null
+
+  private cycle: LoopCycle = new LoopCycle({
+    leg: (out) => (out ? null : this.scrambleRun()),
+    hold: () => this.hold,
+    gap: () => this.gap,
+    delay: () => this.delay,
+  })
+
+  private viewport = new LoopTrigger(this, {
+    threshold: () => 0.2,
+    once: () => this.once,
+    loop: () => this.loop,
+  })
 
   playback: PlaybackController = new PlaybackController(this, {
-    start: () => {
-      this.frame = 0
-      this.iter = 0
-      this.elapsed = 0
-      const done = new Promise<void>((resolve) => {
-        this.resolveSettled = resolve
-      })
-      this.loop.start()
-      return {
-        handle: {
-          pause: () => this.loop.stop(),
-          resume: () => this.loop.start(),
-          finish: () => this.settle(),
-          cancel: () => {
-            this.loop.stop()
-            this.resolveSettled = null
-          },
-        },
-        done,
-      }
-    },
+    start: () =>
+      this.loop
+        ? { handle: this.cycle.start() }
+        : delayedRun(
+            () => this.delay,
+            () => this.scrambleRun(),
+          ),
     applyFinalState: () => {
+      this.cycle.stop()
       this.displayed = this.full
     },
     applyInitialState: () => {
+      this.cycle.stop()
       this.displayed = this.full
     },
   })
+
+  private scrambleRun(): PlaybackRun {
+    this.frame = 0
+    this.iter = 0
+    this.elapsed = 0
+    const done = new Promise<void>((resolve) => {
+      this.resolveSettled = resolve
+    })
+    this.ticker.start()
+    return {
+      handle: {
+        pause: () => this.ticker.stop(),
+        resume: () => this.ticker.start(),
+        finish: () => this.settle(),
+        cancel: () => {
+          this.ticker.stop()
+          this.resolveSettled = null
+        },
+      },
+      done,
+    }
+  }
 
   connectedCallback() {
     // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
@@ -129,30 +138,23 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
     if (this.trigger === 'hover') {
       this.addEventListener('mouseenter', this.begin)
     } else {
-      this.observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting && !this.triggered) {
-            if (this.delay) {
-              setTimeout(() => this.begin(), this.delay * 1000)
-            } else {
-              this.begin()
-            }
-            if (this.once) {
-              this.triggered = true
-              this.observer?.disconnect()
-            }
-          }
-        },
-        { threshold: 0.2 },
-      )
-      this.observer.observe(this)
+      this.viewport.arm()
     }
+
+    this.detachPauseOnHover = pauseOnHover(
+      this,
+      () => this.loop && this.pauseOnHover,
+      () => this.pause(),
+      () => this.play(),
+    )
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.observer?.disconnect()
+    this.viewport.disarm()
     this.removeEventListener('mouseenter', this.begin)
+    this.detachPauseOnHover?.()
+    this.detachPauseOnHover = null
   }
 
   private begin = () => {
@@ -161,7 +163,7 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
   }
 
   private settle() {
-    this.loop.stop()
+    this.ticker.stop()
     this.resolveSettled?.()
     this.resolveSettled = null
     this.displayed = this.full
@@ -191,7 +193,7 @@ export class MotionScramble extends Controllable(LitElement) implements MotionSc
 
   /** Re-runs the scramble animation. */
   replay() {
-    this.triggered = false
+    this.viewport.reset()
     this.begin()
   }
 

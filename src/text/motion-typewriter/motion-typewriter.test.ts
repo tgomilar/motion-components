@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion, stubIntersectionObserver } from '../../test/helpers.js'
 import type { IntersectionHandle } from '../../test/helpers.js'
@@ -16,6 +16,7 @@ import './motion-typewriter.js'
 
 const text = (el: MotionTypewriter) =>
   el.shadowRoot?.querySelector('[aria-hidden="true"]')?.textContent?.trim()
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const caret = (el: MotionTypewriter) => el.shadowRoot!.querySelector<HTMLElement>('.cursor')!
 
 describe('motion-typewriter', () => {
@@ -25,6 +26,10 @@ describe('motion-typewriter', () => {
     stubReducedMotion(false)
     vi.clearAllMocks()
     io = stubIntersectionObserver()
+  })
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll('motion-typewriter')) el.remove()
   })
 
   it('renders nothing typed before it scrolls into view', async () => {
@@ -127,6 +132,36 @@ describe('motion-typewriter', () => {
 
     el.remove()
     expect(controls.stop).toHaveBeenCalled()
+  })
+
+  it('waits `gap` between typing and the next loop cycle', async () => {
+    const el = (await fixture(
+      html`<motion-typewriter loop speed="900" hold="0.05" gap="1">Hi</motion-typewriter>`,
+    )) as MotionTypewriter
+    io.enter()
+    expect(el.playState).toBe('running')
+    await wait(120)
+    expect(text(el)).not.toBe('')
+    el.pause()
+  })
+
+  it('pauses on hover with pause-on-hover and loop', async () => {
+    const el = (await fixture(
+      html`<motion-typewriter loop speed="1" hold="4" gap="4" pause-on-hover
+        >Hi</motion-typewriter
+      >`,
+    )) as MotionTypewriter
+    io.enter()
+    await wait(40)
+
+    el.dispatchEvent(new Event('pointerenter'))
+    expect(el.playState).toBe('paused')
+    const paused = text(el)
+    await wait(60)
+    expect(text(el)).toBe(paused)
+
+    el.dispatchEvent(new Event('pointerleave'))
+    expect(el.playState).toBe('running')
   })
 
   it('keeps the caret still under reduced motion', async () => {

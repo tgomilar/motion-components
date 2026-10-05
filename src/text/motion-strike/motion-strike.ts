@@ -21,7 +21,7 @@ export type { MotionStrikeProps, MarkTrigger } from './motion-strike.types.js'
  * `text-decoration: none` on it.
  *
  * **Reduced motion:** the line appears fully drawn at once on the same
- * trigger, with no animation.
+ * trigger, with no animation. With `loop` it stays drawn and never cycles.
  *
  * **Common mistakes:** a `<del>` around the component with its default
  * `text-decoration`, so two lines show.
@@ -46,13 +46,14 @@ export type { MotionStrikeProps, MarkTrigger } from './motion-strike.types.js'
 export class MotionStrike extends MarkElement implements MotionStrikeProps {
   static styles = css`
     :host {
-      --mc-mark-ink: var(--mc-mark-color, currentColor);
+      --mc-_mark-ink: var(--mc-mark-color, currentColor);
       display: inline;
       padding-bottom: 0.08em;
-      background-image: linear-gradient(var(--mc-mark-ink), var(--mc-mark-ink));
+      background-image: linear-gradient(var(--mc-_mark-ink), var(--mc-_mark-ink));
       background-repeat: no-repeat;
       background-position: 0 58%;
-      background-size: calc(min(var(--mc-mark-progress, 0), 1) * 100%) var(--mc-mark-thickness, 2px);
+      background-size: calc(min(var(--mc-_mark-progress, 0), 1) * 100%)
+        var(--mc-mark-thickness, 2px);
       -webkit-box-decoration-break: clone;
       box-decoration-break: clone;
     }

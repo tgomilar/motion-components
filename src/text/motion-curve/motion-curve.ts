@@ -69,7 +69,7 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
   @property({ type: Boolean, converter: flag, reflect: true }) loop = false
   /** Scroll speed when `loop` is enabled, in pixels per second. */
   @property({ type: Number, attribute: 'loop-speed' }) loopSpeed = 80
-  /** Gap between repeated text sets in loop mode, in pixels. */
+  /** Gap between repeated text sets in marquee mode, in pixels. This is spacing, not the seconds-based `gap` other components use for loop timing. */
   @property({ type: Number, attribute: 'loop-gap' }) loopGap = 48
   /** When `true`, omit vertical padding equal to `amplitude`. */
   @property({ type: Boolean, converter: flag, attribute: 'no-pad' }) noPad = false

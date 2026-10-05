@@ -1,7 +1,8 @@
 import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate, scroll, GroupAnimationWithThen } from 'motion'
-import { useIntersect } from '../utils/use-intersect.js'
+import { LoopCycle, LoopTrigger, pauseOnHover } from '../utils/loop.js'
+import type { LoopProps } from '../utils/loop.js'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionFontProps, FontTrigger } from './motion-font.types.js'
 import { customElement } from '../../utils/define.js'
@@ -70,7 +71,7 @@ interface AxisDef {
  * ```
  */
 @customElement('motion-font')
-export class MotionFont extends Controllable(LitElement) implements MotionFontProps {
+export class MotionFont extends Controllable(LitElement) implements MotionFontProps, LoopProps {
   /** Single-axis tag to animate (e.g. `'wght'`, `'slnt'`, `'opsz'`). Ignored if `axes` is set. */
   @property({ type: String }) axis = 'wght'
   /** Multi-axis spec: space-separated `axis:from:to` triples. Overrides `axis`/`from`/`to`. */
@@ -87,8 +88,16 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   @property({ type: Number }) delay = 0
   /** Trigger source: `'view'` (when scrolled into view), `'hover'`, or `'scroll'` (progress-mapped). */
   @property({ type: String, reflect: true }) trigger: FontTrigger = 'view'
-  /** When `true` and `trigger="view"`, only animate the first time it enters view. Set `once="false"` to turn it off. */
+  /** When `true` and `trigger="view"`, only animate the first time it enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
+  /** With `trigger="view"`, run from `from` to `to`, hold, back to `from`, wait, then repeat. */
+  @property({ type: Boolean, converter: flag }) loop = false
+  /** With `loop`, seconds the axes stay at `to` before they spring back to `from`. */
+  @property({ type: Number }) hold = 1.6
+  /** With `loop`, seconds the axes stay at `from` before they run to `to` again. */
+  @property({ type: Number }) gap = 0.5
+  /** Pause the loop while the pointer is over the text. */
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   static styles = css`
     :host {
@@ -98,14 +107,19 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
 
   private baseProp: string
   private axesDef: AxisDef[] = []
-  private disconnectIntersect: (() => void) | null = null
   private scrollCleanup: (() => void) | null = null
-  private triggered = false
   private hoverAnim: GroupAnimationWithThen | null = null
+  private detachPauseOnHover: (() => void) | null = null
+
+  private viewport = new LoopTrigger(this, {
+    threshold: () => 0.2,
+    once: () => this.once,
+    loop: () => this.loop,
+  })
 
   constructor() {
     super()
-    this.baseProp = `--mc-font-${_instanceCount++}`
+    this.baseProp = `--mc-_font-${_instanceCount++}`
   }
 
   private get reduced() {
@@ -114,20 +128,39 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
-      if (this.trigger === 'scroll') {
-        return this.scrollStart()
-      }
+      if (this.trigger === 'scroll') return this.scrollStart()
+      if (this.loop) return { handle: this.cycle.start() }
       return this.autoStart()
     },
     applyFinalState: () => {
+      this.cycle.stop()
       this.setAll((ax) => ax.to)
     },
     applyInitialState: () => {
+      this.cycle.stop()
       this.setAll((ax) => ax.from)
     },
   })
 
-  private springAxes(start: (ax: AxisDef) => number, target: (ax: AxisDef) => number) {
+  private cycle: LoopCycle = new LoopCycle({
+    leg: (out) =>
+      controlsRun(
+        this.springAxes(
+          (ax) => (out ? ax.to : ax.from),
+          (ax) => (out ? ax.from : ax.to),
+          0,
+        ),
+      ),
+    hold: () => this.hold,
+    gap: () => this.gap,
+    delay: () => this.delay,
+  })
+
+  private springAxes(
+    start: (ax: AxisDef) => number,
+    target: (ax: AxisDef) => number,
+    delay = this.delay,
+  ) {
     return new GroupAnimationWithThen(
       this.axesDef.map((ax) => {
         const obj = { value: start(ax) }
@@ -138,7 +171,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
             duration: this.duration,
             type: 'spring',
             bounce: this.bounce,
-            delay: this.delay,
+            delay,
             onUpdate: () => this.style.setProperty(ax.prop, String(obj.value)),
           },
         )
@@ -240,12 +273,20 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
 
     // trigger === 'view'
     this.setupIntersect()
+    this.detachPauseOnHover = pauseOnHover(
+      this,
+      () => this.loop && this.pauseOnHover,
+      () => this.pause(),
+      () => this.play(),
+    )
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.disconnectIntersect?.()
+    this.viewport.disarm()
     this.unbindScroll()
+    this.detachPauseOnHover?.()
+    this.detachPauseOnHover = null
     this.removeEventListener('mouseenter', this.onHoverIn)
     this.removeEventListener('mouseleave', this.onHoverOut)
     this.removeEventListener('focusin', this.onHoverIn)
@@ -253,23 +294,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   }
 
   private setupIntersect() {
-    this.disconnectIntersect?.()
-    this.disconnectIntersect = useIntersect(
-      this,
-      0.2,
-      () => {
-        if (!this.triggered && this.playState === 'idle') {
-          void this.play()
-          if (this.once) {
-            this.triggered = true
-            this.disconnectIntersect?.()
-          }
-        }
-      },
-      () => {
-        if (!this.once && this.playState !== 'idle') this.cancel()
-      },
-    )
+    this.viewport.arm()
   }
 
   private hoverTo(target: (ax: AxisDef) => number) {
@@ -295,7 +320,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   /** Resets axes to their `from` values and re-arms the viewport observer. Only valid when `trigger="view"`. */
   replay() {
     if (this.trigger !== 'view') return
-    this.triggered = false
+    this.viewport.reset()
     this.cancel()
     this.setupIntersect()
   }

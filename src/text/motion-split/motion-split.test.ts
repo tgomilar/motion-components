@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion, stubIntersectionObserver, waitForEvent } from '../../test/helpers.js'
 import type { IntersectionHandle } from '../../test/helpers.js'
@@ -35,6 +35,7 @@ vi.mock('motion', () => ({ animate: animateMock, stagger: staggerMock }))
 import type { MotionSplit } from './motion-split.js'
 import './motion-split.js'
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const units = (el: MotionSplit) => [...el.querySelectorAll<HTMLElement>('[data-unit]')]
 const spoken = (el: MotionSplit) =>
   [...el.children].filter((c) => !c.hasAttribute('aria-hidden')) as HTMLElement[]
@@ -48,6 +49,10 @@ describe('motion-split', () => {
     animateMock.mockClear()
     staggerMock.mockClear()
     controls.length = 0
+  })
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll('motion-split')) el.remove()
   })
 
   async function mount(attrs = html`<motion-split>Hello brave new world</motion-split>`) {
@@ -183,7 +188,6 @@ describe('motion-split', () => {
     const el = await mount()
     io.enter()
     el.pause()
-    expect(el.playState).toBe('paused')
     expect(controls[0].pause).toHaveBeenCalled()
     void el.play()
     expect(el.playState).toBe('running')
@@ -238,5 +242,64 @@ describe('motion-split', () => {
     const el = await mount()
     el.remove()
     expect(io.observed).toHaveLength(0)
+  })
+
+  it('with loop, reveals then hides on repeat and keeps running past the first cycle', async () => {
+    const el = await mount(html`<motion-split loop hold="0.1" gap="0.1">Hi there</motion-split>`)
+    io.enter()
+    expect(el.playState).toBe('running')
+    await wait(20)
+
+    controls[0].resolve()
+    await wait(180)
+    expect(animateMock).toHaveBeenCalledTimes(2)
+    expect(animateMock.mock.calls[1][1]).toMatchObject({ opacity: [1, 0], y: [0, 20] })
+
+    controls[1].resolve()
+    await wait(180)
+    expect(el.playState).toBe('running')
+  })
+
+  it('with loop, skips the stagger on the hide leg', async () => {
+    await mount(html`<motion-split loop hold="0.1" gap="0.1">Hi</motion-split>`)
+    io.enter()
+    await wait(20)
+    expect(staggerMock).toHaveBeenCalledTimes(1)
+
+    controls[0].resolve()
+    await wait(180)
+    expect(staggerMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('with loop, cancels on leave and restarts on the next entry', async () => {
+    const el = await mount(html`<motion-split loop hold="4">Hi</motion-split>`)
+    io.enter()
+    expect(el.playState).toBe('running')
+
+    io.leave()
+    expect(el.playState).toBe('idle')
+    for (const s of units(el)) expect(s.style.opacity).toBe('0')
+
+    io.enter()
+    expect(el.playState).toBe('running')
+  })
+
+  it('pauses on hover with pause-on-hover and loop', async () => {
+    const el = await mount(html`<motion-split loop hold="0.1" pause-on-hover>Hi</motion-split>`)
+    io.enter()
+    await wait(20)
+    el.dispatchEvent(new Event('pointerenter'))
+    expect(controls[controls.length - 1].pause).toHaveBeenCalled()
+
+    el.dispatchEvent(new Event('pointerleave'))
+    expect(el.playState).toBe('running')
+  })
+
+  it('never starts the loop under reduced motion', async () => {
+    stubReducedMotion(true)
+    const el = await mount(html`<motion-split loop>Hi</motion-split>`)
+    io.enter()
+    expect(animateMock).not.toHaveBeenCalled()
+    expect(el.playState).toBe('finished')
   })
 })

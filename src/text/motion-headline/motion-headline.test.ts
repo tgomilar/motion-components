@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion, stubIntersectionObserver, waitForEvent } from '../../test/helpers.js'
 import type { IntersectionHandle } from '../../test/helpers.js'
@@ -35,6 +35,9 @@ vi.mock('motion', () => ({ animate: animateMock, stagger: staggerMock }))
 import type { MotionHeadline } from './motion-headline.js'
 import './motion-headline.js'
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const HIDE_KEYFRAMES = (keys: unknown) => JSON.stringify(keys) === '{"y":["0%","110%"]}'
+const LOOPED = html`<motion-headline loop hold="0.1" gap="0.1">One two</motion-headline>`
 const units = (el: MotionHeadline) => [...el.querySelectorAll<HTMLElement>('[data-unit]')]
 const spoken = (el: MotionHeadline) =>
   [...el.children].filter((c) => !c.hasAttribute('aria-hidden')) as HTMLElement[]
@@ -48,6 +51,10 @@ describe('motion-headline', () => {
     animateMock.mockClear()
     staggerMock.mockClear()
     controls.length = 0
+  })
+
+  afterEach(() => {
+    for (const el of document.querySelectorAll('motion-headline')) el.remove()
   })
 
   async function mount(tpl = html`<motion-headline>Motion first web</motion-headline>`) {
@@ -258,5 +265,55 @@ describe('motion-headline', () => {
     const el = await mount()
     el.remove()
     expect(io.observed).toHaveLength(0)
+  })
+
+  it('with loop, reveals then hides on repeat and keeps running', async () => {
+    const el = await mount(LOOPED)
+    io.enter()
+    expect(el.playState).toBe('running')
+    await wait(20)
+
+    controls[0].resolve()
+    await wait(180)
+    expect(animateMock).toHaveBeenCalledTimes(2)
+    expect(HIDE_KEYFRAMES(animateMock.mock.calls[1][1])).toBeTruthy()
+
+    controls[1].resolve()
+    await wait(180)
+    expect(el.playState).toBe('running')
+  })
+
+  it('with loop, cancels on leave and restarts on the next entry', async () => {
+    const el = await mount(html`<motion-headline loop hold="4">One two</motion-headline>`)
+    io.enter()
+    expect(el.playState).toBe('running')
+
+    io.leave()
+    expect(el.playState).toBe('idle')
+
+    io.enter()
+    expect(el.playState).toBe('running')
+  })
+
+  it('pauses on hover with pause-on-hover and loop', async () => {
+    const el = await mount(
+      html`<motion-headline loop hold="0.1" pause-on-hover>One two</motion-headline>`,
+    )
+    io.enter()
+    await wait(20)
+    el.dispatchEvent(new Event('pointerenter'))
+    expect(el.playState).toBe('paused')
+    expect(controls[controls.length - 1].pause).toHaveBeenCalled()
+
+    el.dispatchEvent(new Event('pointerleave'))
+    expect(el.playState).toBe('running')
+  })
+
+  it('never starts the loop under reduced motion', async () => {
+    stubReducedMotion(true)
+    const el = await mount(LOOPED)
+    io.enter()
+    expect(animateMock).not.toHaveBeenCalled()
+    expect(el.playState).toBe('finished')
   })
 })

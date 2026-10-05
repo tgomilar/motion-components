@@ -18,12 +18,13 @@ export type { MotionRingProps, RingShape, MarkTrigger } from './motion-ring.type
  * for text that wraps.
  *
  * **Accessibility:** the drawing is an SVG hidden from screen readers. The
- * text stays in the page, selectable, and read unchanged. The ring sits
- * outside the text and takes no space, so it can overlap the lines above and
- * below in a tight paragraph.
+ * text stays in the page, selectable, and read unchanged. The ring takes room
+ * on its left and right, so it never covers the neighbouring words. It takes
+ * no room above and below, so it can overlap the lines above and below in a
+ * tight paragraph.
  *
  * **Reduced motion:** the ring appears fully drawn at once on the same
- * trigger, with no animation.
+ * trigger, with no animation. With `loop` it stays drawn and never cycles.
  *
  * **Common mistakes:** a large `padding` in a paragraph with a small line
  * height, which makes the ring cover the neighbouring lines; raise the line
@@ -54,10 +55,11 @@ export class MotionRing extends MarkElement implements MotionRingProps {
 
   static styles = css`
     :host {
-      --mc-mark-drawn: min(var(--mc-mark-progress, 0), 1);
+      --mc-_mark-drawn: min(var(--mc-_mark-progress, 0), 1);
       display: inline-block;
       position: relative;
       white-space: nowrap;
+      margin-inline: calc(var(--mc-_ring-space, 0px) + var(--mc-mark-thickness, 2px) / 2);
     }
     svg {
       position: absolute;
@@ -70,61 +72,38 @@ export class MotionRing extends MarkElement implements MotionRingProps {
       stroke-width: var(--mc-mark-thickness, 2px);
       stroke-linecap: round;
       stroke-linejoin: round;
-      stroke-dasharray: var(--mc-mark-drawn) calc(1 - var(--mc-mark-drawn));
-      stroke-opacity: clamp(0, calc(var(--mc-mark-drawn) * 50), 1);
+      stroke-dasharray: var(--mc-_mark-drawn) calc(1 - var(--mc-_mark-drawn));
+      stroke-opacity: clamp(0, calc(var(--mc-_mark-drawn) * 50), 1);
     }
     ellipse.stroke {
       stroke-dashoffset: -0.58;
     }
   `
 
-  private observer: ResizeObserver | null = null
-
-  connectedCallback() {
-    super.connectedCallback()
-    this.observer = new ResizeObserver(() => this.layout())
-    this.observer.observe(this)
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback()
-    this.observer?.disconnect()
-    this.observer = null
-  }
-
-  updated(changed: Map<string, unknown>) {
-    super.updated(changed)
-    if (changed.has('shape') || changed.has('padding')) this.layout()
-  }
-
-  private layout() {
+  protected layout() {
     const box = this.renderRoot.querySelector<SVGSVGElement>('svg')
     const stroke = box?.querySelector('.stroke')
-    if (!box || !stroke) return
-    const w = this.offsetWidth
-    const h = this.offsetHeight
+    const range = document.createRange()
+    range.selectNodeContents(this)
+    const text = range.getBoundingClientRect()
+    const host = this.getBoundingClientRect()
+    if (!box || !stroke || !text.width || !host.width) return
+    const scale = Math.abs(host.width - this.offsetWidth) > 1 ? this.offsetWidth / host.width : 1
     const pad = this.padding
-    let width: number
-    let height: number
-    if (this.shape === 'box') {
-      width = w + pad * 2
-      height = h + pad * 2
-      Object.entries({ width, height, rx: Math.min(6, height / 4) }).forEach(([k, v]) =>
-        stroke.setAttribute(k, String(v)),
-      )
-    } else {
-      const rx = w / 2 + pad + h * 0.12
-      const ry = (h / 2) * 0.9 + pad
-      width = rx * 2
-      height = ry * 2
-      Object.entries({ cx: rx, cy: ry, rx, ry }).forEach(([k, v]) =>
-        stroke.setAttribute(k, String(v)),
-      )
-    }
+    const h = text.height * scale
+    const padX = this.shape === 'box' ? pad : pad + h * 0.1
+    const width = text.width * scale + padX * 2
+    const height = h + pad * 2
+    const geometry =
+      this.shape === 'box'
+        ? { width, height, rx: Math.min(6, height / 4) }
+        : { cx: width / 2, cy: height / 2, rx: width / 2, ry: height / 2 }
+    Object.entries(geometry).forEach(([k, v]) => stroke.setAttribute(k, String(v)))
     box.setAttribute('width', String(width))
     box.setAttribute('height', String(height))
-    box.style.left = `${(w - width) / 2}px`
-    box.style.top = `${(h - height) / 2}px`
+    box.style.left = `${(text.left - host.left) * scale - padX}px`
+    box.style.top = `${(text.top - host.top) * scale - pad}px`
+    this.style.setProperty('--mc-_ring-space', `${padX}px`)
   }
 
   render() {

@@ -4,6 +4,14 @@ import { stubReducedMotion, stubIntersectionObserver } from '../../test/helpers.
 import type { MotionUnderline } from './motion-underline.js'
 import './motion-underline.js'
 
+const progress = (el: HTMLElement) => Number(el.style.getPropertyValue('--mc-_mark-progress'))
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function until(check: () => boolean, timeout = 3000) {
+  const start = performance.now()
+  while (!check() && performance.now() - start < timeout) await wait(30)
+}
+
 async function mount(attrs = '', text = 'feel right') {
   const host = document.createElement('div')
   host.innerHTML = `<p style="font-size: 20px">Interactions that <motion-underline trigger="mount" duration="0.2" ${attrs}>${text}</motion-underline>.</p>`
@@ -57,6 +65,30 @@ describe('motion-underline', () => {
     expect(path.getAttribute('d')).toMatch(/^M0 [\d.]+ Q.* T/)
     expect(el.getClientRects()).toHaveLength(1)
     expect(Number(path.closest('svg')!.getAttribute('width'))).toBe(el.offsetWidth)
+  })
+
+  it('draws a zigzag of straight segments under one line with shape="zigzag"', async () => {
+    const el = await mount('shape="zigzag"', 'no jank')
+    await el.finished
+    const d = el.shadowRoot!.querySelector('svg path')!.getAttribute('d')!
+    const points = d.match(/L/g) ?? []
+    expect(d).not.toMatch(/[QT]/)
+    expect(points.length % 2).toBe(0)
+    const parts = d.trim().split(' ')
+    expect(Number(parts[parts.length - 2].slice(1))).toBeCloseTo(el.offsetWidth, 1)
+    expect(el.getClientRects()).toHaveLength(1)
+  })
+
+  it('cycles the wave on repeat with loop', async () => {
+    const el = await mount('loop shape="wave" duration="0.2" hold="0.3" gap="0.2"', 'loops')
+    await wait(400)
+    const start = progress(el)
+    expect(start).toBeGreaterThan(0.9)
+    await until(() => progress(el) < 0.05)
+    expect(progress(el)).toBeLessThan(0.05)
+    await until(() => progress(el) > 0.95)
+    expect(progress(el)).toBeGreaterThan(0.95)
+    expect(el.playState).toBe('running')
   })
 
   it('waits until it is rendered before drawing the wave', async () => {

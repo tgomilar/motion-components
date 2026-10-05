@@ -2,8 +2,10 @@ import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
+import type { PlaybackRun } from '../../utils/playback.js'
 import { escapeHtml, screenReaderText, splitText, wordGroup } from '../utils/split-text.js'
-import { useIntersect } from '../utils/use-intersect.js'
+import { LoopCycle, LoopTrigger, pauseOnHover } from '../utils/loop.js'
+import type { LoopProps } from '../utils/loop.js'
 import type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-headline.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
@@ -52,7 +54,10 @@ export type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-
  * ```
  */
 @customElement('motion-headline')
-export class MotionHeadline extends Controllable(LitElement) implements MotionHeadlineProps {
+export class MotionHeadline
+  extends Controllable(LitElement)
+  implements MotionHeadlineProps, LoopProps
+{
   /** Split unit: `'words'`, `'chars'`, or `'lines'`. */
   @property({ type: String, reflect: true }) by: HeadlineBy = 'words'
   /** Reveal style: `'slide'` (mask + slide up) or `'flip'` (3D rotateX). */
@@ -65,8 +70,16 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
   @property({ type: Number }) delay = 0
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
   @property({ type: Number }) threshold = 0.2
-  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. */
+  /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
+  /** Reveal the headline, hold, hide it again, then repeat. */
+  @property({ type: Boolean, converter: flag }) loop = false
+  /** With `loop`, seconds the headline stays visible before it hides again. */
+  @property({ type: Number }) hold = 1.6
+  /** With `loop`, seconds the headline stays hidden before it reveals again. */
+  @property({ type: Number }) gap = 0.5
+  /** Pause the loop while the pointer is over the headline. */
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   static styles = css`
     :host {
@@ -78,53 +91,68 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
   `
 
   private units: HTMLElement[] = []
-  private disconnectIntersect: (() => void) | null = null
-  private revealed = false
+  private detachPauseOnHover: (() => void) | null = null
+
+  private cycle: LoopCycle = new LoopCycle({
+    leg: (out) => this.animateUnits(out, 0),
+    hold: () => this.hold,
+    gap: () => this.gap,
+    delay: () => this.delay,
+  })
+
+  private viewport = new LoopTrigger(this, {
+    threshold: () => this.threshold,
+    once: () => this.once,
+    loop: () => this.loop,
+  })
 
   playback: PlaybackController = new PlaybackController(this, {
-    start: () =>
-      this.variant === 'flip'
-        ? controlsRun(
-            animate(
-              this.units,
-              { rotateX: [90, 0], opacity: [0, 1] },
-              {
-                delay: stagger(this.interval, { startDelay: this.delay }),
-                duration: this.duration,
-                type: 'spring',
-                bounce: 0.1,
-              },
-            ),
-          )
-        : controlsRun(
-            animate(
-              this.units,
-              { y: ['110%', '0%'] },
-              {
-                delay: stagger(this.interval, { startDelay: this.delay }),
-                duration: this.duration,
-                type: 'spring',
-                bounce: 0.05,
-              },
-            ),
-          ),
+    start: () => (this.loop ? { handle: this.cycle.start() } : this.animateUnits(false)),
     applyFinalState: () => {
-      for (const u of this.units) {
+      this.cycle.stop()
+      this.placeUnits(false)
+    },
+    applyInitialState: () => {
+      this.cycle.stop()
+      this.placeUnits(true)
+    },
+  })
+
+  private animateUnits(out: boolean, startDelay = this.delay): PlaybackRun {
+    const flip = this.variant === 'flip'
+    const delay = out ? {} : { delay: stagger(this.interval, { startDelay }) }
+    return controlsRun(
+      animate(
+        this.units,
+        flip
+          ? out
+            ? { rotateX: [0, 90], opacity: [1, 0] }
+            : { rotateX: [90, 0], opacity: [0, 1] }
+          : out
+            ? { y: ['0%', '110%'] }
+            : { y: ['110%', '0%'] },
+        {
+          ...delay,
+          duration: this.duration,
+          type: 'spring',
+          bounce: flip ? 0.1 : 0.05,
+        },
+      ),
+    )
+  }
+
+  private placeUnits(hidden: boolean) {
+    for (const u of this.units) {
+      if (hidden) {
+        u.style.transform =
+          this.variant === 'flip' ? 'perspective(400px) rotateX(90deg)' : 'translateY(110%)'
+        if (this.variant === 'flip') u.style.opacity = '0'
+      } else {
         u.style.transform = ''
         u.style.opacity = '1'
       }
-    },
-    applyInitialState: () => {
-      for (const u of this.units) {
-        if (this.variant === 'flip') {
-          u.style.transform = 'perspective(400px) rotateX(90deg)'
-          u.style.opacity = '0'
-        } else {
-          u.style.transform = 'translateY(110%)'
-        }
-      }
-    },
-  })
+    }
+  }
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -152,21 +180,12 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
       return
     }
 
-    this.disconnectIntersect = useIntersect(
+    this.viewport.arm()
+    this.detachPauseOnHover = pauseOnHover(
       this,
-      this.threshold,
-      () => {
-        if (!this.revealed && this.playState === 'idle') {
-          void this.play()
-          if (this.once) {
-            this.revealed = true
-            this.disconnectIntersect?.()
-          }
-        }
-      },
-      () => {
-        if (!this.once && this.playState !== 'idle') this.cancel()
-      },
+      () => this.loop && this.pauseOnHover,
+      () => this.pause(),
+      () => this.play(),
     )
   }
 
@@ -189,12 +208,14 @@ export class MotionHeadline extends Controllable(LitElement) implements MotionHe
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.disconnectIntersect?.()
+    this.viewport.disarm()
+    this.detachPauseOnHover?.()
+    this.detachPauseOnHover = null
   }
 
   /** Resets and re-runs the headline reveal. */
   replay() {
-    this.revealed = false
+    this.viewport.reset()
     this.cancel()
     void this.play()
   }

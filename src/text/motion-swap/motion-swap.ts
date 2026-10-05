@@ -1,8 +1,10 @@
 import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
-import { useIntersect } from '../utils/use-intersect.js'
+import { LoopCycle, LoopTrigger, pauseOnHover } from '../utils/loop.js'
+import type { LoopProps } from '../utils/loop.js'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
+import type { PlaybackRun } from '../../utils/playback.js'
 import type { MotionSwapProps, TriggerMode } from './motion-swap.types.js'
 import type { AnimationPlaybackControls } from 'motion'
 import { wordParts } from '../utils/word-parts.js'
@@ -58,7 +60,7 @@ interface CharPair {
  * ```
  */
 @customElement('motion-swap')
-export class MotionSwap extends Controllable(LitElement) implements MotionSwapProps {
+export class MotionSwap extends Controllable(LitElement) implements MotionSwapProps, LoopProps {
   /** Trigger mode: `'hover'` (swap on mouseenter/mouseleave) or `'view'` (swap on viewport entry). */
   @property({ type: String }) trigger: TriggerMode = 'hover'
 
@@ -73,8 +75,16 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
   /** Spring bounciness (0 = critically damped, higher = more elastic). */
   @property({ type: Number }) bounce = 0.3
 
-  /** When `true`, only animate the first time the element enters view (`trigger="view"`). Set `once="false"` to turn it off. */
+  /** When `true`, only animate the first time the element enters view (`trigger="view"`). Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
+  /** Swap the words, hold, swap back, then repeat. With `trigger="view"` the cycle runs while on screen. */
+  @property({ type: Boolean, converter: flag }) loop = false
+  /** With `loop`, seconds the swapped words stay in place before they swap back. */
+  @property({ type: Number }) hold = 1.6
+  /** With `loop`, seconds before the next swap. */
+  @property({ type: Number }) gap = 0.5
+  /** Pause the loop while the pointer is over the text. */
+  @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
   /** Delay in seconds before the animation starts. */
   @property({ type: Number }) delay = 0
@@ -92,9 +102,13 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
   private oAnim: AnimationPlaybackControls | null = null
   private dAnim: AnimationPlaybackControls | null = null
   private swapped = false
-  private triggered = false
-  private delayTimer: ReturnType<typeof setTimeout> | undefined
-  private disconnectIntersect: (() => void) | null = null
+  private detachPauseOnHover: (() => void) | null = null
+
+  private viewport = new LoopTrigger(this, {
+    threshold: () => 0.1,
+    once: () => this.once,
+    loop: () => this.loop,
+  })
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -103,44 +117,61 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
   private anims: AnimationPlaybackControls[] = []
 
   playback: PlaybackController = new PlaybackController(this, {
-    start: () => {
-      this.stopAnims()
-      const originals = this.pairs.map((p) => p.original)
-      const duplicates = this.pairs.map((p) => p.duplicate)
-      const delayFn = stagger(this.interval)
-      const oAnim = animate(
-        originals,
-        { y: ['0%', this.reverse ? '-100%' : '100%'], opacity: [1, 0] },
-        { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
-      )
-      const dAnim = animate(
-        duplicates,
-        { y: [this.reverse ? '100%' : '-100%', '0%'], opacity: [0, 1] },
-        { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
-      )
-      this.anims = [oAnim, dAnim]
-      this.swapped = true
-      return {
-        handle: {
-          pause: () => {
-            for (const a of this.anims) a.pause()
-          },
-          resume: () => {
-            for (const a of this.anims) a.play()
-          },
-          finish: () => {
-            for (const a of this.anims) a.complete()
-          },
-          cancel: () => {
-            for (const a of this.anims) a.cancel()
-          },
-        },
-        done: oAnim,
-      }
+    start: () => (this.loop ? { handle: this.cycle.start() } : this.swap(true, this.delay)),
+    applyFinalState: () => {
+      this.cycle.stop()
+      this.setPose(true)
     },
-    applyFinalState: () => this.setPose(true),
-    applyInitialState: () => this.setPose(false),
+    applyInitialState: () => {
+      this.cycle.stop()
+      this.setPose(false)
+    },
   })
+
+  private cycle: LoopCycle = new LoopCycle({
+    leg: (out) => this.swap(!out),
+    hold: () => this.hold,
+    gap: () => this.gap,
+    delay: () => this.delay,
+  })
+
+  private swap(enter: boolean, startDelay = 0): PlaybackRun {
+    this.stopAnims()
+    const originals = this.pairs.map((p) => p.original)
+    const duplicates = this.pairs.map((p) => p.duplicate)
+    const delayFn = stagger(this.interval, { startDelay })
+    const exited = this.reverse ? '-100%' : '100%'
+    const entered = this.reverse ? '100%' : '-100%'
+    const oAnim = animate(
+      originals,
+      enter ? { y: ['0%', exited], opacity: [1, 0] } : { y: [exited, '0%'], opacity: [0, 1] },
+      { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
+    )
+    const dAnim = animate(
+      duplicates,
+      enter ? { y: [entered, '0%'], opacity: [0, 1] } : { y: ['0%', entered], opacity: [1, 0] },
+      { delay: delayFn, type: 'spring', duration: this.duration, bounce: this.bounce },
+    )
+    this.anims = [oAnim, dAnim]
+    this.swapped = enter
+    return {
+      handle: {
+        pause: () => {
+          for (const a of this.anims) a.pause()
+        },
+        resume: () => {
+          for (const a of this.anims) a.play()
+        },
+        finish: () => {
+          for (const a of this.anims) a.complete()
+        },
+        cancel: () => {
+          for (const a of this.anims) a.cancel()
+        },
+      },
+      done: oAnim,
+    }
+  }
 
   private setPose(swapped: boolean) {
     const originals = this.pairs.map((p) => p.original)
@@ -166,25 +197,15 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
       this.addEventListener('mouseenter', this.onEnter)
       this.addEventListener('mouseleave', this.onLeave)
     } else {
-      this.disconnectIntersect = useIntersect(
-        this,
-        0.1,
-        () => {
-          if (this.triggered) return
-          this.triggered = true
-          if (this.once) this.disconnectIntersect?.()
-          const delayMs = this.delay * 1000
-          if (delayMs) this.delayTimer = setTimeout(() => void this.play(), delayMs)
-          else void this.play()
-        },
-        () => {
-          if (this.once) return
-          this.triggered = false
-          clearTimeout(this.delayTimer)
-          this.cancel()
-        },
-      )
+      this.viewport.arm()
     }
+
+    this.detachPauseOnHover = pauseOnHover(
+      this,
+      () => this.loop && this.pauseOnHover,
+      () => this.pause(),
+      () => this.play(),
+    )
   }
 
   private stopAnims() {
@@ -194,13 +215,14 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    clearTimeout(this.delayTimer)
     this.stopAnims()
     this.oAnim?.stop()
     this.dAnim?.stop()
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
-    this.disconnectIntersect?.()
+    this.viewport.disarm()
+    this.detachPauseOnHover?.()
+    this.detachPauseOnHover = null
   }
 
   private build(text: string) {
@@ -306,7 +328,7 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
 
   /** Resets and re-runs the swap animation. */
   replay() {
-    this.triggered = false
+    this.viewport.reset()
     this.swapped = false
     this.cancel()
     void this.play()
