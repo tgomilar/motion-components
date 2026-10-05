@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
-import { stubReducedMotion, stubIntersectionObserver, waitForEvent } from '../../test/helpers.js'
+import {
+  stubReducedMotion,
+  stubIntersectionObserver,
+  waitFor,
+  waitForEvent,
+} from '../../test/helpers.js'
 import type { IntersectionHandle } from '../../test/helpers.js'
 
 // The reveal runs through Motion's spring; the contract is the keyframes,
@@ -287,7 +292,7 @@ describe('motion-split', () => {
   it('pauses on hover with pause-on-hover and loop', async () => {
     const el = await mount(html`<motion-split loop hold="0.1" pause-on-hover>Hi</motion-split>`)
     io.enter()
-    await wait(20)
+    await waitFor(() => controls.length > 0, 'the first loop leg never started')
     el.dispatchEvent(new Event('pointerenter'))
     expect(controls[controls.length - 1].pause).toHaveBeenCalled()
 
