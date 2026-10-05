@@ -138,7 +138,8 @@ Typography & character effects
 [`motion-ticker`](https://www.motion-components.dev/docs/text/motion-ticker/) [`motion-words`](https://www.motion-components.dev/docs/text/motion-words/) [`motion-curve`](https://www.motion-components.dev/docs/text/motion-curve/) [`motion-circle`](https://www.motion-components.dev/docs/text/motion-circle/)
 [`motion-arc`](https://www.motion-components.dev/docs/text/motion-arc/) [`motion-headline`](https://www.motion-components.dev/docs/text/motion-headline/) [`motion-glitch`](https://www.motion-components.dev/docs/text/motion-glitch/) [`motion-gravity`](https://www.motion-components.dev/docs/text/motion-gravity/)
 [`motion-liquid`](https://www.motion-components.dev/docs/text/motion-liquid/) [`motion-perspective`](https://www.motion-components.dev/docs/text/motion-perspective/) [`motion-stretch`](https://www.motion-components.dev/docs/text/motion-stretch/) [`motion-swap`](https://www.motion-components.dev/docs/text/motion-swap/)
-[`motion-text-mask`](https://www.motion-components.dev/docs/text/motion-text-mask/) [`motion-font`](https://www.motion-components.dev/docs/text/motion-font/)
+[`motion-text-mask`](https://www.motion-components.dev/docs/text/motion-text-mask/) [`motion-font`](https://www.motion-components.dev/docs/text/motion-font/) [`motion-marker`](https://www.motion-components.dev/docs/text/motion-marker/) [`motion-underline`](https://www.motion-components.dev/docs/text/motion-underline/)
+[`motion-strike`](https://www.motion-components.dev/docs/text/motion-strike/) [`motion-ring`](https://www.motion-components.dev/docs/text/motion-ring/)
 
 ### Icons [🔗](https://www.motion-components.dev/docs/icons/motion-icon/)
 
@@ -250,6 +251,18 @@ import { preloadCSS } from 'motion-components'
 
 ---
 
+## Using with AI
+
+AI assistants write better code from the current docs than from what they learned in training. Point yours at:
+
+- [llms.txt](https://www.motion-components.dev/llms.txt): every component, docs page and recipe, with one line each
+- [llms-full.txt](https://www.motion-components.dev/llms-full.txt): every attribute, event, slot and CSS custom property in one file
+- Any docs page as Markdown: add `.md` to its address, for example [motion-marker.md](https://www.motion-components.dev/docs/text/motion-marker.md)
+
+The package also ships editor data in `dist/`: `custom-elements.json`, VS Code custom data and `web-types.json` for JetBrains IDEs. [Using with AI](https://www.motion-components.dev/docs/ai/) has a rules block to paste into `AGENTS.md` or `CLAUDE.md`, and the editor setup.
+
+---
+
 ## Why motion-components?
 
 - **Motion-first.** Built around animation from the start, not retrofitted.
@@ -284,8 +297,10 @@ src/
 ├── reveal/      entrance & transition effects
 ├── respond/     input-driven interactivity
 ├── text/        typography effects
+├── icons/       animated and state-morphing icons
 ├── scroll/      scroll-driven components
 ├── components/  ready-made widgets
+├── charts/      data visualization
 ├── code/        code-display components
 ├── utils/       shared helpers
 └── test/        shared test helpers
