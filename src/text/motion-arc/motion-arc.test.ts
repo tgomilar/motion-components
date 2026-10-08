@@ -53,32 +53,58 @@ describe('motion-arc', () => {
     expect(container.style.width).toBe('100px')
     expect(container.style.height).toBe('100px')
     const transforms = chars(el).map((c) => c.style.transform)
-    expect(transforms[0]).toContain('rotate(-180deg)')
-    expect(transforms[1]).toContain('rotate(-90deg)')
-    expect(transforms[2]).toContain('rotate(0deg)')
+    expect(transforms[0]).toContain('rotate(-90deg)')
+    expect(transforms[1]).toContain('rotate(0deg)')
+    expect(transforms[2]).toContain('rotate(90deg)')
     expect(transforms[0]).toContain('translateY(-50px)')
   })
 
-  it('align="bottom" centres the arc at the bottom of the circle', async () => {
+  it('align="bottom" centres the arc at the bottom, reading left to right', async () => {
     const el = (await fixture(
-      html`<motion-arc text="ABC" arc="90" align="bottom"></motion-arc>`,
+      html`<motion-arc text="ABC" radius="50" arc="90" align="bottom"></motion-arc>`,
     )) as MotionArc
     const transforms = chars(el).map((c) => c.style.transform)
     expect(transforms[0]).toContain('rotate(45deg)')
-    expect(transforms[1]).toContain('rotate(90deg)')
-    expect(transforms[2]).toContain('rotate(135deg)')
+    expect(transforms[1]).toContain('rotate(0deg)')
+    expect(transforms[2]).toContain('rotate(-45deg)')
+    expect(transforms[0]).toContain('translateY(50px)')
+  })
+
+  it('places glyphs where align says, measured on screen', async () => {
+    const top = (await fixture(
+      html`<motion-arc text="ABCDE" radius="80" arc="120"></motion-arc>`,
+    )) as MotionArc
+    const bottom = (await fixture(
+      html`<motion-arc text="ABCDE" radius="80" arc="120" align="bottom"></motion-arc>`,
+    )) as MotionArc
+    const middle = (el: MotionArc) => {
+      const box = el.shadowRoot!.querySelector('.container')!.getBoundingClientRect()
+      const c = chars(el)[2].getBoundingClientRect()
+      return {
+        dx: c.x + c.width / 2 - (box.x + box.width / 2),
+        dy: c.y + c.height / 2 - (box.y + box.height / 2),
+      }
+    }
+    const firstX = (el: MotionArc) => chars(el)[0].getBoundingClientRect().x
+    const lastX = (el: MotionArc) => chars(el)[4].getBoundingClientRect().x
+    expect(Math.abs(middle(top).dx)).toBeLessThan(2)
+    expect(middle(top).dy).toBeLessThan(-70)
+    expect(Math.abs(middle(bottom).dx)).toBeLessThan(2)
+    expect(middle(bottom).dy).toBeGreaterThan(70)
+    expect(firstX(top)).toBeLessThan(lastX(top))
+    expect(firstX(bottom)).toBeLessThan(lastX(bottom))
   })
 
   it('places a single glyph at the arc centre', async () => {
     const el = (await fixture(html`<motion-arc text="A"></motion-arc>`)) as MotionArc
-    expect(chars(el)[0].style.transform).toContain('rotate(-90deg)')
+    expect(chars(el)[0].style.transform).toContain('rotate(0deg)')
   })
 
   it('upright counter-rotates each glyph', async () => {
     const el = (await fixture(
       html`<motion-arc text="AB" arc="90" upright></motion-arc>`,
     )) as MotionArc
-    expect(chars(el)[0].style.transform).toMatch(/rotate\(-135deg\).*rotate\(135deg\)$/)
+    expect(chars(el)[0].style.transform).toMatch(/rotate\(-45deg\).*rotate\(45deg\)$/)
   })
 
   it('does not rotate by default (duration 0)', async () => {

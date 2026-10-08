@@ -181,20 +181,19 @@ export class MotionArc extends Controllable(LitElement) implements MotionArcProp
     const n = chars.length
     const size = this.radius * 2
 
-    // align="top" → center of arc at 270° (top of circle)
-    // align="bottom" → center of arc at 90° (bottom of circle)
-    const centerAngle = this.align === 'top' ? -90 : 90
-    const halfArc = this.arc / 2
-    const startAngle = centerAngle - halfArc
+    const bottom = this.align === 'bottom'
+    const step = n > 1 ? this.arc / (n - 1) : 0
+    const startAngle = bottom ? this.arc / 2 : -this.arc / 2
+    const offset = bottom ? this.radius : -this.radius
 
     return html`
       <span class="sr-only">${this.text}</span>
       <div class="container" style="width:${size}px;height:${size}px">
         <div class="ring" aria-hidden="true">
           ${chars.map((char, i) => {
-            const angle = n > 1 ? startAngle + (i / (n - 1)) * this.arc : centerAngle
+            const angle = n > 1 ? startAngle + (bottom ? -i : i) * step : 0
             const counterRotate = this.upright ? ` rotate(${-angle}deg)` : ''
-            const transform = `translate(-50%,-50%) rotate(${angle}deg) translateY(${-this.radius}px)${counterRotate}`
+            const transform = `translate(-50%,-50%) rotate(${angle}deg) translateY(${offset}px)${counterRotate}`
             return html`<span class="char" style="transform:${transform}"
               >${char === ' ' ? '\u00A0' : char}</span
             >`
