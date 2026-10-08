@@ -48,19 +48,73 @@ export class MotionStrike extends MarkElement implements MotionStrikeProps {
     :host {
       --mc-_mark-ink: var(--mc-mark-color, currentColor);
       display: inline;
+      position: relative;
       padding-bottom: 0.08em;
-      background-image: linear-gradient(var(--mc-_mark-ink), var(--mc-_mark-ink));
-      background-repeat: no-repeat;
-      background-position: 0 58%;
-      background-size: calc(min(var(--mc-_mark-progress, 0), 1) * 100%)
-        var(--mc-mark-thickness, 2px);
       -webkit-box-decoration-break: clone;
       box-decoration-break: clone;
     }
+    .lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    .line {
+      --mc-_mark-drawn: clamp(
+        0,
+        (var(--mc-_mark-progress, 0) - var(--mc-_line-from)) / var(--mc-_line-span),
+        1
+      );
+      position: absolute;
+      background-image: linear-gradient(var(--mc-_mark-ink), var(--mc-_mark-ink));
+      background-repeat: no-repeat;
+      background-position: 0 58%;
+      background-size: calc(var(--mc-_mark-drawn) * 100%) var(--mc-mark-thickness, 2px);
+    }
   `
 
+  private resizeParent: ResizeObserver | null = null
+
+  connectedCallback() {
+    super.connectedCallback()
+    this.resizeParent = new ResizeObserver(() => this.layout())
+    if (this.parentElement) this.resizeParent.observe(this.parentElement)
+    void document.fonts?.ready.then(() => this.layout())
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    this.resizeParent?.disconnect()
+    this.resizeParent = null
+  }
+
+  protected layout() {
+    const lines = this.renderRoot.querySelector<HTMLElement>('.lines')
+    if (!lines) return
+    const origin = lines.getBoundingClientRect()
+    const rects = [...this.getClientRects()].filter((r) => r.width > 0)
+    const total = rects.reduce((sum, r) => sum + r.width, 0)
+    let from = 0
+    lines.replaceChildren(
+      ...rects.map((r) => {
+        const line = document.createElement('span')
+        line.className = 'line'
+        Object.assign(line.style, {
+          left: `${r.left - origin.left}px`,
+          top: `${r.top - origin.top}px`,
+          width: `${r.width}px`,
+          height: `${r.height}px`,
+        })
+        line.style.setProperty('--mc-_line-from', String(from / total))
+        line.style.setProperty('--mc-_line-span', String(r.width / total))
+        from += r.width
+        return line
+      }),
+    )
+  }
+
   render() {
-    return html`<slot></slot>`
+    return html`<slot></slot><span class="lines" aria-hidden="true"></span>`
   }
 }
 
