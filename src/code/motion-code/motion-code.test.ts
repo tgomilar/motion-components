@@ -92,4 +92,47 @@ describe('motion-code', () => {
     await elementUpdated(el)
     expect(codeText(el).trim()).toBe('')
   })
+
+  it('keeps a type-once block empty until it scrolls into view', async () => {
+    stubReducedMotion(false)
+    const spacer = document.createElement('div')
+    spacer.style.height = '3000px'
+    document.body.prepend(spacer)
+    const el = (await fixture(html`
+      <motion-code typing typing-loop="false"><pre>const x = 1</pre></motion-code>
+    `)) as MotionCode
+    await elementUpdated(el)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(codeText(el).trim()).toBe('')
+    spacer.remove()
+  })
+
+  it('shows the full code at once under reduced motion', async () => {
+    stubReducedMotion(true)
+    const el = (await fixture(html`
+      <motion-code typing typing-loop="false"><pre>const x = 1</pre></motion-code>
+    `)) as MotionCode
+    await elementUpdated(el)
+    expect(codeText(el)).toContain('const x = 1')
+  })
+
+  it('highlights shell commands, flags, strings, variables and comments', async () => {
+    const el = (await fixture(html`
+      <motion-code code-lang="sh">
+        <pre>
+$ npm install --save-dev "a b" # note
+echo $HOME | grep -i home</pre
+        >
+      </motion-code>
+    `)) as MotionCode
+    await elementUpdated(el)
+    const cls = (c: string) =>
+      [...el.shadowRoot!.querySelectorAll(`.${c}`)].map((n) => n.textContent)
+    expect(cls('cw-keyword')).toEqual(['npm', 'echo', 'grep'])
+    expect(cls('cw-attr')).toEqual(['--save-dev', '-i'])
+    expect(cls('cw-string')).toEqual(['"a b"'])
+    expect(cls('cw-num')).toEqual(['$HOME'])
+    expect(cls('cw-comment')).toEqual(['$ ', '# note'])
+    expect(cls('cw-tag')).toEqual(['|'])
+  })
 })

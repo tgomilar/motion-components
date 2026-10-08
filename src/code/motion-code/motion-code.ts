@@ -366,6 +366,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       if (!this.typingLoop) {
         // The observer fires immediately with the current intersection state,
         // so this covers both already-visible and scrolled-to-later windows.
+        this.hideUntilTyped()
         this.setupRevealObserver()
       } else {
         requestAnimationFrame(() => void this.play())
@@ -428,11 +429,18 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     this.hasCode = true
     if (this.typing) {
       if (!this.typingLoop) {
+        this.hideUntilTyped()
         this.setupRevealObserver()
       } else {
         void this.play()
       }
     }
+  }
+
+  private hideUntilTyped() {
+    if (this.playState !== 'idle') return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    this.visibleChars = reduced ? -1 : 0
   }
 
   private setupRevealObserver() {
@@ -586,6 +594,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     if (lang === 'css') return this.tokenizeCss(code)
     if (lang === 'json') return this.tokenizeJson(code)
     if (lang === 'python') return this.tokenizePython(code)
+    if (lang === 'sh') return this.tokenizeSh(code)
     return [{ text: code }]
   }
 
@@ -884,6 +893,69 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
   }
 
   // Python
+  // Shell: prompts, commands, flags, strings, variables and comments
+  private tokenizeSh(code: string): Token[] {
+    const tokens: Token[] = []
+    let i = 0
+    let command = true
+    while (i < code.length) {
+      const ch = code[i]
+      const lineStart = i === 0 || code[i - 1] === '\n'
+      if (ch === '\n') {
+        tokens.push({ text: ch })
+        command = true
+        i++
+        continue
+      }
+      if (lineStart && (code.startsWith('$ ', i) || code.startsWith('> ', i))) {
+        tokens.push({ text: code.slice(i, i + 2), cls: 'cw-comment' })
+        i += 2
+        continue
+      }
+      if (ch === '#' && (lineStart || /\s/.test(code[i - 1]))) {
+        const end = code.indexOf('\n', i)
+        const text = end === -1 ? code.slice(i) : code.slice(i, end)
+        tokens.push({ text, cls: 'cw-comment' })
+        i += text.length
+        continue
+      }
+      if (ch === '"' || ch === "'") {
+        let j = i + 1
+        while (j < code.length && code[j] !== ch) j += code[j] === '\\' && ch === '"' ? 2 : 1
+        const text = code.slice(i, j + 1)
+        tokens.push({ text, cls: 'cw-string' })
+        i += text.length
+        command = false
+        continue
+      }
+      if (ch === '$' && /[{A-Za-z_]/.test(code[i + 1] ?? '')) {
+        const m = /^\$(\{[^}]*\}|[A-Za-z_][A-Za-z0-9_]*)/.exec(code.slice(i))!
+        tokens.push({ text: m[0], cls: 'cw-num' })
+        i += m[0].length
+        command = false
+        continue
+      }
+      const op = /^(&&|\|\||[|;]|>>?)/.exec(code.slice(i))
+      if (op) {
+        tokens.push({ text: op[0], cls: 'cw-tag' })
+        i += op[0].length
+        command = op[0] !== '>' && op[0] !== '>>'
+        continue
+      }
+      if (/\s/.test(ch)) {
+        tokens.push({ text: ch })
+        i++
+        continue
+      }
+      const word = /^[^\s|;&>'"]+/.exec(code.slice(i))![0]
+      const cls = command ? 'cw-keyword' : word.startsWith('-') ? 'cw-attr' : undefined
+      tokens.push(cls ? { text: word, cls } : { text: word })
+      i += word.length
+      command = false
+    }
+    return tokens
+  }
+
   private tokenizePython(code: string): Token[] {
     const keywords = new Set([
       'def',
