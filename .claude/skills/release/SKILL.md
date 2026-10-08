@@ -1,6 +1,6 @@
 ---
 name: release
-description: Run pre-publish verification for the motion-components package — typecheck, preload-rule check, library build, and bundle size budget. Use before bumping the version or running npm publish.
+description: Run pre-publish verification for the motion-components package — typecheck, preload-rule check, library build, bundle size budget, and CHANGELOG/README coverage. Use before bumping the version or running npm publish.
 ---
 
 # release
@@ -37,15 +37,21 @@ If any step fails, the publish is aborted. Don't bypass with `--ignore-scripts`.
    diff /tmp/built.txt /tmp/exported.txt
    ```
 7. **Bundle size budget** — `npm run size`. Compares brotli'd output against the budget in `package.json`. The library targets ~20 KB brotlied for the full bundle. If a single new component blows the budget, reconsider its weight (often: heavy import, missing externalisation).
-8. **Version bump** — `npm version <patch|minor|major>`. This updates `package.json`, creates a tag, and a commit. Push with `git push --follow-tags`.
-10. **Publish** — `npm publish`. Runs `prepublishOnly` again as a safety net.
+8. **CHANGELOG.md** — every user-facing commit since the last tag (`git log $(git describe --tags --abbrev=0)..HEAD --oneline`) has an entry under a new `## x.y.z — YYYY-MM-DD` heading, grouped as `### Breaking changes`, `### Fixed`, `### Changed`, `### Added` like the earlier entries. Changed defaults go under **Changed** with the attribute that restores the old behavior. `chore`, `test` and docs-site commits need no entry. Commit as `docs(changelog): x.y.z`.
+9. **README.md** — every component directory under `src/*/motion-*` is listed with its docs link:
+   ```bash
+   for d in src/*/motion-*; do n=$(basename $d); grep -q "\`$n\`" README.md || echo "missing in README: $n"; done
+   ```
+   Also update README examples when a release renames or removes an attribute, a CSS custom property or an export.
+10. **Version bump** — `npm version <patch|minor|major> -m "chore: bump version to %s"`. This updates `package.json`, creates a tag, and a commit. Push with `git push --follow-tags`.
+11. **Publish** — `npm publish`. Runs `prepublishOnly` again as a safety net.
 
 ## Things that are easy to forget
 
 - **New components** need four touches in sync: `src/<cat>/<name>/<name>.ts`, the re-export in `src/index.ts`, the entry in `vite.config.ts`, and the export in `package.json`. The build will succeed without the export but consumers using `import 'motion-components/motion-foo'` will hit a "package subpath not defined" error.
 - **Preload rules** only matter for components that hide slotted content during entrance (reveal, split, headline, ticker, slider, gallery, blur, blur-in, counter, glitch, scramble, typewriter, stagger). Hover/click/scroll-driven components don't need them.
 - **Per-component types** — the `types` field in each `package.json` export points to the `.d.ts` *next to its source*, not at `dist/`'s root, so the dts plugin's directory layout matters.
-- **Changelog** — there is no automated changelog. Write release notes by hand based on `git log <last-tag>..HEAD --oneline`.
+- **Changelog** — there is no automated changelog. Write it by hand (step 8) before the version bump, so the bump commit and tag include it.
 
 ## When something fails
 
@@ -57,6 +63,7 @@ If any step fails, the publish is aborted. Don't bypass with `--ignore-scripts`.
 - The branch is dirty, behind `main`, or has unmerged conflicts.
 - `dist/` was committed by accident — it's gitignored; don't pin it.
 - A component was added but not exported in `package.json`. Run the diff in step 6.
+- `CHANGELOG.md` has no entry for the new version, or `README.md` is missing a component (steps 8 and 9).
 
 ## References
 
