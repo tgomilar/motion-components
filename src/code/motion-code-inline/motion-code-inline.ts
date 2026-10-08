@@ -57,6 +57,7 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
 
   static styles = css`
     :host {
+      position: relative;
       display: inline-flex;
       align-items: center;
       gap: 0.3em;
@@ -88,6 +89,12 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
         opacity 0.15s,
         color 0.15s;
       line-height: 1;
+    }
+
+    :host(:not([copy-visible])) button {
+      position: absolute;
+      left: 100%;
+      margin-left: 0.2em;
     }
 
     :host(:hover) button,
