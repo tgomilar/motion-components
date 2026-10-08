@@ -158,4 +158,12 @@ describe('motion-image-compare', () => {
     await elementUpdated(el)
     expect(knob(el).getAttribute('aria-valuenow')).toBe('100')
   })
+
+  it('blocks text and image selection while dragging, WebKit included', async () => {
+    const el = await mount()
+    await elementUpdated(el)
+    const style = getComputedStyle(el) as CSSStyleDeclaration & { webkitUserSelect?: string }
+    expect(style.userSelect).toBe('none')
+    expect(style.webkitUserSelect ?? 'none').toBe('none')
+  })
 })
