@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { property, state } from 'lit/decorators.js'
 import { animate } from 'motion'
+import type { AnimationPlaybackControls } from 'motion'
 import type { MotionImageCompareProps, CompareOrientation } from './motion-image-compare.types.js'
 import { customElement } from '../../utils/define.js'
 
@@ -136,28 +137,34 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
   `
 
   private dragging = false
-  private knob: HTMLElement | null = null
+  private motion: AnimationPlaybackControls | null = null
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
-  firstUpdated() {
-    this.pos = this.clamp(this.start)
-    this.apply()
-    this.knob = this.renderRoot.querySelector('.knob')
+  connectedCallback() {
+    super.connectedCallback()
     this.addEventListener('pointerdown', this.onDown)
-    window.addEventListener('pointermove', this.onMove)
-    window.addEventListener('pointerup', this.onUp)
-    this.knob?.addEventListener('keydown', this.onKey)
+    this.addEventListener('pointermove', this.onMove)
+    this.addEventListener('pointerup', this.onUp)
+    this.addEventListener('pointercancel', this.onUp)
+    this.addEventListener('lostpointercapture', this.onUp)
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
     this.removeEventListener('pointerdown', this.onDown)
-    window.removeEventListener('pointermove', this.onMove)
-    window.removeEventListener('pointerup', this.onUp)
-    this.knob?.removeEventListener('keydown', this.onKey)
+    this.removeEventListener('pointermove', this.onMove)
+    this.removeEventListener('pointerup', this.onUp)
+    this.removeEventListener('pointercancel', this.onUp)
+    this.removeEventListener('lostpointercapture', this.onUp)
+    this.stop()
+  }
+
+  firstUpdated() {
+    this.pos = this.clamp(this.start)
+    this.apply()
   }
 
   updated(changed: Map<string, unknown>) {
@@ -172,13 +179,15 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
   }
 
   private onDown = (e: PointerEvent) => {
+    if (e.button !== 0) return
     this.dragging = true
-    this.setPointerCapture?.(e.pointerId)
+    this.setPointerCapture(e.pointerId)
     this.spring(this.fromEvent(e))
   }
 
   private onMove = (e: PointerEvent) => {
     if (!this.dragging) return
+    this.stop()
     this.pos = this.fromEvent(e)
     this.apply()
   }
@@ -214,14 +223,20 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
     return this.clamp(ratio * 100)
   }
 
+  private stop() {
+    this.motion?.stop()
+    this.motion = null
+  }
+
   private spring(target: number) {
+    this.stop()
     if (this.reduced) {
       this.pos = target
       this.apply()
       return
     }
     const obj = { v: this.pos }
-    animate(
+    this.motion = animate(
       obj,
       { v: target },
       {
@@ -245,8 +260,9 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
         this.orientation === 'horizontal' ? `inset(0 0 0 ${p}%)` : `inset(${p}% 0 0 0)`
     }
     if (handle) {
-      if (this.orientation === 'horizontal') handle.style.left = `${p}%`
-      else handle.style.top = `${p}%`
+      const horizontal = this.orientation === 'horizontal'
+      handle.style.left = horizontal ? `${p}%` : ''
+      handle.style.top = horizontal ? '' : `${p}%`
     }
   }
 
@@ -264,6 +280,7 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
           aria-valuemax="100"
           aria-valuenow=${Math.round(this.pos)}
           aria-orientation=${this.orientation}
+          @keydown=${this.onKey}
         >
           <span aria-hidden="true">⇆</span>
         </div>

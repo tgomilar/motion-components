@@ -21,6 +21,49 @@ describe('motion-image-compare', () => {
     )) as MotionImageCompare
   }
 
+  it('follows the pointer while dragging instead of springing back to the press point', async () => {
+    const el = await mount()
+    el.style.width = '400px'
+    el.style.height = '200px'
+    await elementUpdated(el)
+    const r = el.getBoundingClientRect()
+    const at = (f: number) => ({
+      clientX: r.left + r.width * f,
+      clientY: r.top + r.height / 2,
+      pointerId: 1,
+      button: 0,
+      bubbles: true,
+    })
+    el.dispatchEvent(new PointerEvent('pointerdown', at(0.2)))
+    for (let pct = 25; pct <= 80; pct += 5)
+      el.dispatchEvent(new PointerEvent('pointermove', at(pct / 100)))
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    expect(el['pos']).toBeCloseTo(80, 0)
+    el.dispatchEvent(new PointerEvent('pointerup', at(0.8)))
+    el.dispatchEvent(new PointerEvent('pointermove', at(0.3)))
+    expect(el['pos']).toBeCloseTo(80, 0)
+  })
+
+  it('stops dragging when the pointer is cancelled', async () => {
+    const el = await mount()
+    el.style.width = '400px'
+    el.style.height = '200px'
+    await elementUpdated(el)
+    const r = el.getBoundingClientRect()
+    const at = (f: number) => ({
+      clientX: r.left + r.width * f,
+      clientY: r.top + r.height / 2,
+      pointerId: 1,
+      button: 0,
+      bubbles: true,
+    })
+    stubReducedMotion(true)
+    el.dispatchEvent(new PointerEvent('pointerdown', at(0.6)))
+    el.dispatchEvent(new PointerEvent('pointercancel', at(0.6)))
+    el.dispatchEvent(new PointerEvent('pointermove', at(0.1)))
+    expect(el['pos']).toBeCloseTo(60, 0)
+  })
+
   it('exposes an ARIA slider on the knob reflecting the split position', async () => {
     const el = await mount()
     await elementUpdated(el)
