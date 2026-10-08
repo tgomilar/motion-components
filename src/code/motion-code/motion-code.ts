@@ -161,6 +161,9 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
       border-radius: 16px;
       overflow: hidden;
       font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+      container-type: inline-size;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
 
     :host([compact]) {
@@ -282,6 +285,21 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     :host([compact]) pre {
       font-size: 0.8rem;
       line-height: 1.6;
+    }
+
+    @container (max-width: 30rem) {
+      .chrome {
+        padding: 0.6rem 1rem;
+      }
+
+      .body {
+        padding: 1rem 1.1rem;
+      }
+
+      pre {
+        font-size: 0.78rem;
+        line-height: 1.7;
+      }
     }
 
     .cursor {
