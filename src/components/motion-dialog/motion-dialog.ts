@@ -5,6 +5,8 @@ import type { MotionDialogProps } from './motion-dialog.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 
+const BACKDROP = '--mc-_backdrop'
+
 export type { MotionDialogProps } from './motion-dialog.types.js'
 
 /**
@@ -80,22 +82,10 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
   @property({ type: Boolean, converter: flag, attribute: 'light-dismiss' }) lightDismiss = false
 
   @query('dialog') private dialogEl!: HTMLDialogElement
-  @query('.backdrop') private backdropEl!: HTMLElement
 
   static styles = css`
     :host {
       display: contents;
-    }
-
-    .backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 9998;
-      background: var(--mc-dialog-backdrop-color, rgba(0, 0, 0, 0.48));
-      backdrop-filter: var(--mc-dialog-backdrop-blur, blur(6px));
-      -webkit-backdrop-filter: var(--mc-dialog-backdrop-blur, blur(6px));
-      opacity: 0;
-      pointer-events: none;
     }
 
     dialog {
@@ -116,6 +106,13 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
     }
 
     dialog::backdrop {
+      background: var(--mc-dialog-backdrop-color, rgba(0, 0, 0, 0.48));
+      backdrop-filter: var(--mc-dialog-backdrop-blur, blur(6px));
+      -webkit-backdrop-filter: var(--mc-dialog-backdrop-blur, blur(6px));
+      opacity: var(--mc-_backdrop, 1);
+    }
+
+    :host([no-backdrop]) dialog::backdrop {
       display: none;
     }
   `
@@ -164,26 +161,26 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
 
   private animateIn() {
     const dialog = this.dialogEl
-    const backdropEl = this.backdropEl
     if (!dialog) return
 
     this.generation++
     const reopening = dialog.open
-    if (!reopening) dialog.showModal()
+    if (!reopening) {
+      this.setBackdrop(0)
+      dialog.showModal()
+    }
 
     if (this.reduced) {
-      if (!this.noBackdrop) backdropEl.style.opacity = '1'
+      this.setBackdrop(1)
       dialog.style.opacity = '1'
       return
     }
 
-    if (!this.noBackdrop) {
-      animate(
-        backdropEl,
-        { opacity: reopening ? 1 : [0, 1] },
-        { type: 'spring', bounce: 0, duration: this.duration },
-      )
-    }
+    animate(
+      dialog,
+      { [BACKDROP]: [this.backdrop, 1] },
+      { type: 'spring', bounce: 0, duration: this.duration },
+    )
     animate(dialog, reopening ? { opacity: 1, y: 0 } : { opacity: [0, 1], y: [this.y, 0] }, {
       type: 'spring',
       bounce: this.bounce,
@@ -193,20 +190,21 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
 
   private async animateOut() {
     const dialog = this.dialogEl
-    const backdropEl = this.backdropEl
     if (!dialog || !dialog.open) return
 
     const gen = ++this.generation
 
     if (this.reduced) {
-      backdropEl.style.opacity = '0'
+      this.setBackdrop(0)
       dialog.style.opacity = '0'
     } else {
       const exitDuration = this.duration * 0.65
       await Promise.all([
-        this.noBackdrop
-          ? Promise.resolve()
-          : animate(backdropEl, { opacity: 0 }, { ease: 'easeInOut', duration: exitDuration }),
+        animate(
+          dialog,
+          { [BACKDROP]: [this.backdrop, 0] },
+          { ease: 'easeInOut', duration: exitDuration },
+        ),
         animate(
           dialog,
           { opacity: 0, y: this.y * 0.6 },
@@ -226,6 +224,14 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
     this.dispatchEvent(new Event('motion-close', { bubbles: true, composed: true }))
   }
 
+  private get backdrop() {
+    return Number(this.dialogEl.style.getPropertyValue(BACKDROP)) || 0
+  }
+
+  private setBackdrop(value: number) {
+    this.dialogEl.style.setProperty(BACKDROP, String(value))
+  }
+
   /** Opens the dialog with the entrance animation. */
   show() {
     this.open = true
@@ -243,7 +249,6 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
 
   render() {
     return html`
-      <div class="backdrop"></div>
       <dialog @cancel=${this.onCancel}>
         <slot></slot>
       </dialog>

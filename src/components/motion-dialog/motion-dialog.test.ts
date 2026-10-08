@@ -5,7 +5,6 @@ import type { MotionDialog } from './motion-dialog.js'
 import './motion-dialog.js'
 
 const nativeDialog = (el: MotionDialog) => el.shadowRoot!.querySelector('dialog')!
-const backdrop = (el: MotionDialog) => el.shadowRoot!.querySelector<HTMLElement>('.backdrop')!
 
 describe('motion-dialog', () => {
   beforeEach(() => stubReducedMotion(false))
@@ -59,6 +58,19 @@ describe('motion-dialog', () => {
     expect(Number(getComputedStyle(nativeDialog(el)).opacity)).toBeGreaterThan(0.9)
   })
 
+  it('draws the backdrop in the top layer, so an ancestor with backdrop-filter cannot clip it', async () => {
+    stubReducedMotion(true)
+    const wrap = document.createElement('div')
+    wrap.style.cssText = 'height: 40px; backdrop-filter: blur(2px)'
+    wrap.innerHTML = '<motion-dialog><p>Hi</p></motion-dialog>'
+    const el = (await fixture(wrap)).querySelector('motion-dialog') as MotionDialog
+    el.show()
+    await elementUpdated(el)
+    const backdrop = getComputedStyle(nativeDialog(el), '::backdrop')
+    expect(backdrop.opacity).toBe('1')
+    expect(backdrop.backdropFilter).toBe('blur(6px)')
+  })
+
   it('no-backdrop hides the overlay and reflects the attribute', async () => {
     const el = await mount()
     el.noBackdrop = true
@@ -68,8 +80,7 @@ describe('motion-dialog', () => {
     stubReducedMotion(true)
     el.show()
     await elementUpdated(el)
-    // reduced-motion animateIn leaves the backdrop untouched when no-backdrop
-    expect(backdrop(el).style.opacity).toBe('')
+    expect(getComputedStyle(nativeDialog(el), '::backdrop').display).toBe('none')
   })
 
   it('light-dismiss closes when clicking outside the panel', async () => {
