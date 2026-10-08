@@ -59,4 +59,21 @@ describe('motion-code-inline', () => {
     expect(btn.getAttribute('aria-label')).toBe('Copied')
     spy.mockRestore()
   })
+
+  it('keeps a hover-only copy button out of the text flow', async () => {
+    const plain = (await fixture(
+      html`<motion-code-inline>npm i x</motion-code-inline>`,
+    )) as MotionCodeInline
+    const hover = (await fixture(
+      html`<motion-code-inline copy>npm i x</motion-code-inline>`,
+    )) as MotionCodeInline
+    const visible = (await fixture(
+      html`<motion-code-inline copy-visible>npm i x</motion-code-inline>`,
+    )) as MotionCodeInline
+    await elementUpdated(hover)
+    await elementUpdated(visible)
+    const width = (el: HTMLElement) => el.getBoundingClientRect().width
+    expect(width(hover)).toBeCloseTo(width(plain), 0)
+    expect(width(visible)).toBeGreaterThan(width(plain) + 5)
+  })
 })
