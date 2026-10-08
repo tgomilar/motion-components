@@ -69,6 +69,7 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
       position: relative;
       overflow: hidden;
       touch-action: none;
+      -webkit-user-select: none;
       user-select: none;
       cursor: ew-resize;
       isolation: isolate;
@@ -84,6 +85,9 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
       will-change: clip-path;
     }
     ::slotted(*) {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-user-drag: none;
       display: block;
       width: 100%;
       height: 100%;
