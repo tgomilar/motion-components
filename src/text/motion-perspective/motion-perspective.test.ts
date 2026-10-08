@@ -104,11 +104,11 @@ describe('motion-perspective', () => {
     expect(el.playState).toBe('running')
   })
 
-  it('loop starts the oscillation with a default cycle of 0.667 seconds', async () => {
+  it('loop starts the oscillation with a default cycle of 3 seconds', async () => {
     const el = (await fixture(
       html`<motion-perspective text="ABC" loop></motion-perspective>`,
     )) as MotionPerspective
-    expect(el.duration).toBe(0.667)
+    expect(el.duration).toBe(3)
     expect(el.playState).toBe('running')
     expect(frames.pending).toBe(1)
   })
