@@ -64,7 +64,7 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   /** When `true`, animate a back-and-forth depth oscillation on repeat. `oscillate` is kept as an alias for `loop`. */
   @property({ type: Boolean, converter: flag, attribute: 'loop' }) loop = false
   /** Seconds per oscillation cycle when `loop` is set. Lower is faster. */
-  @property({ type: Number }) duration = 0.667
+  @property({ type: Number }) duration = 3
   /** When `true`, pause the oscillation while the cursor is over the element. */
   @property({ type: Boolean, converter: flag, attribute: 'pause-on-hover' }) pauseOnHover = false
 
