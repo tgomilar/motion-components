@@ -1,8 +1,8 @@
 import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
-import { animate, stagger, GroupAnimationWithThen } from 'motion'
-import type { AnimationPlaybackControlsWithThen } from 'motion'
-import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
+import { animate, stagger } from 'motion'
+import type { AnimationPlaybackControlsWithThen, AnimationSequence } from 'motion'
+import { Controllable, PlaybackController, controlsHandle } from '../../utils/playback.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 import { useIntersect } from '../../text/utils/use-intersect.js'
@@ -22,7 +22,33 @@ export type {
 
 const SHAPES = 'path, line, polyline, polygon, circle, rect, ellipse'
 
-const MOTIONS = new Set<string>(['pop', 'bounce', 'rotate', 'wiggle', 'pulse'])
+const MOTIONS = new Set<string>([
+  'pop',
+  'bounce',
+  'rotate',
+  'wiggle',
+  'pulse',
+  'nudge-up',
+  'nudge-down',
+  'nudge-left',
+  'nudge-right',
+])
+
+const NUDGE: Record<string, [x: number, y: number]> = {
+  'nudge-up': [0, -1],
+  'nudge-down': [0, 1],
+  'nudge-left': [-1, 0],
+  'nudge-right': [1, 0],
+}
+
+type Segment = AnimationSequence[number]
+
+function pose(el: Element) {
+  const t = getComputedStyle(el).transform
+  if (!t || t === 'none') return { x: 0, y: 0, scale: 1, rotate: 0 }
+  const { a, b, e, f } = new DOMMatrixReadOnly(t)
+  return { x: e, y: f, scale: Math.hypot(a, b), rotate: (Math.atan2(b, a) * 180) / Math.PI }
+}
 
 const ELEMENTS = new Set(
   'svg g path line polyline polygon circle rect ellipse defs use symbol clippath mask lineargradient radialgradient stop title desc'.split(
@@ -97,8 +123,11 @@ function fetchIcon(url: string) {
 
 /**
  * Animates any SVG icon on a spring: it draws the strokes in, or makes the
- * icon pop, bounce, rotate, wiggle or pulse. It can also do both at once, as in
- * `animation="draw wiggle"`. Pass the icon as a URL in `src`, as an SVG
+ * icon pop, bounce, rotate, wiggle, pulse or nudge up, down, left or right.
+ * It can also do both at once, as in `animation="draw wiggle"`. Every run
+ * starts from where the icon is, so hovering again mid-animation never
+ * makes it jump. With `trigger="hover"`, a nudge holds while the pointer is
+ * over it and springs back on leave. Pass the icon as a URL in `src`, as an SVG
  * string in `icon`, or as a child `<svg>`. Stroke sets such as Lucide,
  * Tabler, Heroicons and Iconoir can draw; filled icons such as Phosphor and
  * Bootstrap pop instead. The icon takes `currentColor`. Inside a button or
@@ -127,6 +156,8 @@ function fetchIcon(url: string) {
  * Phosphor or Bootstrap: there are no strokes to draw, so it pops instead.
  * Setting `label` on an icon inside a button that already has text, so
  * screen readers read the name twice.
+ * Listing two motions, such as `animation="pop wiggle"`: only `draw` combines
+ * with a motion, so only the first motion runs.
  *
  * @element motion-icon
  *
@@ -154,13 +185,13 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   @property({ type: String }) src = ''
   /** SVG markup to render, for example `import { Heart } from 'lucide-static'`. Takes precedence over `src`. */
   @property({ type: String }) icon = ''
-  /** `'draw'`, `'pop'`, `'bounce'`, `'rotate'`, `'wiggle'` or `'pulse'`, or `draw` plus one of the others, such as `'draw wiggle'`, to run both. `draw` needs a stroke icon and falls back to `pop`. */
+  /** `'draw'`, `'pop'`, `'bounce'`, `'rotate'`, `'wiggle'`, `'pulse'`, `'nudge-up'`, `'nudge-down'`, `'nudge-left'` or `'nudge-right'`, or `draw` plus one of the others, such as `'draw nudge-right'`, to run both. `draw` needs a stroke icon and falls back to `pop`. */
   @property({ type: String, reflect: true }) animation: IconAnimation = 'draw'
   /** What starts the animation: `'hover'`, `'click'`, `'view'` (scrolled into view), `'mount'` or `'loop'`. */
   @property({ type: String, reflect: true }) trigger: IconTrigger = 'hover'
   /** Duration of one run, in seconds. */
   @property({ type: Number }) duration = 0.6
-  /** Spring bounciness for `pop`, `bounce` and `rotate` (0 = no overshoot). */
+  /** Spring bounciness as the icon settles (0 = no overshoot). `wiggle` always uses at least `0.6`. */
   @property({ type: Number }) bounce = 0.4
   /** Seconds to wait before the animation starts. */
   @property({ type: Number }) delay = 0
@@ -203,6 +234,8 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   private strokes: SVGElement[] = []
   private disconnectIntersect: (() => void) | null = null
   private loopTimer: ReturnType<typeof setTimeout> | null = null
+  private hovering = false
+  private keepPose = false
 
   private get parts(): { draw: boolean; motion: IconMotion | null } {
     const tokens = this.animation.trim().split(/\s+/)
@@ -225,7 +258,14 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
           handle: { pause() {}, resume() {}, finish() {}, cancel() {} },
           done: Promise.resolve(),
         }
-      return controlsRun(this.run())
+      const controls = this.run()
+      return {
+        handle: {
+          ...controlsHandle(controls),
+          cancel: () => (this.keepPose ? controls.stop() : controls.cancel()),
+        },
+        done: controls,
+      }
     },
     applyFinalState: () => this.settle(),
     applyInitialState: () => (this.startsHidden ? this.hide() : this.settle()),
@@ -235,6 +275,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     super.connectedCallback()
     this.target = this.closest<HTMLElement>('button, a, [role="button"]') ?? this
     this.target.addEventListener('pointerenter', this.onHover)
+    this.target.addEventListener('pointerleave', this.onLeave)
     this.target.addEventListener('click', this.onClick)
     this.addEventListener('motion-finish', this.onFinish)
     if (this.hasUpdated) this.setup()
@@ -243,6 +284,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   disconnectedCallback() {
     super.disconnectedCallback()
     this.target.removeEventListener('pointerenter', this.onHover)
+    this.target.removeEventListener('pointerleave', this.onLeave)
     this.target.removeEventListener('click', this.onClick)
     this.removeEventListener('motion-finish', this.onFinish)
     this.disconnectIntersect?.()
@@ -330,57 +372,104 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     })
   }
 
+  private get holdsNudge() {
+    return this.trigger === 'hover' && this.parts.motion?.startsWith('nudge-')
+  }
+
   private run(): AnimationPlaybackControlsWithThen {
     const svg = this.svg!
     const { draw, motion } = this.parts
-    const drawing = draw ? this.draw(svg) : []
-    if (!motion) return new GroupAnimationWithThen(drawing)
-    const moving = this.move(svg, motion)
-    return drawing.length ? new GroupAnimationWithThen([...drawing, moving]) : moving
-  }
-
-  private draw(svg: SVGSVGElement) {
-    return [
-      ...this.strokes.map((el, i) =>
-        animate(
-          el,
-          { strokeDashoffset: [1, 0] },
-          {
-            type: 'spring',
-            bounce: 0,
-            duration: this.duration,
-            delay: this.delay + stagger(0.08)(i, this.strokes.length),
-          },
-        ),
-      ),
-      animate(
-        svg,
-        { fillOpacity: [0, 1] },
-        { duration: this.duration * 0.6, delay: this.delay + this.duration * 0.5 },
-      ),
+    const leaving = this.holdsNudge && !this.hovering
+    const sequence: Segment[] = [
+      ...(draw && !leaving ? this.draw(svg) : []),
+      ...(motion ? this.move(svg, motion) : []),
     ]
+    return animate(sequence, { delay: this.delay })
   }
 
-  private move(svg: SVGSVGElement, motion: IconMotion): AnimationPlaybackControlsWithThen {
-    const spring = {
-      type: 'spring' as const,
-      duration: this.duration,
-      bounce: this.bounce,
-      delay: this.delay,
+  private get spring() {
+    return { type: 'spring' as const, duration: this.duration, bounce: this.bounce }
+  }
+
+  private draw(svg: SVGSVGElement): Segment[] {
+    const out = this.duration * 0.3
+    const drawn = this.strokes.some((el) => Number(el.style.strokeDashoffset || 0) < 0.999)
+    const lead = drawn ? out : 0
+    const segments: Segment[] = []
+    if (drawn) {
+      for (const el of this.strokes) {
+        const from = Number(el.style.strokeDashoffset || 0)
+        segments.push([
+          el,
+          { strokeDashoffset: [from, 1] },
+          { duration: out, ease: 'easeIn', at: 0 },
+        ])
+      }
+      const fill = Number(getComputedStyle(svg).fillOpacity)
+      segments.push([svg, { fillOpacity: [fill, 0] }, { duration: out, at: 0 }])
     }
-    const keys = { duration: this.duration, ease: 'easeInOut' as const, delay: this.delay }
-    switch (motion) {
-      case 'pop':
-        return animate(svg, { scale: [0.6, 1] }, spring)
-      case 'bounce':
-        return animate(svg, { y: [-svg.getBoundingClientRect().height * 0.3, 0] }, spring)
-      case 'rotate':
-        return animate(svg, { rotate: [-180, 0] }, spring)
-      case 'wiggle':
-        return animate(svg, { rotate: [0, -14, 12, -8, 5, 0] }, keys)
-      case 'pulse':
-        return animate(svg, { scale: [1, 1.18, 1] }, keys)
+    this.strokes.forEach((el, i) => {
+      segments.push([
+        el,
+        { strokeDashoffset: [1, 0] },
+        {
+          type: 'spring',
+          bounce: 0,
+          duration: this.duration,
+          at: lead + stagger(this.duration * 0.12)(i, this.strokes.length),
+        },
+      ])
+    })
+    segments.push([
+      svg,
+      { fillOpacity: [0, 1] },
+      { duration: this.duration * 0.6, at: lead + this.duration * 0.5 },
+    ])
+    return segments
+  }
+
+  private move(svg: SVGSVGElement, motion: IconMotion): Segment[] {
+    const from = pose(svg)
+    const size = svg.getBoundingClientRect().height || 24
+    const out = (key: string, start: number, peak: number): Segment => [
+      svg,
+      { [key]: [start, peak] },
+      { type: 'spring', bounce: 0, duration: this.duration * 0.35, at: 0 },
+    ]
+    const back = (key: string, peak: number, bounce = this.bounce): Segment => [
+      svg,
+      { [key]: [peak, key === 'scale' ? 1 : 0] },
+      { type: 'spring', duration: this.duration, bounce },
+    ]
+    const settle = (key: string, start: number, end: number): Segment[] => [
+      [
+        svg,
+        { [key]: [start, end] },
+        { type: 'spring', duration: this.duration, bounce: this.bounce, at: 0 },
+      ],
+    ]
+
+    if (motion in NUDGE) {
+      const [dx, dy] = NUDGE[motion]
+      const key = dx ? 'x' : 'y'
+      const start = dx ? from.x : from.y
+      const peak = (dx || dy) * size * 0.25
+      if (this.holdsNudge) return settle(key, start, this.hovering ? peak : 0)
+      return [out(key, start, peak), back(key, peak)]
     }
+    if (motion === 'pop') return [out('scale', from.scale, 0.7), back('scale', 0.7)]
+    if (motion === 'bounce') return [out('y', from.y, -size * 0.3), back('y', -size * 0.3)]
+    if (motion === 'rotate') return settle('rotate', from.rotate, 360)
+    if (motion === 'wiggle')
+      return [out('rotate', from.rotate, -14), back('rotate', -14, Math.max(this.bounce, 0.6))]
+    return [out('scale', from.scale, 1.18), back('scale', 1.18)]
+  }
+
+  private restart() {
+    this.keepPose = true
+    this.playback.teardown()
+    this.keepPose = false
+    void this.play()
   }
 
   private hide() {
@@ -397,17 +486,23 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   }
 
   private onHover = () => {
-    if (this.trigger === 'hover') this.replay()
+    this.hovering = true
+    if (this.trigger === 'hover') this.restart()
+  }
+
+  private onLeave = () => {
+    this.hovering = false
+    if (this.holdsNudge) this.restart()
   }
 
   private onClick = () => {
-    if (this.trigger === 'click') this.replay()
+    if (this.trigger === 'click') this.restart()
   }
 
   private onFinish = () => {
     if (this.trigger !== 'loop' || !this.isConnected) return
     this.stopLoop()
-    this.loopTimer = setTimeout(() => this.replay(), this.interval * 1000)
+    this.loopTimer = setTimeout(() => this.restart(), this.interval * 1000)
   }
 
   private stopLoop() {
