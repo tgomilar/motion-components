@@ -15,6 +15,14 @@ async function mount(attrs = '', inner = STROKE) {
   return el
 }
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+const matrix = (el: Element) =>
+  new DOMMatrixReadOnly(getComputedStyle(el).transform.replace('none', ''))
+const scaleOf = (el: Element) => Math.hypot(matrix(el).a, matrix(el).b)
+const xOf = (el: Element) => matrix(el).e
+const yOf = (el: Element) => matrix(el).f
+
 const strokes = (el: MotionIcon) => [...el.querySelectorAll<SVGPathElement>('path')]
 
 describe('motion-icon', () => {
@@ -47,6 +55,54 @@ describe('motion-icon', () => {
     expect(Number(getComputedStyle(strokes(el)[0]).strokeDashoffset.replace('px', ''))).toBeCloseTo(
       0,
     )
+  })
+
+  it('redraws from where the strokes are when hovered again mid-run', async () => {
+    const el = await mount('duration="0.6"')
+    const offset = () => Number(strokes(el)[0].style.strokeDashoffset)
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    await wait(350)
+    const before = offset()
+    expect(before).toBeGreaterThan(0.05)
+    expect(before).toBeLessThan(0.95)
+    el.dispatchEvent(new PointerEvent('pointerleave'))
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    await nextFrame()
+    expect(Math.abs(offset() - before)).toBeLessThan(0.2)
+    await el.finished
+    expect(offset()).toBeCloseTo(0, 2)
+  })
+
+  it('kicks a motion from the current pose instead of snapping to its start', async () => {
+    const el = await mount('animation="pop" duration="0.4"', FILLED)
+    const svg = el.querySelector('svg')!
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    await nextFrame()
+    expect(scaleOf(svg)).toBeGreaterThan(0.9)
+    await el.finished
+    expect(scaleOf(svg)).toBeCloseTo(1, 2)
+  })
+
+  it('holds a nudge while hovered and springs back on leave', async () => {
+    const el = await mount('animation="nudge-right" duration="0.3" bounce="0"')
+    const svg = el.querySelector('svg')!
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    await el.finished
+    const height = svg.getBoundingClientRect().height
+    expect(xOf(svg)).toBeCloseTo(height * 0.25, 0)
+    el.dispatchEvent(new PointerEvent('pointerleave'))
+    await el.finished
+    expect(xOf(svg)).toBeCloseTo(0, 1)
+  })
+
+  it('nudges out and back on other triggers', async () => {
+    const el = await mount('trigger="click" animation="nudge-up" duration="0.3"', FILLED)
+    const svg = el.querySelector('svg')!
+    el.dispatchEvent(new MouseEvent('click'))
+    await wait(120)
+    expect(yOf(svg)).toBeLessThan(-1)
+    await el.finished
+    expect(yOf(svg)).toBeCloseTo(0, 1)
   })
 
   it('starts hidden and draws in when scrolled into view', async () => {
