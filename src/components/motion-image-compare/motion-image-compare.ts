@@ -230,7 +230,7 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
 
   private onKey = (e: KeyboardEvent) => {
     const step = e.shiftKey ? 10 : 2
-    let next = this.pos
+    let next = this.position
     if (e.key === 'Home') next = 0
     else if (e.key === 'End') next = 100
     else if (this.orientation === 'horizontal') {
