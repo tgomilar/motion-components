@@ -3,13 +3,16 @@ import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 export type { MotionCodeInlineProps } from './motion-code-inline.types.js'
 
-import { LitElement, html, css, svg, nothing } from 'lit'
+import { LitElement, html, css, nothing } from 'lit'
 import { property, state } from 'lit/decorators.js'
+import '../../icons/motion-icon-state/motion-icon-state.js'
 
 /**
  * Inline code snippet with an optional copy-to-clipboard button. Renders the
  * slotted text inside a styled `<code>` element; the copy button fades in on
- * hover, or stays visible with `copy-visible`.
+ * hover, or stays visible with `copy-visible`. The copy icon is a
+ * `motion-icon-state` that morphs into a check after copying, and it scales
+ * with the text.
  *
  * **Use it for:** short code inside running text, such as a command, a file
  * name, an attribute or a CSS variable, with an optional copy button.
@@ -23,8 +26,8 @@ import { property, state } from 'lit/decorators.js'
  * until the pointer is over the component or the button has keyboard focus.
  * Set `copy-visible` to show it at all times.
  *
- * **Reduced motion:** nothing changes. The component uses no Motion One
- * animation; the copy button keeps its short 0.15 s CSS fade on hover.
+ * **Reduced motion:** the copy icon switches to the check at once, with no
+ * morph. The copy button keeps its short 0.15 s CSS fade on hover.
  *
  * **Common mistakes:** putting a prompt such as `$ ` inside the element: the
  * button copies all of the element's text, prompt included. Expecting copy to
@@ -38,6 +41,7 @@ import { property, state } from 'lit/decorators.js'
  * @cssprop [--mc-color-accent=#2563eb] - Code text color, and the copy button color on hover.
  * @cssprop [--mc-color-accent-dim=#2563eb18] - Background behind the code.
  * @cssprop [--mc-color-muted=#60608a] - Copy button color.
+ * @cssprop --mc-icon-color-active - Color of the check after copying. Default the copy button color.
  *
  * @example
  * ```html
@@ -75,6 +79,7 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
     }
 
     button {
+      font: inherit;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -112,9 +117,8 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
       color: var(--mc-color-accent, #2563eb);
     }
 
-    button svg {
-      width: 13px;
-      height: 13px;
+    motion-icon-state {
+      --mc-icon-size: 1em;
       display: block;
     }
   `
@@ -128,24 +132,12 @@ export class MotionCodeInline extends LitElement implements MotionCodeInlineProp
     }, 1800)
   }
 
-  private copyIcon() {
-    if (this.copied) {
-      return svg`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="2 8 6 12 14 4"/>
-      </svg>`
-    }
-    return svg`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="5" y="5" width="9" height="9" rx="2"/>
-      <path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
-    </svg>`
-  }
-
   render() {
     return html`
       <code><slot></slot></code>
       ${this.copy || this.copyVisible
         ? html`<button @click=${this.doCopy} aria-label=${this.copied ? 'Copied' : 'Copy'}>
-            ${this.copyIcon()}
+            <motion-icon-state name="copy" .active=${this.copied}></motion-icon-state>
           </button>`
         : nothing}
     `

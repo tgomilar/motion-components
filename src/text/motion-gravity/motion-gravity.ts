@@ -2,11 +2,12 @@ import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
-import type { MotionGravityProps } from './motion-gravity.types.js'
+import type { MotionGravityProps, GravityTrigger } from './motion-gravity.types.js'
 import { charsByWord } from '../utils/chars-by-word.js'
+import { useIntersect } from '../utils/use-intersect.js'
 import { customElement } from '../../utils/define.js'
 
-export type { MotionGravityProps } from './motion-gravity.types.js'
+export type { MotionGravityProps, GravityTrigger } from './motion-gravity.types.js'
 
 /**
  * Gravity-drop text. Each character falls in from above and bounces to rest
@@ -17,11 +18,11 @@ export type { MotionGravityProps } from './motion-gravity.types.js'
  * element is defined, so the page never paints an empty gap.
  *
  * **Use it for:** short, playful words and headings whose letters drop in and
- * bounce into place when the page loads.
+ * bounce into place, when the page loads or, with `trigger="view"`, when they
+ * scroll into view.
  *
- * **Avoid it for:** long sentences, and text below the first screen. It plays
- * when the element first renders, not when it scrolls into view. For a
- * split-text reveal on scroll, use `motion-split` or `motion-headline`.
+ * **Avoid it for:** long sentences. For a split-text reveal of longer text,
+ * use `motion-split` or `motion-headline`.
  *
  * **Accessibility:** screen readers read the whole text once from a visually
  * hidden copy. The falling letters are `aria-hidden`. The element has no
@@ -30,8 +31,9 @@ export type { MotionGravityProps } from './motion-gravity.types.js'
  * **Reduced motion:** the letters show at their final position at once, with
  * no drop.
  *
- * **Common mistakes:** placing it far down the page, so the drop is over
- * before anyone sees it; call `replay()` when it comes into view. Changing
+ * **Common mistakes:** placing it far down the page with the default
+ * `trigger="mount"`, so the drop is over before anyone sees it; set
+ * `trigger="view"`. Changing
  * the child text after the element is on the page; the child text is read
  * once, so set the `text` property instead.
  *
@@ -43,7 +45,8 @@ export type { MotionGravityProps } from './motion-gravity.types.js'
  *
  * @example
  * ```html
- * <motion-gravity height="80" stagger="0.06">GRAVITY</motion-gravity>
+ * <motion-gravity height="80" interval="0.06">GRAVITY</motion-gravity>
+ * <motion-gravity trigger="view">drops in on scroll</motion-gravity>
  * ```
  */
 @customElement('motion-gravity')
@@ -60,6 +63,11 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
   @property({ type: Number }) bounce = 0.45
   /** Delay before the first character starts falling, in seconds. */
   @property({ type: Number }) delay = 0
+  /** When the letters drop: `'mount'` (as soon as it renders) or `'view'` (the first time half of it is in view). */
+  @property({ type: String, reflect: true }) trigger: GravityTrigger = 'mount'
+
+  private seen = false
+  private disarm: (() => void) | null = null
 
   static styles = css`
     :host {
@@ -122,22 +130,46 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
         }
       }
     },
-    applyInitialState: () => {
-      const chars = this.shadowRoot?.querySelectorAll<HTMLElement>('.char')
-      if (chars) {
-        for (const char of chars) {
-          char.style.opacity = '0'
-          char.style.transform = `translateY(${-this.height}px)`
-        }
-      }
-    },
+    applyInitialState: () => this.hide(),
   })
+
+  private hide() {
+    for (const char of this.shadowRoot?.querySelectorAll<HTMLElement>('.char') ?? []) {
+      char.style.opacity = '0'
+      char.style.transform = `translateY(${-this.height}px)`
+    }
+  }
+
+  private get waitsForView() {
+    return (
+      this.trigger === 'view' &&
+      !this.seen &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+  }
+
+  private arm() {
+    this.disarm?.()
+    this.disarm = useIntersect(this, 0.5, () => {
+      this.seen = true
+      this.disarm?.()
+      this.disarm = null
+      void this.play()
+    })
+  }
 
   connectedCallback() {
     // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
     if (!this.text) this.text = this.textContent?.trim() ?? ''
     this.textContent = ''
     super.connectedCallback()
+    if (this.hasUpdated && this.waitsForView) this.arm()
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    this.disarm?.()
+    this.disarm = null
   }
 
   updated(changed: Map<string, unknown>) {
@@ -147,12 +179,15 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
       changed.has('interval') ||
       changed.has('duration') ||
       changed.has('bounce') ||
-      changed.has('delay')
+      changed.has('delay') ||
+      changed.has('trigger')
 
-    if (needsPlay) {
-      this.cancel()
-      void this.play()
-    }
+    if (!needsPlay) return
+    this.cancel()
+    if (this.waitsForView) {
+      this.hide()
+      this.arm()
+    } else void this.play()
   }
 
   /** Resets and re-runs the gravity drop. */

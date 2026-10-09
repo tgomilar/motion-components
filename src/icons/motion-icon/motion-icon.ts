@@ -140,7 +140,7 @@ function fetchIcon(url: string) {
  * It works with any SVG icon.
  *
  * **Avoid it for:** icons that switch between two states, such as menu and
- * close or play and pause; use `motion-state-icon`. Avoid `trigger="loop"`
+ * close or play and pause; use `motion-icon-state`. Avoid `trigger="loop"`
  * next to text people need to read, because the loop never stops on its own.
  *
  * **Accessibility:** without `label` the icon is decorative and gets

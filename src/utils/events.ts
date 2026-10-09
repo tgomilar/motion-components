@@ -2,7 +2,7 @@ import type { SliderChangeDetail } from '../components/motion-slider/motion-slid
 import type { GalleryIndexDetail } from '../components/motion-gallery/motion-gallery.types.js'
 import type { FlipCardChangeDetail } from '../components/motion-flip-card/motion-flip-card.types.js'
 import type { ImageCompareChangeDetail } from '../components/motion-image-compare/motion-image-compare.types.js'
-import type { StateIconChangeDetail } from '../icons/motion-state-icon/motion-state-icon.types.js'
+import type { IconStateChangeDetail } from '../icons/motion-icon-state/motion-icon-state.types.js'
 
 /**
  * Detail of a `motion-change` event. The event bubbles, so a listener on an
@@ -13,7 +13,7 @@ export type MotionChangeDetail =
   | GalleryIndexDetail
   | FlipCardChangeDetail
   | ImageCompareChangeDetail
-  | StateIconChangeDetail
+  | IconStateChangeDetail
 
 declare global {
   interface HTMLElementEventMap {

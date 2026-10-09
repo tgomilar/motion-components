@@ -62,7 +62,7 @@ let uid = 0
  *
  * **Avoid it for:** switching the theme; it only draws the glyph. Use
  * `motion-theme-toggle` for a working control. For other animated icons, use
- * `motion-icon` or `motion-state-icon`.
+ * `motion-icon` or `motion-icon-state`.
  *
  * **Accessibility:** the SVG has `aria-hidden="true"` and the element has no
  * role or label, so screen readers skip it. When it is the only content of a

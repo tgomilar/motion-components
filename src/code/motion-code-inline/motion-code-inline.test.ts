@@ -76,4 +76,34 @@ describe('motion-code-inline', () => {
     expect(width(hover)).toBeCloseTo(width(plain), 0)
     expect(width(visible)).toBeGreaterThan(width(plain) + 5)
   })
+
+  it('morphs a decorative copy state icon into the check after copying', async () => {
+    const spy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
+    const el = (await fixture(
+      html`<motion-code-inline copy-visible>npm i motion-components</motion-code-inline>`,
+    )) as MotionCodeInline
+    await elementUpdated(el)
+    const icon = el.shadowRoot!.querySelector('motion-icon-state')!
+    expect(icon.name).toBe('copy')
+    expect(icon.active).toBe(false)
+    expect(icon.getAttribute('aria-hidden')).toBe('true')
+    el.shadowRoot!.querySelector('button')!.click()
+    await elementUpdated(el)
+    expect(icon.active).toBe(true)
+    spy.mockRestore()
+  })
+
+  it('sizes the copy icon with the text', async () => {
+    const el = (
+      await fixture(
+        html`<div style="font-size: 32px"
+          ><motion-code-inline copy-visible>big</motion-code-inline></div
+        >`,
+      )
+    ).querySelector('motion-code-inline') as MotionCodeInline
+    await elementUpdated(el)
+    const icon = el.shadowRoot!.querySelector('motion-icon-state')!
+    await (icon as unknown as { updateComplete: Promise<boolean> }).updateComplete
+    expect(icon.getBoundingClientRect().width).toBeCloseTo(32, 0)
+  })
 })

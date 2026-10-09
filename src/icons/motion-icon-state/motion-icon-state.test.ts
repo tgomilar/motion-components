@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion, waitForEvent } from '../../test/helpers.js'
-import type { MotionStateIcon, StateIconName } from './motion-state-icon.js'
-import './motion-state-icon.js'
+import type { MotionIconState, IconStateName } from './motion-icon-state.js'
+import './motion-icon-state.js'
 import { pauseAll, resumeAll } from '../../utils/registry.js'
 
-const NAMES: StateIconName[] = [
+const NAMES: IconStateName[] = [
   'menu',
   'play',
   'copy',
@@ -16,26 +16,26 @@ const NAMES: StateIconName[] = [
   'eye',
 ]
 
-const part = (el: MotionStateIcon, cls: string) =>
+const part = (el: MotionIconState, cls: string) =>
   el.shadowRoot!.querySelector<SVGElement>(`.${cls}`)!
 const settle = () => new Promise((resolve) => setTimeout(resolve, 700))
 
-describe('motion-state-icon', () => {
+describe('motion-icon-state', () => {
   beforeEach(() => stubReducedMotion(false))
 
   for (const name of NAMES) {
     it(`renders ${name}`, async () => {
       const el = (await fixture(
-        html`<motion-state-icon name=${name}></motion-state-icon>`,
-      )) as MotionStateIcon
+        html`<motion-icon-state name=${name}></motion-icon-state>`,
+      )) as MotionIconState
       expect(el.shadowRoot!.querySelectorAll('svg > *').length).toBeGreaterThan(0)
     })
   }
 
   it('morphs menu into close', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="menu"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="menu"></motion-icon-state>`,
+    )) as MotionIconState
     el.active = true
     await elementUpdated(el)
     await settle()
@@ -43,42 +43,42 @@ describe('motion-state-icon', () => {
     expect(part(el, 'top').style.transform).toContain('rotate(45deg)')
   })
 
-  it('fills the heart with the accent color', async () => {
+  it('fills the heart with the second-state color', async () => {
     const el = (await fixture(
-      html`<motion-state-icon
+      html`<motion-icon-state
         name="heart"
         active
-        style="--mc-icon-accent: rgb(0, 0, 255)"
-      ></motion-state-icon>`,
-    )) as MotionStateIcon
+        style="--mc-icon-color-active: rgb(0, 0, 255)"
+      ></motion-icon-state>`,
+    )) as MotionIconState
     await settle()
     const heart = getComputedStyle(part(el, 'h'))
     expect(heart.fill).toBe('rgb(0, 0, 255)')
     expect(heart.fillOpacity).toBe('1')
   })
 
-  it('uses a red heart and a green check by default', async () => {
+  it('colors the second state with the text color by default', async () => {
     const heart = (await fixture(
-      html`<motion-state-icon name="heart"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="heart" style="color: rgb(10, 20, 30)"></motion-icon-state>`,
+    )) as MotionIconState
     const copy = (await fixture(
-      html`<motion-state-icon name="copy"></motion-state-icon>`,
-    )) as MotionStateIcon
-    expect(getComputedStyle(part(heart, 'h')).fill).toBe('rgb(225, 29, 72)')
-    expect(getComputedStyle(part(copy, 'check')).stroke).toBe('rgb(22, 163, 74)')
+      html`<motion-icon-state name="copy" style="color: rgb(10, 20, 30)"></motion-icon-state>`,
+    )) as MotionIconState
+    expect(getComputedStyle(part(heart, 'h')).fill).toBe('rgb(10, 20, 30)')
+    expect(getComputedStyle(part(copy, 'check')).stroke).toBe('rgb(10, 20, 30)')
   })
 
   it('is decorative without label or toggle', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="plus"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="plus"></motion-icon-state>`,
+    )) as MotionIconState
     expect(el.getAttribute('aria-hidden')).toBe('true')
   })
 
   it('toggle makes a button that switches state and fires motion-change', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="play" toggle label="Play"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="play" toggle label="Play"></motion-icon-state>`,
+    )) as MotionIconState
     expect(el.getAttribute('role')).toBe('button')
     expect(el.getAttribute('aria-pressed')).toBe('false')
     expect(el.tabIndex).toBe(0)
@@ -96,23 +96,23 @@ describe('motion-state-icon', () => {
 
   it('warns once when toggle has no label', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const el = await fixture<MotionStateIcon>(
-      html`<motion-state-icon name="menu" toggle></motion-state-icon>`,
+    const el = await fixture<MotionIconState>(
+      html`<motion-icon-state name="menu" toggle></motion-icon-state>`,
     )
     el.active = true
     await elementUpdated(el)
     expect(warn).toHaveBeenCalledTimes(1)
     expect(el.getAttribute('aria-label')).toBe('menu')
     warn.mockClear()
-    await fixture(html`<motion-state-icon name="menu" toggle label="Menu"></motion-state-icon>`)
+    await fixture(html`<motion-icon-state name="menu" toggle label="Menu"></motion-icon-state>`)
     expect(warn).not.toHaveBeenCalled()
     warn.mockRestore()
   })
 
   it('spins while loading and stops when done', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="loading"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="loading"></motion-icon-state>`,
+    )) as MotionIconState
     await new Promise((resolve) => setTimeout(resolve, 200))
     expect(part(el, 'arc').style.transform).toContain('rotate')
     el.active = true
@@ -124,8 +124,8 @@ describe('motion-state-icon', () => {
   it('switches instantly under reduced motion', async () => {
     stubReducedMotion(true)
     const el = (await fixture(
-      html`<motion-state-icon name="eye"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="eye"></motion-icon-state>`,
+    )) as MotionIconState
     el.active = true
     await elementUpdated(el)
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -134,8 +134,8 @@ describe('motion-state-icon', () => {
 
   it('keeps the loading spinner turning after it is removed and added back', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="loading"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="loading"></motion-icon-state>`,
+    )) as MotionIconState
     const spinning = () => (el as unknown as { spin: unknown }).spin !== null
     expect(spinning()).toBe(true)
     const parent = el.parentElement!
@@ -147,8 +147,8 @@ describe('motion-state-icon', () => {
 
   it('flip() switches the state and fires motion-change', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="heart"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="heart"></motion-icon-state>`,
+    )) as MotionIconState
     const details: boolean[] = []
     el.addEventListener('motion-change', (e) =>
       details.push((e as CustomEvent<{ active: boolean }>).detail.active),
@@ -161,8 +161,8 @@ describe('motion-state-icon', () => {
 
   it('pauseAll() holds the loading spinner and resumeAll() releases it', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="loading"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="loading"></motion-icon-state>`,
+    )) as MotionIconState
     await elementUpdated(el)
     const ring = el.shadowRoot!.querySelector('svg') as SVGElement
     const angle = () => {
@@ -186,8 +186,8 @@ describe('motion-state-icon', () => {
 
   it('keeps the spinner held by pauseAll() when the icon moves', async () => {
     const el = (await fixture(
-      html`<motion-state-icon name="loading"></motion-state-icon>`,
-    )) as MotionStateIcon
+      html`<motion-icon-state name="loading"></motion-icon-state>`,
+    )) as MotionIconState
     await elementUpdated(el)
     const angle = () =>
       [...el.shadowRoot!.querySelectorAll<SVGElement>('svg *')].find((n) =>
@@ -205,5 +205,45 @@ describe('motion-state-icon', () => {
     resumeAll()
     await new Promise((resolve) => setTimeout(resolve, 150))
     expect(angle()).not.toBe(held)
+  })
+
+  it('still works under the old name motion-state-icon, with a one-time warning', async () => {
+    await import('../motion-state-icon/motion-state-icon.js')
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const el = (await fixture(
+      html`<motion-state-icon name="heart" toggle label="Like"></motion-state-icon>`,
+    )) as MotionIconState
+    await fixture(html`<motion-state-icon name="menu"></motion-state-icon>`)
+    expect(el).toBeInstanceOf(customElements.get('motion-icon-state')!)
+    el.click()
+    expect(el.active).toBe(true)
+    expect(warn.mock.calls.filter(([m]) => String(m).includes('motion-icon-state'))).toHaveLength(1)
+    warn.mockRestore()
+  })
+
+  it('leaves no dot where an undrawn line starts', async () => {
+    const el = (await fixture(
+      html`<motion-icon-state name="loading"></motion-icon-state>`,
+    )) as MotionIconState
+    await elementUpdated(el)
+    for (const name of ['ring', 'check']) {
+      const style = getComputedStyle(part(el, name))
+      expect(parseFloat(style.strokeDashoffset)).toBeGreaterThan(1)
+      expect(style.strokeDasharray.replace(/px/g, '')).toBe('1, 2')
+    }
+  })
+
+  it('colors any icon in its second state with --mc-icon-color-active', async () => {
+    const el = (await fixture(
+      html`<motion-icon-state
+        name="menu"
+        style="color: rgb(10, 20, 30); --mc-icon-color-active: rgb(200, 100, 0)"
+      ></motion-icon-state>`,
+    )) as MotionIconState
+    const svg = el.shadowRoot!.querySelector('svg')!
+    expect(getComputedStyle(svg).stroke).toBe('rgb(10, 20, 30)')
+    el.active = true
+    await elementUpdated(el)
+    expect(getComputedStyle(svg).stroke).toBe('rgb(200, 100, 0)')
   })
 })

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
-import { stubReducedMotion, waitForEvent } from '../../test/helpers.js'
+import { stubIntersectionObserver, stubReducedMotion, waitForEvent } from '../../test/helpers.js'
 
 // The drop runs through Motion's spring; the contract is the targets, keyframes,
 // stagger and spring options handed to `animate`, so we mock it. `then` lets a
@@ -164,5 +164,29 @@ describe('motion-gravity', () => {
     const el = await mount('', '')
     await el.finished
     expect(el.playState).toBe('finished')
+  })
+
+  it('with trigger="view", waits hidden until it scrolls into view, then drops once', async () => {
+    const io = stubIntersectionObserver()
+    const el = await mount('trigger="view"')
+    await elementUpdated(el)
+    expect(animateMock).not.toHaveBeenCalled()
+    expect(el.playState).toBe('idle')
+    expect(chars(el).every((c) => c.style.opacity === '0')).toBe(true)
+    io.enter()
+    expect(el.playState).toBe('running')
+    expect(animateMock).toHaveBeenCalledOnce()
+    io.leave()
+    io.enter()
+    expect(animateMock).toHaveBeenCalledOnce()
+  })
+
+  it('with trigger="view", shows the text at once under reduced motion', async () => {
+    stubIntersectionObserver()
+    stubReducedMotion(true)
+    const el = await mount('trigger="view"')
+    await elementUpdated(el)
+    expect(el.playState).toBe('finished')
+    expect(chars(el).every((c) => c.style.opacity !== '0')).toBe(true)
   })
 })
