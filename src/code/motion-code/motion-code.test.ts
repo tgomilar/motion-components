@@ -136,6 +136,20 @@ echo $HOME | grep -i home</pre
     expect(cls('cw-tag')).toEqual(['|'])
   })
 
+  it('highlights background jobs, redirects and an unclosed ${ in shell code', async () => {
+    const el = (await fixture(html`
+      <motion-code code-lang="sh"><pre>npm run dev & cmd 2>&1 | tee log
+echo \${HOME</pre></motion-code>
+    `)) as MotionCode
+    await elementUpdated(el)
+    const cls = (c: string) =>
+      [...el.shadowRoot!.querySelectorAll(`.${c}`)].map((n) => n.textContent)
+    expect(cls('cw-keyword')).toEqual(['npm', 'cmd', 'tee', 'echo'])
+    expect(cls('cw-tag')).toEqual(['&', '>&', '|'])
+    expect(cls('cw-num')).toEqual(['\${HOME'])
+    expect(el.shadowRoot!.textContent).toContain('echo ${HOME')
+  })
+
   it('the code property reads and replaces the source', async () => {
     const el = (await fixture(html`<motion-code></motion-code>`)) as MotionCode
     el.code = 'let x = 1'
