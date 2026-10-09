@@ -138,8 +138,12 @@ echo $HOME | grep -i home</pre
 
   it('highlights background jobs, redirects and an unclosed ${ in shell code', async () => {
     const el = (await fixture(html`
-      <motion-code code-lang="sh"><pre>npm run dev & cmd 2>&1 | tee log
-echo \${HOME</pre></motion-code>
+      <motion-code code-lang="sh">
+        <pre>
+npm run dev & cmd 2>&1 | tee log
+echo \${HOME</pre
+        >
+      </motion-code>
     `)) as MotionCode
     await elementUpdated(el)
     const cls = (c: string) =>
