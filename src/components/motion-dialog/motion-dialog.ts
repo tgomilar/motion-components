@@ -33,6 +33,10 @@ export type { MotionChangeDetail } from '../../utils/events.js'
  * once, with no slide or fade. `motion-close` still fires after the dialog
  * closes.
  *
+ * **Older browsers:** Safari before 17.4 and Chrome before 122 do not pass
+ * custom properties to `::backdrop`. There the backdrop appears at once,
+ * without a fade, and uses the default color and blur.
+ *
  * **Common mistakes:** listening for the native `close` event on
  * `motion-dialog`; it does not reach the host, so listen for `motion-close`.
  * Expecting a click outside the panel to close the dialog; that only happens
