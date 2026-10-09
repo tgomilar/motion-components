@@ -133,7 +133,8 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
 
   connectedCallback() {
     super.connectedCallback()
-    if (this.hasUpdated && this.main) this.arm()
+    // 'mount' fires once on load, so a move in the page does not fire it again
+    if (this.hasUpdated && this.main && this.trigger !== 'mount') this.arm()
   }
 
   private arm() {
