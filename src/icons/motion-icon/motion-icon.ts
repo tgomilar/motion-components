@@ -473,7 +473,8 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     }
     if (motion === 'pop') return [out('scale', from.scale, 0.7), back('scale', 0.7)]
     if (motion === 'bounce') return [out('y', from.y, -size * 0.3), back('y', -size * 0.3)]
-    if (motion === 'rotate') return settle('rotate', from.rotate, 360)
+    // The pose angle wraps into (-180, 180]; read it as 0 to 360 so an interrupted turn finishes forward
+    if (motion === 'rotate') return settle('rotate', (from.rotate + 360) % 360, 360)
     if (motion === 'wiggle')
       return [out('rotate', from.rotate, -14), back('rotate', -14, Math.max(this.bounce, 0.6))]
     return [out('scale', from.scale, 1.18), back('scale', 1.18)]
