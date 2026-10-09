@@ -3,6 +3,7 @@ import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { stubReducedMotion, waitForEvent } from '../../test/helpers.js'
 import type { MotionStateIcon, StateIconName } from './motion-state-icon.js'
 import './motion-state-icon.js'
+import { pauseAll, resumeAll } from '../../utils/registry.js'
 
 const NAMES: StateIconName[] = [
   'menu',
@@ -142,5 +143,67 @@ describe('motion-state-icon', () => {
     expect(spinning()).toBe(false)
     parent.append(el)
     expect(spinning()).toBe(true)
+  })
+
+  it('flip() switches the state and fires motion-change', async () => {
+    const el = (await fixture(
+      html`<motion-state-icon name="heart"></motion-state-icon>`,
+    )) as MotionStateIcon
+    const details: boolean[] = []
+    el.addEventListener('motion-change', (e) =>
+      details.push((e as CustomEvent<{ active: boolean }>).detail.active),
+    )
+    el.flip()
+    expect(el.active).toBe(true)
+    el.flip()
+    expect(details).toEqual([true, false])
+  })
+
+  it('pauseAll() holds the loading spinner and resumeAll() releases it', async () => {
+    const el = (await fixture(
+      html`<motion-state-icon name="loading"></motion-state-icon>`,
+    )) as MotionStateIcon
+    await elementUpdated(el)
+    const ring = el.shadowRoot!.querySelector('svg') as SVGElement
+    const angle = () => {
+      const part = [...el.shadowRoot!.querySelectorAll<SVGElement>('svg *')].find((n) =>
+        n.style.transform.includes('rotate'),
+      )
+      return part?.style.transform ?? ''
+    }
+    expect(ring).not.toBeNull()
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    pauseAll()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    const held = angle()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(held).not.toBe('')
+    expect(angle()).toBe(held)
+    resumeAll()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(angle()).not.toBe(held)
+  })
+
+  it('keeps the spinner held by pauseAll() when the icon moves', async () => {
+    const el = (await fixture(
+      html`<motion-state-icon name="loading"></motion-state-icon>`,
+    )) as MotionStateIcon
+    await elementUpdated(el)
+    const angle = () =>
+      [...el.shadowRoot!.querySelectorAll<SVGElement>('svg *')].find((n) =>
+        n.style.transform.includes('rotate'),
+      )?.style.transform ?? ''
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    pauseAll()
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    const held = angle()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(angle()).toBe(held)
+    resumeAll()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(angle()).not.toBe(held)
   })
 })

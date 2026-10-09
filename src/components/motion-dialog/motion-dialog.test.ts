@@ -22,6 +22,19 @@ describe('motion-dialog', () => {
     expect(nativeDialog(el).open).toBe(true)
   })
 
+  it('fires motion-open once when it opens, not when reopened during the exit', async () => {
+    const el = await mount()
+    let opened = 0
+    el.addEventListener('motion-open', () => opened++)
+    el.show()
+    await elementUpdated(el)
+    el.close()
+    await elementUpdated(el)
+    el.show()
+    await elementUpdated(el)
+    expect(opened).toBe(1)
+  })
+
   it('opens declaratively via the open attribute', async () => {
     const el = await mount()
     el.setAttribute('open', '')

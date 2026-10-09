@@ -4,3 +4,7 @@ export interface MotionGalleryProps {
   aspectRatio: string
   stagger: boolean
 }
+
+export interface GalleryIndexDetail {
+  index: number
+}

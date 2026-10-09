@@ -3,4 +3,5 @@ export interface MotionStretchProps {
   spread: number
   duration: number
   bounce: number
+  disabled: boolean
 }

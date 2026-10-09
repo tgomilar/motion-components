@@ -84,12 +84,12 @@ describe('motion-liquid', () => {
     el.pause()
     el.finish()
     expect(el.playState).toBe('finished')
-    expect(svgOf(el).animationsPaused()).toBe(false)
+    expect(svgOf(el).animationsPaused()).toBe(true)
     void el.play()
     el.pause()
     el.cancel()
     expect(el.playState).toBe('idle')
-    expect(svgOf(el).animationsPaused()).toBe(false)
+    expect(svgOf(el).animationsPaused()).toBe(true)
   })
 
   it('pause-on-hover pauses the distortion while hovered once playing', async () => {
@@ -97,10 +97,10 @@ describe('motion-liquid', () => {
       html`<motion-liquid text="Flow" pause-on-hover></motion-liquid>`,
     )) as MotionLiquid
     void el.play()
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('paused')
     expect(svgOf(el).animationsPaused()).toBe(true)
-    el.dispatchEvent(new MouseEvent('mouseleave'))
+    el.dispatchEvent(new PointerEvent('pointerleave'))
     expect(el.playState).toBe('running')
     expect(svgOf(el).animationsPaused()).toBe(false)
   })
@@ -111,7 +111,7 @@ describe('motion-liquid', () => {
     )) as MotionLiquid
     expect(el.pauseOnHover).toBe(false)
     void el.play()
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('running')
     expect(svgOf(el).animationsPaused()).toBe(false)
   })
@@ -130,7 +130,31 @@ describe('motion-liquid', () => {
     )) as MotionLiquid
     await elementUpdated(el)
     expect(el.playState).toBe('running')
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('paused')
+  })
+
+  it('cancel() and finish() stop the flow, and play() starts it again', async () => {
+    const el = (await fixture(html`<motion-liquid text="X"></motion-liquid>`)) as MotionLiquid
+    await elementUpdated(el)
+    const svg = el.shadowRoot!.querySelector('svg')!
+    expect(el.playState).toBe('running')
+    el.cancel()
+    expect(el.playState).toBe('idle')
+    expect(svg.animationsPaused()).toBe(true)
+    void el.play()
+    expect(svg.animationsPaused()).toBe(false)
+    el.finish()
+    expect(svg.animationsPaused()).toBe(true)
+  })
+
+  it('flows again after it is removed and added back', async () => {
+    const el = (await fixture(html`<motion-liquid text="Flow"></motion-liquid>`)) as MotionLiquid
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    await elementUpdated(el)
+    expect(el.playState).toBe('running')
+    expect(svgOf(el).animationsPaused()).toBe(false)
   })
 })

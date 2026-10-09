@@ -8,6 +8,7 @@ import { flag } from '../../utils/attributes.js'
 const BACKDROP = '--mc-_backdrop'
 
 export type { MotionDialogProps } from './motion-dialog.types.js'
+export type { MotionChangeDetail } from '../../utils/events.js'
 
 /**
  * Animated modal dialog. Slides up with spring physics on open, springs back
@@ -41,6 +42,7 @@ export type { MotionDialogProps } from './motion-dialog.types.js'
  *
  * @slot - Content rendered inside the dialog panel.
  *
+ * @fires motion-open - Dispatched when the dialog opens, as the entrance animation starts.
  * @fires motion-close - Dispatched after the close animation completes.
  *
  * @cssprop --mc-dialog-bg - Panel background. Default `var(--mc-color-surface, Canvas)`.
@@ -168,6 +170,7 @@ export class MotionDialog extends LitElement implements MotionDialogProps {
     if (!reopening) {
       this.setBackdrop(0)
       dialog.showModal()
+      this.dispatchEvent(new CustomEvent('motion-open', { bubbles: true, composed: true }))
     }
 
     if (this.reduced) {

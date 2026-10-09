@@ -24,6 +24,16 @@ describe('motion-sparkline', () => {
     expect(el.getAttribute('aria-label')).toBe('from 3 to 11, low 3, high 11')
   })
 
+  it('takes its numbers from data, ahead of values', async () => {
+    const el = await mount('values="3, 5"')
+    el.data = [2, 9, 4]
+    await elementUpdated(el)
+    expect(el.getAttribute('aria-label')).toBe('from 2 to 4, low 2, high 9')
+    el.data = null
+    await elementUpdated(el)
+    expect(el.getAttribute('aria-label')).toBe('from 3 to 5, low 3, high 5')
+  })
+
   it('draws in when scrolled into view', async () => {
     const io = stubIntersectionObserver()
     const el = await mount('values="3, 5, 4, 11"')

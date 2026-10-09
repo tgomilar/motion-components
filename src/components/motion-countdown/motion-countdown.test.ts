@@ -101,6 +101,24 @@ describe('motion-countdown', () => {
     expect(el.playState).toBe('finished')
   })
 
+  it('counts down again when a new future target is set after it finished', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    vi.setSystemTime(NOW)
+    const el = (await fixture(
+      html`<motion-countdown to=${after(1000)} format="minutes seconds"></motion-countdown>`,
+    )) as MotionCountdown
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(el.playState).toBe('finished')
+    let starts = 0
+    el.addEventListener('motion-start', () => starts++)
+    el.to = after(60000)
+    await elementUpdated(el)
+    expect(starts).toBe(1)
+    expect(el.playState).toBe('running')
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(digitText(el)).not.toBe('0000')
+  })
+
   it('fires motion-finish when the time is up under reduced motion', async () => {
     stubReducedMotion(true)
     const el = document.createElement('motion-countdown')
@@ -143,5 +161,32 @@ describe('motion-countdown', () => {
     const strips = [...el.shadowRoot!.querySelectorAll('.strip')]
     expect(strips).toHaveLength(4)
     expect(strips.every((s) => s.closest('[aria-hidden="true"]'))).toBe(true)
+  })
+
+  it('roll mode keeps each digit in its window after the size changes', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(NOW)
+    stubReducedMotion(true)
+    const el = (await fixture(
+      html`<motion-countdown
+        to=${after(330_500)}
+        format="minutes seconds"
+        roll
+        style="--mc-countdown-size: 24px"
+      ></motion-countdown>`,
+    )) as MotionCountdown
+    await elementUpdated(el)
+    await new Promise((resolve) => setTimeout(resolve, 250))
+    const shown = () =>
+      [...el.shadowRoot!.querySelectorAll<HTMLElement>('.reel')].map((reel) => {
+        const top = reel.getBoundingClientRect().top
+        const digits = [...reel.querySelectorAll<HTMLElement>('.digit')]
+        const hit = digits.find((d) => Math.abs(d.getBoundingClientRect().top - top) < 1)
+        return hit?.textContent ?? '?'
+      })
+    expect(shown().join('')).toBe('0530')
+    el.style.setProperty('--mc-countdown-size', '64px')
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    expect(shown().join('')).toBe('0530')
   })
 })

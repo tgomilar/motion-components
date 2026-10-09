@@ -124,16 +124,23 @@ describe('motion-ticker', () => {
     expect(focusable).toEqual(read)
   })
 
-  it('cancel() drops back to idle', async () => {
-    const el = await ticker()
+  it('cancel() drops back to idle with the items lined up at the start', async () => {
+    const el = await scrollingTicker()
+    expect(trackX(el)).toBeLessThan(0)
     el.cancel()
     expect(el.playState).toBe('idle')
+    expect(trackX(el)).toBe(0)
+    await sleep(120)
+    expect(trackX(el)).toBe(0)
   })
 
-  it('finish() settles playback to finished', async () => {
-    const el = await ticker()
+  it('finish() settles to finished with the items lined up at the start', async () => {
+    const el = await scrollingTicker()
     el.finish()
     expect(el.playState).toBe('finished')
+    expect(trackX(el)).toBe(0)
+    await sleep(120)
+    expect(trackX(el)).toBe(0)
   })
 
   it('keeps scrolling while it decelerates on hover', async () => {
@@ -308,5 +315,31 @@ describe('motion-ticker', () => {
     el.dispatchEvent(new MouseEvent('mouseenter'))
     await sleep(120)
     expect(el.playState).toBe('running')
+  })
+
+  it('leaving does not resume a pause the hover did not make', async () => {
+    const host = document.createElement('div')
+    host.innerHTML = '<motion-ticker><span>A</span><span>B</span></motion-ticker>'
+    const el = (await fixture(host.firstElementChild!)) as HTMLElement & {
+      pause(): void
+      readonly playState: string
+    }
+    await elementUpdated(el as never)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    el.pause()
+    expect(el.playState).toBe('paused')
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new MouseEvent('mouseleave'))
+    expect(el.playState).toBe('paused')
+  })
+
+  it('keeps a pause() made during a hover hold after the pointer leaves', async () => {
+    const el = await scrollingTicker()
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    await sleep(80)
+    el.pause()
+    el.dispatchEvent(new MouseEvent('mouseleave'))
+    await sleep(80)
+    expect(el.playState).toBe('paused')
   })
 })

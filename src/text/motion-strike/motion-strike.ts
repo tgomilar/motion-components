@@ -65,11 +65,18 @@ export class MotionStrike extends MarkElement implements MotionStrikeProps {
         (var(--mc-_mark-progress, 0) - var(--mc-_line-from)) / var(--mc-_line-span),
         1
       );
+      --mc-_mark-from: clamp(
+        0,
+        (var(--mc-_mark-tail, 0) - var(--mc-_line-from)) / var(--mc-_line-span),
+        1
+      );
+      --mc-_mark-len: max(calc(var(--mc-_mark-drawn) - var(--mc-_mark-from)), 0);
+      --mc-_mark-at: calc(var(--mc-_mark-from) / max(calc(1 - var(--mc-_mark-len)), 0.0001));
       position: absolute;
       background-image: linear-gradient(var(--mc-_mark-ink), var(--mc-_mark-ink));
       background-repeat: no-repeat;
-      background-position: 0 58%;
-      background-size: calc(var(--mc-_mark-drawn) * 100%) var(--mc-mark-thickness, 2px);
+      background-position: calc(var(--mc-_mark-at) * 100%) 58%;
+      background-size: calc(var(--mc-_mark-len) * 100%) var(--mc-mark-thickness, 2px);
     }
   `
 

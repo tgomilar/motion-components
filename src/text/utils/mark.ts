@@ -1,9 +1,13 @@
 import { LitElement } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
-import type { AnimationPlaybackControls } from 'motion'
-import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
-import type { PlaybackRun } from '../../utils/playback.js'
+import {
+  Controllable,
+  PlaybackController,
+  controlsHandle,
+  controlsRun,
+} from '../../utils/playback.js'
+import type { PlaybackHandle, PlaybackRun } from '../../utils/playback.js'
 import { flag } from '../../utils/attributes.js'
 import { LoopCycle, LoopTrigger, pauseOnHover } from './loop.js'
 import type { LoopProps } from './loop.js'
@@ -12,11 +16,14 @@ import type { MarkProps, MarkTrigger } from './mark.types.js'
 export type { MarkProps, MarkTrigger } from './mark.types.js'
 
 const PROGRESS = '--mc-_mark-progress'
+const TAIL = '--mc-_mark-tail'
 
 /**
  * Shared base for marks that draw onto their text: the subclass paints the
- * mark from the CSS custom property `--mc-_mark-progress`, and this class
- * springs it from 0 to 1 on the chosen trigger, or cycles it when `loop`.
+ * mark between the CSS custom properties `--mc-_mark-tail` and
+ * `--mc-_mark-progress`. This class springs the progress from 0 to 1 on the
+ * chosen trigger. With `loop`, it then springs the tail from 0 to 1, so the
+ * mark leaves at its end, and starts again.
  */
 export class MarkElement extends Controllable(LitElement) implements MarkProps, LoopProps {
   /** What draws the mark: `'view'` (scrolled into view), `'hover'` (pointer enter, undraws on leave) or `'mount'`. */
@@ -41,7 +48,9 @@ export class MarkElement extends Controllable(LitElement) implements MarkProps, 
   @property({ type: Number }) threshold = 0.6
 
   private hoverTarget: HTMLElement = this
-  private hoverControls: AnimationPlaybackControls | null = null
+  private hoverGoal: number | null = null
+  private sweepNext = false
+  private keep = false
   private resizer: ResizeObserver | null = null
   private detachPauseOnHover: (() => void) | null = null
 
@@ -60,24 +69,125 @@ export class MarkElement extends Controllable(LitElement) implements MarkProps, 
   }
 
   playback: PlaybackController = new PlaybackController(this, {
-    start: () => (this.loop ? { handle: this.cycle.start() } : this.startDraw()),
+    start: () => {
+      if (this.sweepNext) {
+        this.sweepNext = false
+        return this.sweepRun()
+      }
+      if (this.hoverGoal !== null) return this.hoverRun(this.hoverGoal)
+      return this.loop ? { handle: this.cycle.start() } : this.startDraw()
+    },
     applyFinalState: () => {
       this.cycle.stop()
-      this.setProgress(1)
+      this.setTail(0)
+      this.setProgress(this.hoverGoal === 0 ? 0 : 1)
     },
     applyInitialState: () => {
+      if (this.keep) return
       this.cycle.stop()
+      this.setTail(0)
       this.setProgress(0)
     },
   })
 
   private cycle: LoopCycle = new LoopCycle({
     leg: (out: boolean) =>
-      controlsRun(animate(this, { [PROGRESS]: [this.progress, out ? 0 : 1] }, this.spring)),
+      out
+        ? this.erase()
+        : controlsRun(animate(this, { [PROGRESS]: [this.progress, 1] }, this.spring)),
     hold: () => this.hold,
     gap: () => this.gap,
     delay: () => this.delay,
   })
+
+  /**
+   * Erases the mark from its start, so it leaves at its end, then resets it for
+   * the next draw. A finish or cancel skips the reset, so the state they apply stays.
+   */
+  private erase(): PlaybackRun {
+    const controls = animate(this, { [TAIL]: [this.tail, 1] }, { ...this.spring, bounce: 0 })
+    let live = true
+    return {
+      handle: {
+        ...controlsHandle(controls),
+        finish: () => {
+          live = false
+          controls.complete()
+        },
+        cancel: () => {
+          live = false
+          if (this.keep) controls.stop()
+          else controls.cancel()
+        },
+      },
+      done: {
+        then: (resolve: () => void) =>
+          controls.then(() => {
+            if (live) {
+              this.setTail(0)
+              this.setProgress(0)
+            }
+            resolve()
+          }),
+      },
+    }
+  }
+
+  /** Springs the head to `goal` from wherever it is, drawing back any part a sweep has erased. */
+  private hoverRun(goal: number): PlaybackRun {
+    const controls = animate(
+      this,
+      { [PROGRESS]: [this.progress, goal], [TAIL]: [this.tail, 0] },
+      this.spring,
+    )
+    return {
+      handle: {
+        ...controlsHandle(controls),
+        cancel: () => (this.keep ? controls.stop() : controls.cancel()),
+        finish: () => {
+          controls.stop()
+          this.setTail(0)
+          this.setProgress(goal)
+        },
+      },
+      done: controls,
+    }
+  }
+
+  /** One sweep as a playback run: erase from the start, then draw in again. */
+  private sweepRun(): PlaybackRun {
+    const erase = this.erase()
+    let phase: PlaybackHandle = erase.handle
+    let ended = false
+    let settle: () => void = () => {}
+    const done = new Promise<void>((resolve) => (settle = resolve))
+    erase.done?.then(() => {
+      if (ended) return
+      const draw = animate(this, { [PROGRESS]: [0, 1] }, this.spring)
+      phase = {
+        ...controlsHandle(draw),
+        cancel: () => (this.keep ? draw.stop() : draw.cancel()),
+      }
+      void draw.then(() => settle())
+    })
+    return {
+      handle: {
+        pause: () => phase.pause(),
+        resume: () => phase.resume(),
+        finish: () => {
+          ended = true
+          phase.cancel()
+          this.setTail(0)
+          this.setProgress(1)
+        },
+        cancel: () => {
+          ended = true
+          phase.cancel()
+        },
+      },
+      done,
+    }
+  }
 
   private startDraw(): PlaybackRun {
     return controlsRun(
@@ -87,6 +197,7 @@ export class MarkElement extends Controllable(LitElement) implements MarkProps, 
 
   connectedCallback() {
     super.connectedCallback()
+    this.setTail(0)
     this.setProgress(0)
     this.resizer = new ResizeObserver(() => this.layout())
     this.resizer.observe(this)
@@ -122,7 +233,19 @@ export class MarkElement extends Controllable(LitElement) implements MarkProps, 
   /** Draws the mark again from the start. */
   replay() {
     this.viewport.reset()
+    this.hoverGoal = null
     this.cancel()
+    void this.play()
+  }
+
+  /**
+   * Sweeps a drawn mark across: it erases from its start, so it leaves at its
+   * end, then draws in again from the start. Calls while a sweep runs, before
+   * the mark is drawn, or under reduced motion do nothing.
+   */
+  sweep() {
+    if (this.reduced || this.playState !== 'finished' || this.progress < 1) return
+    this.sweepNext = true
     void this.play()
   }
 
@@ -145,11 +268,10 @@ export class MarkElement extends Controllable(LitElement) implements MarkProps, 
   }
 
   private teardown() {
+    this.hoverGoal = null
     this.viewport.disarm()
     this.hoverTarget.removeEventListener('pointerenter', this.onEnter)
     this.hoverTarget.removeEventListener('pointerleave', this.onLeave)
-    this.hoverControls?.stop()
-    this.hoverControls = null
     this.detachPauseOnHover?.()
     this.detachPauseOnHover = null
   }
@@ -158,13 +280,15 @@ export class MarkElement extends Controllable(LitElement) implements MarkProps, 
 
   private onLeave = () => this.drawTo(0)
 
-  private drawTo(progress: number) {
-    this.hoverControls?.stop()
-    if (this.reduced) {
-      this.setProgress(progress)
-      return
+  /** Draws towards `goal` from wherever the mark is, as a playback run, so an interrupted run keeps its place. */
+  private drawTo(goal: number) {
+    this.hoverGoal = goal
+    if (this.playState === 'running' || this.playState === 'paused') {
+      this.keep = true
+      this.cancel()
+      this.keep = false
     }
-    this.hoverControls = animate(this, { [PROGRESS]: [this.progress, progress] }, this.spring)
+    void this.play()
   }
 
   private get progress() {
@@ -173,5 +297,13 @@ export class MarkElement extends Controllable(LitElement) implements MarkProps, 
 
   private setProgress(progress: number) {
     this.style.setProperty(PROGRESS, String(progress))
+  }
+
+  private get tail() {
+    return Number(this.style.getPropertyValue(TAIL)) || 0
+  }
+
+  private setTail(tail: number) {
+    this.style.setProperty(TAIL, String(tail))
   }
 }

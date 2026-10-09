@@ -4,6 +4,7 @@ import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
+import { isLoopPaused, registerLoop, unregisterLoop } from '../../utils/registry.js'
 import { ICONS } from './icons.js'
 import type {
   MotionStateIconProps,
@@ -16,6 +17,7 @@ export type {
   StateIconChangeDetail,
   StateIconName,
 } from './motion-state-icon.types.js'
+export type { MotionChangeDetail } from '../../utils/events.js'
 
 /**
  * An icon that morphs between two states with spring physics: menu and close,
@@ -48,7 +50,7 @@ export type {
  *
  * @element motion-state-icon
  *
- * @fires motion-change - When `toggle` is set and the user switches the state. `detail: { active }`.
+ * @fires motion-change - When a click, key or `flip()` switches the state. Setting `active` does not fire it. `detail: { active }`.
  *
  * @cssprop --mc-icon-size - Width and height of the icon. Default `1.5em`.
  * @cssprop --mc-icon-color - Line color. Default `currentColor`.
@@ -135,6 +137,7 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
 
   connectedCallback() {
     super.connectedCallback()
+    registerLoop(this, () => this.spin)
     this.addEventListener('click', this.onClick)
     this.addEventListener('keydown', this.onKey)
     if (this.hasUpdated) this.updateSpin()
@@ -142,6 +145,7 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
 
   disconnectedCallback() {
     super.disconnectedCallback()
+    unregisterLoop(this)
     this.removeEventListener('click', this.onClick)
     this.removeEventListener('keydown', this.onKey)
     this.spin?.stop()
@@ -218,13 +222,15 @@ export class MotionStateIcon extends LitElement implements MotionStateIconProps 
         { rotate: [0, 360] },
         { duration: 0.9, repeat: Infinity, ease: 'linear' },
       )
+      if (isLoopPaused(this)) this.spin.pause()
     } else if (!shouldSpin && this.spin) {
       this.spin.stop()
       this.spin = null
     }
   }
 
-  private flip() {
+  /** Switches `active` and fires `motion-change`, as a click on a `toggle` icon does. */
+  flip() {
     this.active = !this.active
     this.dispatchEvent(
       new CustomEvent<StateIconChangeDetail>('motion-change', {

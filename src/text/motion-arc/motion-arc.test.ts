@@ -143,10 +143,10 @@ describe('motion-arc', () => {
     const el = (await fixture(
       html`<motion-arc text="ABC" duration="6" pause-on-hover></motion-arc>`,
     )) as MotionArc
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(controls.pause).toHaveBeenCalledOnce()
     expect(el.playState).toBe('paused')
-    el.dispatchEvent(new MouseEvent('mouseleave'))
+    el.dispatchEvent(new PointerEvent('pointerleave'))
     expect(controls.play).toHaveBeenCalledOnce()
     expect(el.playState).toBe('running')
   })
@@ -156,7 +156,7 @@ describe('motion-arc', () => {
       html`<motion-arc text="ABC" duration="6" pause-on-hover="false"></motion-arc>`,
     )) as MotionArc
     expect(el.pauseOnHover).toBe(false)
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(controls.pause).not.toHaveBeenCalled()
     expect(el.playState).toBe('running')
   })

@@ -32,6 +32,7 @@ describe('motion-progress', () => {
       await elementUpdated(el)
       await frames(3)
       expect(scale(el)).toBe(0)
+      expect(el.playState).toBe('running')
 
       const max = document.documentElement.scrollHeight - window.innerHeight
       window.scrollTo(0, max / 2)

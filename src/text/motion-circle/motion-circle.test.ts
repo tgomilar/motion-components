@@ -99,12 +99,23 @@ describe('motion-circle', () => {
     const el = (await fixture(
       html`<motion-circle text="ABCD" pause-on-hover></motion-circle>`,
     )) as MotionCircle
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(controls.pause).toHaveBeenCalledOnce()
     expect(el.playState).toBe('paused')
-    el.dispatchEvent(new MouseEvent('mouseleave'))
+    el.dispatchEvent(new PointerEvent('pointerleave'))
     expect(controls.play).toHaveBeenCalledOnce()
     expect(el.playState).toBe('running')
+  })
+
+  it('leaving the element does not resume a pause it did not make', async () => {
+    const el = (await fixture(
+      html`<motion-circle text="ABCD" pause-on-hover></motion-circle>`,
+    )) as MotionCircle
+    el.pause()
+    expect(el.playState).toBe('paused')
+    el.dispatchEvent(new PointerEvent('pointermove'))
+    el.dispatchEvent(new PointerEvent('pointerleave'))
+    expect(el.playState).toBe('paused')
   })
 
   it('pause-on-hover="false" keeps rotating on hover', async () => {
@@ -112,7 +123,7 @@ describe('motion-circle', () => {
       html`<motion-circle text="ABCD" pause-on-hover="false"></motion-circle>`,
     )) as MotionCircle
     expect(el.pauseOnHover).toBe(false)
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(controls.pause).not.toHaveBeenCalled()
     expect(el.playState).toBe('running')
   })

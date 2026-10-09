@@ -56,19 +56,22 @@ export class MotionMarker extends MarkElement implements MotionMarkerProps {
   static styles = css`
     :host {
       --mc-_mark-ink: var(--mc-marker-color, rgb(250 204 21 / 0.4));
+      --mc-_mark-drawn: min(var(--mc-_mark-progress, 0), 1);
+      --mc-_mark-from: clamp(0, var(--mc-_mark-tail, 0), 1);
+      --mc-_mark-len: max(calc(var(--mc-_mark-drawn) - var(--mc-_mark-from)), 0);
+      --mc-_mark-at: calc(var(--mc-_mark-from) / max(calc(1 - var(--mc-_mark-len)), 0.0001));
       display: inline;
       padding: 0 0.15em;
       margin: 0 -0.15em;
       border-radius: 0.2em;
       background-image: linear-gradient(var(--mc-_mark-ink), var(--mc-_mark-ink));
       background-repeat: no-repeat;
-      background-position: 0 85%;
-      background-size: calc(min(var(--mc-_mark-progress, 0), 1) * 100%) 75%;
+      background-position: calc(var(--mc-_mark-at) * 100%) 85%;
+      background-size: calc(var(--mc-_mark-len) * 100%) 75%;
       -webkit-box-decoration-break: clone;
       box-decoration-break: clone;
     }
     :host([shape='wave']) {
-      --mc-_mark-drawn: min(var(--mc-_mark-progress, 0), 1);
       display: inline-block;
       position: relative;
       isolation: isolate;
@@ -89,8 +92,9 @@ export class MotionMarker extends MarkElement implements MotionMarkerProps {
       stroke: var(--mc-_mark-ink);
       stroke-width: 0.8em;
       stroke-linecap: round;
-      stroke-dasharray: var(--mc-_mark-drawn) calc(1 - var(--mc-_mark-drawn));
-      stroke-opacity: clamp(0, calc(var(--mc-_mark-drawn) * 50), 1);
+      stroke-dasharray: var(--mc-_mark-len) 2;
+      stroke-dashoffset: calc(-1 * var(--mc-_mark-from));
+      stroke-opacity: clamp(0, calc(var(--mc-_mark-len) * 50), 1);
     }
   `
 

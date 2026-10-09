@@ -7,4 +7,9 @@ export interface MotionFlipCardProps {
   duration: number
   bounce: number
   perspective: number
+  flipped: boolean
+}
+
+export interface FlipCardChangeDetail {
+  flipped: boolean
 }

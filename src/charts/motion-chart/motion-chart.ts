@@ -25,6 +25,7 @@ const GAP = 2
 const RADIUS = 4
 const CHAR = 6.5
 const PAD = { top: 10, right: 8, bottom: 24 }
+const EDGE_FADE = 16
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -39,7 +40,9 @@ function barPath(x: number, width: number, base: number, end: number) {
  * `<table>` (first column labels, one series per column), or set `data` from
  * JavaScript. Bars grow and lines draw in when the chart scrolls into view.
  * When the data changes, every bar and point springs to its new value, and a
- * change in the middle of an animation continues from where the chart is.
+ * change in the middle of an animation continues from where the chart is. The
+ * scale springs to its new range too: old grid lines fade out and new ones fade
+ * in. Set `animate-scale="false"` to switch the scale at once.
  *
  * **Use it for:** comparing values across categories with bars, or showing a
  * trend over time with lines, for up to eight series.
@@ -75,7 +78,7 @@ function barPath(x: number, width: number, base: number, end: number) {
  *
  * @cssprop --mc-chart-height - Height of the chart, including the legend. Default `16rem`.
  * @cssprop --mc-chart-1 - Color of the first series. `--mc-chart-2` to `--mc-chart-8` color the others.
- * @cssprop --mc-chart-surface - Background behind the chart, used for the ring around points. Default `Canvas`.
+ * @cssprop --mc-chart-surface - Background of the tooltip. Default `Canvas`.
  *
  * @csspart legend - The legend, shown for two or more series.
  * @csspart tooltip - The tooltip.
@@ -117,6 +120,8 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
   @property({ type: Boolean, converter: flag }) legend = true
   /** Accessible name of the chart. */
   @property({ type: String }) label = ''
+  /** Springs the scale and its grid lines to a new range when the data changes. Set `animate-scale="false"` to switch the scale at once. */
+  @property({ type: Boolean, converter: flag, attribute: 'animate-scale' }) animateScale = true
 
   @state() private model: ChartData = { labels: [], series: [] }
   @state() private active = -1
@@ -145,10 +150,6 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
         stroke-linecap: round;
         stroke-linejoin: round;
       }
-      .point {
-        stroke: var(--mc-chart-surface, Canvas);
-        stroke-width: 2;
-      }
       .crosshair {
         stroke: color-mix(in srgb, currentColor 35%, transparent);
       }
@@ -158,6 +159,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
   private springs = new SpringValues(() => this.requestUpdate())
   private draw = new SpringValues(() => this.requestUpdate())
   private domain = new SpringValues(() => this.requestUpdate())
+  private scaleFrom: { ticks: number[]; domain: number[]; target: number[] } | null = null
   private fmt = formatter('')
   private announcement = ''
   private tipShown = false
@@ -251,6 +253,12 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
 
   private retarget() {
     const before = this.model
+    const previous =
+      this.scaleProgress() < 1 && this.size.width && before.labels.length
+        ? this.gridLines(this.layout())
+            .filter((line) => line.o >= 0.5)
+            .map((line) => line.t)
+        : this.scale().ticks
     const next = this.readData()
     const n = before.labels.length
     const m = next.labels.length
@@ -266,17 +274,56 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     const { min, max } = this.scale()
     if (this.playState === 'idle') this.showInitial()
     else if (reduced()) {
+      this.scaleFrom = null
       this.springs.set(targets)
       this.domain.set([min, max])
     } else {
       this.springs.to(targets, () => this.spring())
-      this.domain.to([min, max], () => ({ ...this.spring(), bounce: 0 }))
+      if (this.animateScale) {
+        this.scaleFrom = {
+          ticks: previous,
+          domain: [...this.domain.current],
+          target: [min, max],
+        }
+        this.domain.to([min, max], () => ({ ...this.spring(), bounce: 0 }))
+      } else {
+        this.scaleFrom = null
+        this.domain.set([min, max])
+      }
     }
+  }
+
+  /** How far the scale has moved from its previous range to the new one, from 0 to 1. */
+  private scaleProgress() {
+    const from = this.scaleFrom
+    if (!from || from.domain.length !== 2) return 1
+    const [lo, hi] = this.domain.current
+    const [lo0, hi0] = from.domain
+    const [lo1, hi1] = from.target
+    const top = Math.abs(hi1 - hi0) >= Math.abs(lo1 - lo0)
+    const span = top ? hi1 - hi0 : lo1 - lo0
+    if (!span) return 1
+    return Math.max(0, Math.min(1, ((top ? hi : lo) - (top ? hi0 : lo0)) / span))
+  }
+
+  /** Grid lines to draw, with opacity: lines of the old scale fade out, new ones fade in, and lines past the plot edges fade away. */
+  private gridLines(L: ReturnType<MotionChart['layout']>) {
+    const next = L.scale.ticks
+    const p = this.scaleProgress()
+    const old = p < 1 ? (this.scaleFrom?.ticks ?? []) : []
+    const top = PAD.top
+    const bottom = PAD.top + L.plotH
+    const edge = (y: number) => Math.max(0, 1 - Math.max(top - y, y - bottom, 0) / EDGE_FADE)
+    return [
+      ...next.map((t) => ({ t, o: (p < 1 && !old.includes(t) ? p : 1) * edge(L.y(t)) })),
+      ...old.filter((t) => !next.includes(t)).map((t) => ({ t, o: (1 - p) * edge(L.y(t)) })),
+    ].filter((line) => line.o > 0.01)
   }
 
   private showInitial() {
     const targets = this.targets()
     const { min, max } = this.scale()
+    this.scaleFrom = null
     this.domain.set([min, max])
     if (this.type === 'bar') {
       this.springs.set(targets.map(() => 0))
@@ -289,6 +336,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
 
   private showFinal() {
     const { min, max } = this.scale()
+    this.scaleFrom = null
     this.domain.set([min, max])
     this.springs.set(this.targets())
     this.draw.set([1])
@@ -336,15 +384,20 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     const plotW = Math.max(0, this.size.width - left - PAD.right)
     const plotH = Math.max(0, this.size.height - PAD.top - PAD.bottom)
     const span = high - low || 1
-    const band = labels.length ? plotW / labels.length : 0
+    const n = labels.length
+    const band = n ? plotW / n : 0
+    const line = this.type === 'line'
+    const step = line ? (n > 1 ? plotW / (n - 1) : plotW) : band
     return {
       scale,
       left,
       plotW,
       plotH,
       band,
+      step,
       y: (v: number) => PAD.top + plotH * (1 - (v - low) / span),
-      x: (i: number) => left + band * (i + 0.5),
+      x: (i: number) =>
+        line ? (n > 1 ? left + step * i : left + plotW / 2) : left + band * (i + 0.5),
     }
   }
 
@@ -372,18 +425,17 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     const plotBottom = PAD.top + L.plotH
     return svg`<svg aria-hidden="true">
       <defs><clipPath id="plot"><rect x="0" y="0" width=${this.size.width} height=${plotBottom} /></clipPath></defs>
-      ${L.scale.ticks
-        .filter((t) => L.y(t) >= PAD.top - 1 && L.y(t) <= plotBottom + 1)
-        .map(
-          (
-            t,
-          ) => svg`<line class="grid" x1=${L.left} x2=${L.left + L.plotW} y1=${L.y(t)} y2=${L.y(t)} />
-          <text class="tick" x=${L.left - 8} y=${L.y(t)} text-anchor="end" dominant-baseline="middle">${this.fmt(t)}</text>`,
-        )}
+      ${this.gridLines(L).map(
+        ({
+          t,
+          o,
+        }) => svg`<line class="grid" opacity=${o} x1=${L.left} x2=${L.left + L.plotW} y1=${L.y(t)} y2=${L.y(t)} />
+          <text class="tick" opacity=${o} x=${L.left - 8} y=${L.y(t)} text-anchor="end" dominant-baseline="middle">${this.fmt(t)}</text>`,
+      )}
       ${labels.map((label, i) =>
         i % every
           ? nothing
-          : svg`<text class="tick" x=${L.x(i)} y=${PAD.top + L.plotH + 16} text-anchor="middle">${label}</text>`,
+          : svg`<text class="tick" x=${L.x(i)} y=${PAD.top + L.plotH + 16} text-anchor=${this.labelAnchor(i)}>${label}</text>`,
       )}
       ${
         this.type === 'line' && a >= 0
@@ -462,7 +514,8 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     const h = tip.offsetHeight
     const cx = L.x(this.active)
     const above = L.y(peak) - h - 12
-    const side = cx + L.band / 2 + w <= this.size.width ? cx + L.band / 2 : cx - L.band / 2 - w
+    const half = L.step / 2
+    const side = cx + half + w <= this.size.width ? cx + half : cx - half - w
     const x =
       above >= 0
         ? Math.min(Math.max(0, cx - w / 2), Math.max(0, this.size.width - w))
@@ -475,6 +528,13 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
       animate(tip, { x, y }, { type: 'spring', duration: 0.35, bounce: 0.15 })
     }
     this.tipShown = true
+  }
+
+  /** Line charts put the first and last points on the plot edges, so their labels anchor inwards. */
+  private labelAnchor(i: number) {
+    const n = this.model.labels.length
+    if (this.type !== 'line' || n < 2) return 'middle'
+    return i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'
   }
 
   private setActive(index: number) {
@@ -492,7 +552,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const x = e.clientX - rect.left - L.left
     if (x < 0 || x > L.plotW || !L.band) return this.setActive(-1)
-    this.setActive(Math.floor(x / L.band))
+    this.setActive(this.type === 'line' ? Math.round(x / L.step) : Math.floor(x / L.band))
   }
 
   private onPointerLeave = () => this.setActive(-1)

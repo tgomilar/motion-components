@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
-import type { AnimationPlaybackControls } from 'motion'
+import type { AnimationPlaybackControlsWithThen } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import { customElement } from '../../utils/define.js'
 import { escapeHtml } from '../utils/split-text.js'
@@ -70,7 +70,7 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
   private loopId: ReturnType<typeof setTimeout> | null = null
   private nextFireAt = 0
   private remaining = 0
-  private bursts: AnimationPlaybackControls[] = []
+  private bursts: AnimationPlaybackControlsWithThen[] = []
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -79,6 +79,18 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
       this.runGlitch()
+      if (this.trigger !== 'loop') {
+        const bursts = this.bursts
+        return {
+          handle: {
+            pause: () => bursts.forEach((c) => c.pause()),
+            resume: () => bursts.forEach((c) => c.play()),
+            finish: () => this.settleBursts('complete'),
+            cancel: () => this.settleBursts('cancel'),
+          },
+          done: { then: (resolve: () => void) => Promise.all(bursts).then(resolve) },
+        }
+      }
       this.schedule(this.interval * 1000)
       return {
         handle: {
@@ -116,14 +128,17 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
     this.main = this.querySelector('[data-mg-main]')
     this.r = this.querySelector('[data-mg-r]')
     this.b = this.querySelector('[data-mg-b]')
+    this.arm()
+  }
 
-    if (this.trigger === 'hover') {
-      this.addEventListener('mouseenter', this.runGlitch)
-    } else if (this.trigger === 'mount') {
-      this.runGlitch()
-    } else if (this.trigger === 'loop') {
-      void this.play()
-    }
+  connectedCallback() {
+    super.connectedCallback()
+    if (this.hasUpdated && this.main) this.arm()
+  }
+
+  private arm() {
+    if (this.trigger === 'hover') this.addEventListener('pointerenter', this.onEnter)
+    else void this.play()
   }
 
   private schedule(ms: number) {
@@ -176,9 +191,23 @@ export class MotionGlitch extends Controllable(LitElement) implements MotionGlit
     ]
   }
 
-  /** Triggers a single glitch burst manually. */
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    this.removeEventListener('pointerenter', this.onEnter)
+  }
+
+  private onEnter = () => this.replay()
+
+  /** Plays the glitch again from the start: one burst, or the loop from its first burst. */
+  replay() {
+    this.cancel()
+    void this.play()
+  }
+
+  /** Fires one extra burst. While a loop runs, the loop keeps its rhythm; otherwise this is `replay()`. */
   glitch() {
-    this.runGlitch()
+    if (this.trigger === 'loop' && this.playState === 'running') this.runGlitch()
+    else this.replay()
   }
 
   render() {

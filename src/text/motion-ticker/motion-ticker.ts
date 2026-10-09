@@ -121,6 +121,7 @@ export class MotionTicker extends Controllable(BaseElement) {
               cancelAnimationFrame(this.rateRaf)
               this.rateRaf = null
             }
+            this.rest()
           },
           cancel: () => {
             this.ctrls?.stop()
@@ -134,9 +135,18 @@ export class MotionTicker extends Controllable(BaseElement) {
         },
       }
     },
-    applyFinalState: () => {},
-    applyInitialState: () => {},
+    applyFinalState: () => this.rest(),
+    applyInitialState: () => this.rest(),
   })
+
+  /** A seamless loop starts and ends at the same place: the items lined up from the start edge. */
+  private rest() {
+    if (!this.track || !this.setA) return
+    const w = this.setA.offsetWidth + this.gap
+    const x = this.direction === 'left' ? 0 : -w
+    this.track.style.transform = `translateX(${x}px)`
+    animate(this.track, { x }, { duration: 0 })
+  }
 
   private get speed(): MotionTickerProps['speed'] {
     return Number(this.getAttribute('speed') ?? 60)
@@ -386,7 +396,9 @@ export class MotionTicker extends Controllable(BaseElement) {
         this.rateRaf = null
         if (this.targetRate === 0) {
           this.currentRate = 0
+          this.selfPausing = true
           this.pause()
+          this.selfPausing = false
         } else {
           this.currentRate = this.targetRate
           this.ctrls.speed = this.currentRate
@@ -400,10 +412,24 @@ export class MotionTicker extends Controllable(BaseElement) {
     this.rateRaf = requestAnimationFrame(step)
   }
 
+  private hoverHeld = false
+  private selfPausing = false
+
+  /** Holds the ticker. A pause from your code also ends any hover hold, so leaving does not lift it. */
+  override pause() {
+    if (!this.selfPausing) this.hoverHeld = false
+    super.pause()
+  }
+
   private onEnter = () => {
+    if (this.playState !== 'running') return
+    this.hoverHeld = true
     this.lerpRate(0)
   }
   private onLeave = () => {
+    // Only lift a slowdown the hover made: a pause() or pauseAll() stays.
+    if (!this.hoverHeld) return
+    this.hoverHeld = false
     // A keyboard pause is an explicit request; the pointer or focus wandering
     // off must not override it. Space lifts it again.
     if (this.keyboardPaused) return

@@ -3,6 +3,7 @@ import { property } from 'lit/decorators.js'
 import { Controllable, PlaybackController, frameLoop } from '../../utils/playback.js'
 import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionPerspectiveProps, VanishDirection } from './motion-perspective.types.js'
+import { pauseOnHover } from '../utils/loop.js'
 import { customElement } from '../../utils/define.js'
 import { flag, parseFlag } from '../../utils/attributes.js'
 
@@ -139,26 +140,25 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
     },
   })
 
+  private detachHover: (() => void) | null = null
+
   connectedCallback() {
     // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
     if (!this.text) this.text = this.textContent?.trim() ?? ''
     this.textContent = ''
     super.connectedCallback()
-    this.addEventListener('mouseenter', this.onEnter)
-    this.addEventListener('mouseleave', this.onLeave)
+    this.detachHover = pauseOnHover(
+      this,
+      () => this.pauseOnHover,
+      () => this.pause(),
+      () => void this.play(),
+    )
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.removeEventListener('mouseenter', this.onEnter)
-    this.removeEventListener('mouseleave', this.onLeave)
-  }
-
-  private onEnter = () => {
-    if (this.pauseOnHover) this.pause()
-  }
-  private onLeave = () => {
-    if (this.pauseOnHover && this.playState === 'paused') void this.play()
+    this.detachHover?.()
+    this.detachHover = null
   }
 
   updated(changed: Map<string, unknown>) {

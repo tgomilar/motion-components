@@ -1,5 +1,5 @@
-export type IconNudge = 'nudge-up' | 'nudge-down' | 'nudge-left' | 'nudge-right'
-export type IconMotion = 'pop' | 'bounce' | 'rotate' | 'wiggle' | 'pulse' | IconNudge
+export type IconSlide = 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right'
+export type IconMotion = 'pop' | 'bounce' | 'rotate' | 'wiggle' | 'pulse' | IconSlide
 export type IconAnimation = 'draw' | IconMotion | `draw ${IconMotion}`
 export type IconTrigger = 'hover' | 'click' | 'view' | 'mount' | 'loop'
 

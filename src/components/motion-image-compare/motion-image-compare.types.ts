@@ -6,3 +6,7 @@ export interface MotionImageCompareProps {
   bounce: number
   duration: number
 }
+
+export interface ImageCompareChangeDetail {
+  position: number
+}

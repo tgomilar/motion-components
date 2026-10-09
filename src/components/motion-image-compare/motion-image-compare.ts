@@ -5,7 +5,12 @@ import type { AnimationPlaybackControls } from 'motion'
 import type { MotionImageCompareProps, CompareOrientation } from './motion-image-compare.types.js'
 import { customElement } from '../../utils/define.js'
 
-export type { MotionImageCompareProps, CompareOrientation } from './motion-image-compare.types.js'
+export type {
+  MotionImageCompareProps,
+  CompareOrientation,
+  ImageCompareChangeDetail,
+} from './motion-image-compare.types.js'
+export type { MotionChangeDetail } from '../../utils/events.js'
 
 /**
  * Before/after image comparison slider with a draggable, spring-damped handle.
@@ -39,6 +44,8 @@ export type { MotionImageCompareProps, CompareOrientation } from './motion-image
  *
  * @slot before - The left/top image (visible behind the clip).
  * @slot after  - The right/bottom image (revealed by dragging).
+ *
+ * @fires motion-change - When a drag, click or key moves the split. `detail: { position }`, the percentage it moves to.
  *
  * @cssprop [--mc-color-accent=#2563eb] - Color of the keyboard focus ring on the knob.
  *
@@ -141,6 +148,7 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
   `
 
   private dragging = false
+  private goal: number | null = null
   private motion: AnimationPlaybackControls | null = null
 
   private get reduced() {
@@ -167,15 +175,37 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
   }
 
   firstUpdated() {
-    this.pos = this.clamp(this.start)
+    this.pos = this.goal ?? this.clamp(this.start)
+    this.goal = null
     this.apply()
   }
 
   updated(changed: Map<string, unknown>) {
     if (changed.has('orientation') || changed.has('start')) {
-      if (changed.has('start')) this.pos = this.clamp(this.start)
+      if (changed.has('start') && changed.get('start') !== undefined) {
+        this.stop()
+        this.pos = this.clamp(this.start)
+      }
       this.apply()
     }
+  }
+
+  /**
+   * Split position as a percentage (0–100), where the split is going. Setting it springs
+   * the split there without firing `motion-change`; before the first render it sets the
+   * position the split starts at.
+   */
+  get position(): number {
+    return this.goal ?? this.pos
+  }
+
+  set position(value: number) {
+    const target = this.clamp(Number(value) || 0)
+    if (!this.hasUpdated) {
+      this.goal = target
+      return
+    }
+    this.spring(target)
   }
 
   private clamp(v: number) {
@@ -186,14 +216,12 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
     if (e.button !== 0) return
     this.dragging = true
     this.setPointerCapture(e.pointerId)
-    this.spring(this.fromEvent(e))
+    this.moveTo(this.fromEvent(e), true)
   }
 
   private onMove = (e: PointerEvent) => {
     if (!this.dragging) return
-    this.stop()
-    this.pos = this.fromEvent(e)
-    this.apply()
+    this.moveTo(this.fromEvent(e), false)
   }
 
   private onUp = () => {
@@ -215,7 +243,24 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
       else return
     }
     e.preventDefault()
-    this.spring(this.clamp(next))
+    this.moveTo(this.clamp(next), true)
+  }
+
+  private moveTo(target: number, spring: boolean) {
+    if (target === this.position) return
+    if (spring) this.spring(target)
+    else {
+      this.stop()
+      this.pos = target
+      this.apply()
+    }
+    this.dispatchEvent(
+      new CustomEvent('motion-change', {
+        detail: { position: target },
+        bubbles: true,
+        composed: true,
+      }),
+    )
   }
 
   private fromEvent(e: PointerEvent): number {
@@ -230,6 +275,7 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
   private stop() {
     this.motion?.stop()
     this.motion = null
+    this.goal = null
   }
 
   private spring(target: number) {
@@ -240,6 +286,7 @@ export class MotionImageCompare extends LitElement implements MotionImageCompare
       return
     }
     const obj = { v: this.pos }
+    this.goal = target
     this.motion = animate(
       obj,
       { v: target },

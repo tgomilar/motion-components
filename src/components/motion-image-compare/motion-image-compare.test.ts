@@ -166,4 +166,50 @@ describe('motion-image-compare', () => {
     expect(style.userSelect).toBe('none')
     expect(style.webkitUserSelect ?? 'none').toBe('none')
   })
+
+  it('position springs the split without an event; keys fire motion-change', async () => {
+    stubReducedMotion(true)
+    const el = await mount()
+    await elementUpdated(el)
+    const positions: number[] = []
+    el.addEventListener('motion-change', (e) =>
+      positions.push((e as CustomEvent<{ position: number }>).detail.position),
+    )
+    el.position = 130
+    expect(el.position).toBe(100)
+    expect(after(el).style.clipPath).toBe('inset(0px 0px 0px 100%)')
+    knob(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }))
+    expect(el.position).toBe(0)
+    expect(positions).toEqual([0])
+  })
+
+  it('position set before the first render becomes the starting split', async () => {
+    const el = document.createElement('motion-image-compare') as MotionImageCompare
+    expect(() => (el.position = 20)).not.toThrow()
+    expect(el.position).toBe(20)
+    el.innerHTML = '<img slot="before" alt="" /><img slot="after" alt="" />'
+    document.body.append(el)
+    await elementUpdated(el)
+    expect(el.position).toBe(20)
+    expect(after(el).style.clipPath).toBe('inset(0px 0px 0px 20%)')
+    el.remove()
+  })
+
+  it('position reads the target at once while the split springs there', async () => {
+    const el = await mount()
+    await elementUpdated(el)
+    el.position = 20
+    expect(el.position).toBe(20)
+  })
+
+  it('does not fire motion-change when a key would not move the split', async () => {
+    stubReducedMotion(true)
+    const el = await mount()
+    await elementUpdated(el)
+    let changes = 0
+    el.addEventListener('motion-change', () => changes++)
+    knob(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }))
+    knob(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }))
+    expect(changes).toBe(1)
+  })
 })

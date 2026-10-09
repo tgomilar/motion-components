@@ -27,7 +27,8 @@ export type { MotionBlurProps, BlurDirection } from './motion-blur.types.js'
  *
  * **Reduced motion:** the content shows fully visible, sharp and in place at
  * once, for every `direction`, and it does not change as the page scrolls.
- * No run starts, so `motion-start` and `motion-finish` do not fire.
+ * `motion-start` and `motion-finish` still fire, and `cancel()` keeps the
+ * content visible.
  *
  * **Common mistakes:** placing it near the end of the page, or on a page too
  * short to scroll. With `direction="in"`, the content is fully clear only
@@ -89,8 +90,9 @@ export class MotionBlur extends Controllable(LitElement) implements MotionBlurPr
         },
       }
     },
-    applyFinalState: () => this.applyEnd(),
+    applyFinalState: () => (this.reduced ? this.showPlain() : this.applyEnd()),
     applyInitialState: () => {
+      if (this.reduced) return this.showPlain()
       this.style.opacity = this.direction === 'out' ? '' : '0'
       this.style.filter = ''
       this.style.transform = ''
@@ -106,13 +108,13 @@ export class MotionBlur extends Controllable(LitElement) implements MotionBlurPr
   }
 
   firstUpdated() {
-    if (this.reduced) {
-      this.style.opacity = '1'
-      this.style.filter = ''
-      this.style.transform = ''
-      return
-    }
     void this.play()
+  }
+
+  private showPlain() {
+    this.style.opacity = '1'
+    this.style.filter = ''
+    this.style.transform = ''
   }
 
   private applyEnd() {
@@ -178,15 +180,6 @@ export class MotionBlur extends Controllable(LitElement) implements MotionBlurPr
 
   /** Resets the latch and re-binds the scroll handler. */
   replay() {
-    this.latched = false
-
-    if (this.reduced) {
-      this.style.opacity = '1'
-      this.style.filter = ''
-      this.style.transform = ''
-      return
-    }
-
     this.cancel()
     void this.play()
     requestAnimationFrame(() => {

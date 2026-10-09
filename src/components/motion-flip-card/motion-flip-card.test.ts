@@ -118,4 +118,43 @@ describe('motion-flip-card', () => {
     expect(animateMock).not.toHaveBeenCalled()
     expect(scene(el).style.transform).toBe('rotateY(180deg)')
   })
+
+  it('reflects flipped, reports it with aria-pressed and fires motion-change on interaction', async () => {
+    const el = await mount('click')
+    await elementUpdated(el)
+    const details: boolean[] = []
+    el.addEventListener('motion-change', (e) =>
+      details.push((e as CustomEvent<{ flipped: boolean }>).detail.flipped),
+    )
+    expect(el.getAttribute('aria-pressed')).toBe('false')
+    el.dispatchEvent(new MouseEvent('click'))
+    await elementUpdated(el)
+    expect(el.flipped).toBe(true)
+    expect(el.hasAttribute('flipped')).toBe(true)
+    expect(el.getAttribute('aria-pressed')).toBe('true')
+    el.flip()
+    expect(details).toEqual([true, false])
+  })
+
+  it('turns to the face set with the flipped property, without an event', async () => {
+    const el = await mount('click')
+    await elementUpdated(el)
+    const onChange = vi.fn()
+    el.addEventListener('motion-change', onChange)
+    el.flipped = true
+    await elementUpdated(el)
+    expect(animateMock.mock.calls[0][1]).toMatchObject({ rotateY: 180 })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('starts on the back with the flipped attribute', async () => {
+    const el = (await fixture(
+      html`<motion-flip-card flipped
+        ><div slot="front">F</div><div slot="back">B</div></motion-flip-card
+      >`,
+    )) as MotionFlipCard
+    await elementUpdated(el)
+    expect(scene(el).style.transform).toBe('rotateY(180deg)')
+    expect(animateMock).not.toHaveBeenCalled()
+  })
 })

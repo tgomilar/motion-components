@@ -1,10 +1,16 @@
 import { LitElement, html, css } from 'lit'
-import { property, state } from 'lit/decorators.js'
+import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { MotionFlipCardProps, FlipTrigger, FlipAxis } from './motion-flip-card.types.js'
 import { customElement } from '../../utils/define.js'
 
-export type { MotionFlipCardProps, FlipTrigger, FlipAxis } from './motion-flip-card.types.js'
+export type {
+  MotionFlipCardProps,
+  FlipTrigger,
+  FlipAxis,
+  FlipCardChangeDetail,
+} from './motion-flip-card.types.js'
+export type { MotionChangeDetail } from '../../utils/events.js'
 
 /**
  * Two-sided card that flips between a `front` and `back` slot with spring
@@ -21,7 +27,7 @@ export type { MotionFlipCardProps, FlipTrigger, FlipAxis } from './motion-flip-c
  * `tabindex="0"`, and Enter or Space flips it. With the default
  * `trigger="hover"` it reacts only to the pointer, so keyboard users cannot
  * flip it. Both faces stay in the page, so screen readers read the front and
- * the back at any time. The card does not report whether it is flipped.
+ * the back at any time. A click card reports its face with `aria-pressed`.
  *
  * **Reduced motion:** the card shows the other face at once, with no
  * rotation.
@@ -36,6 +42,8 @@ export type { MotionFlipCardProps, FlipTrigger, FlipAxis } from './motion-flip-c
  *
  * @slot front - The face shown at rest.
  * @slot back  - The face revealed after flipping.
+ *
+ * @fires motion-change - When a hover, click, key or `flip()` turns the card. `detail: { flipped }`.
  *
  * @example
  * ```html
@@ -59,7 +67,8 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
   /** CSS perspective applied to the host, in pixels. */
   @property({ type: Number, reflect: true }) perspective = 1000
 
-  @state() private flipped = false
+  /** Whether the back is showing. Setting it turns the card without firing `motion-change`. */
+  @property({ type: Boolean, reflect: true }) flipped = false
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -97,6 +106,7 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
   `
 
   private scene: HTMLElement | null = null
+  private shown = false
 
   connectedCallback() {
     super.connectedCallback()
@@ -109,6 +119,8 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
   firstUpdated() {
     this.scene = this.renderRoot.querySelector('.scene')
     this.style.perspective = `${this.perspective}px`
+    this.shown = this.flipped
+    if (this.flipped) this.scene!.style.transform = `${this.key}(180deg)`
   }
 
   disconnectedCallback() {
@@ -122,6 +134,8 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
   updated(changed: Map<string, unknown>) {
     if (changed.has('perspective')) this.style.perspective = `${this.perspective}px`
     if (changed.has('trigger')) this.syncTrigger(changed.get('trigger'))
+    if (this.flipped !== this.shown) this.turn()
+    if (this.trigger === 'click') this.setAttribute('aria-pressed', String(this.flipped))
   }
 
   private syncTrigger(previous: unknown) {
@@ -131,6 +145,7 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
     } else if (previous === 'click') {
       this.removeAttribute('tabindex')
       this.removeAttribute('role')
+      this.removeAttribute('aria-pressed')
     }
   }
 
@@ -152,15 +167,27 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
   private applyFlip(to: boolean) {
     if (to === this.flipped || !this.scene) return
     this.flipped = to
-    const target = to ? 180 : 0
-    const key = this.axis === 'y' ? 'rotateY' : 'rotateX'
+    this.turn()
+    this.dispatchEvent(
+      new CustomEvent('motion-change', { detail: { flipped: to }, bubbles: true, composed: true }),
+    )
+  }
+
+  private get key() {
+    return this.axis === 'y' ? 'rotateY' : 'rotateX'
+  }
+
+  private turn() {
+    if (!this.scene) return
+    this.shown = this.flipped
+    const target = this.flipped ? 180 : 0
     if (this.reduced) {
-      this.scene.style.transform = `${key}(${target}deg)`
+      this.scene.style.transform = `${this.key}(${target}deg)`
       return
     }
     animate(
       this.scene,
-      { [key]: target },
+      { [this.key]: target },
       {
         type: 'spring',
         bounce: this.bounce,
@@ -169,7 +196,7 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
     )
   }
 
-  /** Toggles the card programmatically. */
+  /** Turns the card to its other face and fires `motion-change`. */
   flip() {
     this.applyFlip(!this.flipped)
   }

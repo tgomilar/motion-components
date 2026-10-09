@@ -131,4 +131,51 @@ describe('motion-gallery', () => {
     await elementUpdated(el)
     expect(lightbox()!.style.display).toBe('none')
   })
+
+  it('open(), next(), prev() and close() drive the lightbox with events', async () => {
+    const el = await mount()
+    const events: string[] = []
+    for (const type of ['motion-open', 'motion-change', 'motion-close'])
+      el.addEventListener(type, (e) =>
+        events.push(`${type}:${(e as CustomEvent<{ index: number } | null>).detail?.index ?? ''}`),
+      )
+    expect(el.index).toBe(-1)
+    el.next()
+    expect(el.index).toBe(-1)
+    el.open(1)
+    expect(el.index).toBe(1)
+    expect(lightbox()!.textContent).toContain('2 / 3')
+    el.next()
+    el.next()
+    expect(el.index).toBe(2)
+    el.prev()
+    el.open(0)
+    expect(el.index).toBe(0)
+    el.close()
+    expect(el.index).toBe(-1)
+    expect(lightbox()!.style.display).toBe('none')
+    expect(events).toEqual([
+      'motion-open:1',
+      'motion-change:2',
+      'motion-change:1',
+      'motion-change:0',
+      'motion-close:',
+    ])
+  })
+
+  it('closes cleanly when removed while open, and opens again after it is added back', async () => {
+    const el = await mount()
+    const parent = el.parentElement!
+    let closed = 0
+    el.addEventListener('motion-close', () => closed++)
+    el.open(1)
+    el.remove()
+    expect(el.index).toBe(-1)
+    expect(closed).toBe(1)
+    expect((items(el)[1] as HTMLElement).style.opacity).toBe('')
+    parent.append(el)
+    items(el)[0].dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(el.index).toBe(0)
+    el.close()
+  })
 })
