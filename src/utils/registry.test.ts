@@ -7,6 +7,9 @@ import {
   pauseAll,
   resumeAll,
   cancelAll,
+  registerLoop,
+  unregisterLoop,
+  isLoopPaused,
 } from './registry.js'
 import type { MotionControllable, PlaybackState } from './playback.types.js'
 
@@ -129,5 +132,33 @@ describe('registry — disableable control', () => {
 
     pauseAll()
     expect(el.disabled).toBe(false)
+  })
+})
+
+describe('registry — loops', () => {
+  it('pauseAll holds a loop and resumeAll plays it again', () => {
+    const el = document.body.appendChild(document.createElement('div'))
+    const controls = { pause: vi.fn(), play: vi.fn() }
+    registerLoop(el, () => controls)
+
+    pauseAll()
+    expect(controls.pause).toHaveBeenCalledOnce()
+    expect(isLoopPaused(el)).toBe(true)
+    resumeAll()
+    expect(controls.play).toHaveBeenCalledOnce()
+    expect(isLoopPaused(el)).toBe(false)
+    unregisterLoop(el)
+  })
+
+  it('a loop removed while held does not stay held after it comes back', () => {
+    const el = document.body.appendChild(document.createElement('div'))
+    registerLoop(el, () => ({ pause: vi.fn(), play: vi.fn() }))
+
+    pauseAll()
+    unregisterLoop(el)
+    resumeAll()
+    registerLoop(el, () => ({ pause: vi.fn(), play: vi.fn() }))
+    expect(isLoopPaused(el)).toBe(false)
+    unregisterLoop(el)
   })
 })
