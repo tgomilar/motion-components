@@ -55,10 +55,8 @@ const at = (index: number) => `${(-index * 100) / STRIP.length}%`
  * changes in place with no flip or roll. `motion-start` and `motion-finish`
  * fire as usual, and `pause()`, `play()` and `cancel()` control the timer.
  *
- * **Common mistakes:** setting a new `to` after the time is up; the timer has
- * stopped, so call `play()` to count down again. Leaving `days` out of
- * `format` when the target is more than a day away; hours only go from 0 to
- * 23, so the days are lost.
+ * **Common mistakes:** leaving `days` out of `format` when the target is more
+ * than a day away; hours only go from 0 to 23, so the days are lost.
  *
  * @element motion-countdown
  *
