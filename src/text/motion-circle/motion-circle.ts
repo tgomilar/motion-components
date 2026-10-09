@@ -4,6 +4,7 @@ import { animate } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { PlaybackRun } from '../../utils/playback.js'
 import type { MotionCircleProps, CircleDirection } from './motion-circle.types.js'
+import { pauseOnHover } from '../utils/loop.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 
@@ -117,16 +118,22 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
     applyInitialState: () => this.resetRing(),
   })
 
+  private detachHover: (() => void) | null = null
+
   connectedCallback() {
     super.connectedCallback()
-    this.addEventListener('mouseenter', this.onEnter)
-    this.addEventListener('mouseleave', this.onLeave)
+    this.detachHover = pauseOnHover(
+      this,
+      () => this.pauseOnHover,
+      () => this.pause(),
+      () => void this.play(),
+    )
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.removeEventListener('mouseenter', this.onEnter)
-    this.removeEventListener('mouseleave', this.onLeave)
+    this.detachHover?.()
+    this.detachHover = null
   }
 
   updated(changed: Map<string, unknown>) {
@@ -138,13 +145,6 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
       changed.has('upright')
 
     if (needsRestart) this.restart()
-  }
-
-  private onEnter = () => {
-    if (this.pauseOnHover) this.pause()
-  }
-  private onLeave = () => {
-    if (this.pauseOnHover && this.playState === 'paused') void this.play()
   }
 
   private restart() {

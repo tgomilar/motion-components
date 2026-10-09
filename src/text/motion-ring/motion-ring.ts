@@ -56,6 +56,9 @@ export class MotionRing extends MarkElement implements MotionRingProps {
   static styles = css`
     :host {
       --mc-_mark-drawn: min(var(--mc-_mark-progress, 0), 1);
+      --mc-_mark-from: clamp(0, var(--mc-_mark-tail, 0), 1);
+      --mc-_mark-len: max(calc(var(--mc-_mark-drawn) - var(--mc-_mark-from)), 0);
+      --mc-_ring-start: 0;
       display: inline-block;
       position: relative;
       white-space: nowrap;
@@ -72,11 +75,12 @@ export class MotionRing extends MarkElement implements MotionRingProps {
       stroke-width: var(--mc-mark-thickness, 2px);
       stroke-linecap: round;
       stroke-linejoin: round;
-      stroke-dasharray: var(--mc-_mark-drawn) calc(1 - var(--mc-_mark-drawn));
-      stroke-opacity: clamp(0, calc(var(--mc-_mark-drawn) * 50), 1);
+      stroke-dasharray: var(--mc-_mark-len) calc(1 - var(--mc-_mark-len));
+      stroke-dashoffset: calc(-1 * (var(--mc-_ring-start) + var(--mc-_mark-from)));
+      stroke-opacity: clamp(0, calc(var(--mc-_mark-len) * 50), 1);
     }
     ellipse.stroke {
-      stroke-dashoffset: -0.58;
+      --mc-_ring-start: 0.58;
     }
   `
 

@@ -11,6 +11,7 @@ vi.mock('motion', () => ({ animate: animateMock }))
 
 import type { MotionStretch } from './motion-stretch.js'
 import './motion-stretch.js'
+import { pauseAll, resumeAll } from '../../utils/registry.js'
 
 type Controls = ReturnType<typeof animateMock>
 
@@ -125,5 +126,17 @@ describe('motion-stretch', () => {
       expect(c[1]).toEqual({ x: 0 })
       expect(c[2]).toEqual({ duration: 0 })
     }
+  })
+
+  it('pauseAll() disables the hover spread and resumeAll() restores it', async () => {
+    const el = await mount()
+    pauseAll()
+    expect(el.disabled).toBe(true)
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    expect(animateMock).not.toHaveBeenCalled()
+    resumeAll()
+    expect(el.disabled).toBe(false)
+    el.dispatchEvent(new MouseEvent('mouseenter'))
+    expect(animateMock).toHaveBeenCalled()
   })
 })

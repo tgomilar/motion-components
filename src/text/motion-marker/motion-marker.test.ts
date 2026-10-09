@@ -85,6 +85,21 @@ describe('motion-marker', () => {
     expect(progress(el)).toBe(0)
   })
 
+  it('reports hover draws as playback runs', async () => {
+    const el = await mount('trigger="hover"')
+    const events: string[] = []
+    for (const type of ['motion-start', 'motion-finish', 'motion-cancel'])
+      el.addEventListener(type, () => events.push(type))
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    expect(el.playState).toBe('running')
+    await el.finished
+    expect(progress(el)).toBe(1)
+    el.dispatchEvent(new PointerEvent('pointerleave'))
+    el.finish()
+    expect(progress(el)).toBe(0)
+    expect(events).toEqual(['motion-start', 'motion-finish', 'motion-start', 'motion-finish'])
+  })
+
   it('follows the surrounding link with trigger="hover"', async () => {
     const host = document.createElement('div')
     host.innerHTML =
@@ -243,5 +258,19 @@ describe('motion-marker', () => {
       'clone',
     )
     expect(style.backgroundImage).toContain('linear-gradient')
+  })
+
+  it('leaves no dot at the end of the stroke while it is part drawn', async () => {
+    const host = document.createElement('div')
+    host.innerHTML =
+      '<p style="font-size: 40px"><motion-marker shape="wave" trigger="mount">stroke</motion-marker></p>'
+    const p = await fixture(host.firstElementChild!)
+    const el = p.querySelector('motion-marker') as HTMLElement
+    await elementUpdated(el as never)
+    el.style.setProperty('--mc-_mark-progress', '0.3')
+    const path = el.shadowRoot!.querySelector('path')!
+    const [dash, gap] = (getComputedStyle(path).strokeDasharray.match(/[\d.]+/g) ?? []).map(Number)
+    expect(dash).toBeCloseTo(0.3, 2)
+    expect(gap).toBeGreaterThanOrEqual(1)
   })
 })

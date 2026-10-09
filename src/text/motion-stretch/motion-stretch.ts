@@ -4,6 +4,8 @@ import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import type { MotionStretchProps } from './motion-stretch.types.js'
 import { customElement } from '../../utils/define.js'
+import { flag } from '../../utils/attributes.js'
+import { registerDisableable, unregisterDisableable } from '../../utils/registry.js'
 
 export type { MotionStretchProps } from './motion-stretch.types.js'
 
@@ -51,6 +53,8 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
   @property({ type: Number }) duration = 0.77
   /** Spring bounciness (0 = critically damped, higher = more elastic). */
   @property({ type: Number }) bounce = 0.55
+  /** When `true`, ignores pointer input and settles back. `pauseAll()` sets it. */
+  @property({ type: Boolean, converter: flag, reflect: true }) disabled = false
 
   static styles = css`
     :host {
@@ -97,12 +101,14 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
     if (!this.text) this.text = this.textContent?.trim() ?? ''
     this.textContent = ''
     super.connectedCallback()
+    registerDisableable(this)
     this.addEventListener('mouseenter', this.onEnter)
     this.addEventListener('mouseleave', this.onLeave)
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
+    unregisterDisableable(this)
     this.stopAll()
     this.removeEventListener('mouseenter', this.onEnter)
     this.removeEventListener('mouseleave', this.onLeave)
@@ -113,8 +119,12 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
     this.controls = []
   }
 
+  updated(changed: Map<string, unknown>) {
+    if (changed.get('disabled') === false && this.disabled) this.onLeave()
+  }
+
   private onEnter = () => {
-    if (this.reduced) return
+    if (this.disabled || this.reduced) return
     this.stopAll()
     const chars = Array.from(this.shadowRoot!.querySelectorAll<HTMLElement>('.char'))
     const n = chars.length

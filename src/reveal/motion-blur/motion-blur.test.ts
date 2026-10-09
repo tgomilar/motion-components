@@ -186,11 +186,14 @@ describe('motion-blur', () => {
     expect(el.style.opacity).toBe('1')
     expect(el.style.filter).toBe('')
     expect(scrollMock).not.toHaveBeenCalled()
-    expect(el.playState).toBe('idle')
+    expect(el.playState).toBe('finished')
 
+    const started = vi.fn()
+    el.addEventListener('motion-start', started)
     el.replay()
     expect(el.style.opacity).toBe('1')
     expect(scrollMock).not.toHaveBeenCalled()
+    expect(started).toHaveBeenCalledOnce()
   })
 
   it('once latch finishes playback and fires motion-finish', async () => {
@@ -199,5 +202,13 @@ describe('motion-blur', () => {
     progress(1)
     await finished
     expect(el.playState).toBe('finished')
+  })
+
+  it('cancel() under reduced motion keeps the content visible', async () => {
+    stubReducedMotion(true)
+    const el = await mount()
+    await elementUpdated(el)
+    el.cancel()
+    expect(el.style.opacity).toBe('1')
   })
 })

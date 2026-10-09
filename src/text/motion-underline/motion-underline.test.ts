@@ -91,6 +91,65 @@ describe('motion-underline', () => {
     expect(el.playState).toBe('running')
   })
 
+  it('erases a loop from its start, so the line leaves at its end', async () => {
+    const el = await mount('loop shape="wave" duration="0.3" hold="0.2" gap="0.2"', 'loops')
+    const tail = () => Number(el.style.getPropertyValue('--mc-_mark-tail'))
+    await until(() => tail() > 0.3)
+    expect(tail()).toBeGreaterThan(0.3)
+    expect(progress(el)).toBeGreaterThan(0.95)
+    await until(() => progress(el) < 0.05)
+    expect(tail()).toBe(0)
+  })
+
+  it('sweeps a drawn line across: it leaves at its end, then draws in again', async () => {
+    const el = await mount('duration="0.25"')
+    await el.finished
+    expect(progress(el)).toBe(1)
+    const tail = () => Number(el.style.getPropertyValue('--mc-_mark-tail'))
+    el.sweep()
+    await until(() => tail() > 0.3)
+    expect(progress(el)).toBe(1)
+    await until(() => progress(el) < 0.5)
+    expect(tail()).toBe(0)
+    await until(() => progress(el) > 0.99)
+    expect(progress(el)).toBeGreaterThan(0.99)
+  })
+
+  it('runs a sweep as playback: it fires events, pause() holds it and cancel() stops it', async () => {
+    const el = await mount('duration="0.25"')
+    await el.finished
+    const tail = () => Number(el.style.getPropertyValue('--mc-_mark-tail'))
+    const events: string[] = []
+    for (const type of ['motion-start', 'motion-finish', 'motion-cancel'])
+      el.addEventListener(type, () => events.push(type))
+    el.sweep()
+    expect(el.playState).toBe('running')
+    await until(() => tail() > 0.2)
+    el.pause()
+    await wait(50)
+    const held = tail()
+    await wait(150)
+    expect(tail()).toBe(held)
+    el.cancel()
+    await wait(300)
+    expect(progress(el)).toBe(0)
+    expect(tail()).toBe(0)
+    expect(events).toEqual(['motion-start', 'motion-cancel'])
+  })
+
+  it('finish() ends a sweep fully drawn and fires motion-finish', async () => {
+    const el = await mount('duration="0.25"')
+    await el.finished
+    const finished = new Promise((resolve) => el.addEventListener('motion-finish', resolve))
+    el.sweep()
+    await wait(60)
+    el.finish()
+    await finished
+    await wait(300)
+    expect(progress(el)).toBe(1)
+    expect(Number(el.style.getPropertyValue('--mc-_mark-tail'))).toBe(0)
+  })
+
   it('waits until it is rendered before drawing the wave', async () => {
     const outer = document.createElement('div')
     outer.attachShadow({ mode: 'open' })
@@ -105,5 +164,38 @@ describe('motion-underline', () => {
     await new Promise(requestAnimationFrame)
     expect(path.getAttribute('d')).toMatch(/^M0 [\d.]+ Q.* T/)
     outer.remove()
+  })
+
+  it('leaves no dot at the end of the stroke while it is part drawn', async () => {
+    const host = document.createElement('div')
+    host.innerHTML =
+      '<p style="font-size: 40px"><motion-underline shape="wave" trigger="mount">stroke</motion-underline></p>'
+    const p = await fixture(host.firstElementChild!)
+    const el = p.querySelector('motion-underline') as HTMLElement
+    await elementUpdated(el as never)
+    el.style.setProperty('--mc-_mark-progress', '0.3')
+    const path = el.shadowRoot!.querySelector('path')!
+    const [dash, gap] = (getComputedStyle(path).strokeDasharray.match(/[\d.]+/g) ?? []).map(Number)
+    expect(dash).toBeCloseTo(0.3, 2)
+    expect(gap).toBeGreaterThanOrEqual(1)
+  })
+
+  it('a hover leave during a sweep keeps the erased part in place and springs it back', async () => {
+    const host = document.createElement('div')
+    host.innerHTML = `<p style="font-size: 20px">Interactions that <motion-underline trigger="hover" duration="0.3">feel right</motion-underline>.</p>`
+    const p = (await fixture(host.firstElementChild!)) as HTMLElement
+    const el = p.querySelector('motion-underline') as MotionUnderline
+    await elementUpdated(el)
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    await el.finished
+    const tail = () => Number(el.style.getPropertyValue('--mc-_mark-tail'))
+    el.sweep()
+    await until(() => tail() > 0.4)
+    const at = tail()
+    el.dispatchEvent(new PointerEvent('pointerleave'))
+    await wait(34)
+    expect(tail()).toBeGreaterThan(at * 0.6)
+    await until(() => progress(el) < 0.01 && tail() < 0.01)
+    expect(progress(el)).toBeLessThan(0.01)
   })
 })

@@ -167,18 +167,14 @@ describe('motion-font', () => {
     expect(controlsAt(0).play).toHaveBeenCalledOnce()
   })
 
-  it('replay() resets to `from` and re-arms the viewport observer', async () => {
+  it('replay() runs the axes from `from` again', async () => {
     const el = await mount()
     io.enter()
     el.finish()
     el.replay()
-    expect(el.playState).toBe('idle')
-    expect(axisValue(el)).toBe(300)
-    expect(io.observed).toContain(el)
-
-    io.enter()
     expect(el.playState).toBe('running')
     expect(animateMock).toHaveBeenCalledTimes(2)
+    expect(animateMock.mock.calls[1][0]).toEqual({ value: 300 })
   })
 
   it('hover trigger springs to `to` on enter/focus and back to `from` on leave/blur', async () => {

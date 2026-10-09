@@ -2,6 +2,7 @@ import { LitElement, html, css, svg, nothing } from 'lit'
 import { property, query } from 'lit/decorators.js'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionLiquidProps } from './motion-liquid.types.js'
+import { pauseOnHover } from '../utils/loop.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 
@@ -94,35 +95,51 @@ export class MotionLiquid extends Controllable(LitElement) implements MotionLiqu
   private resizeObserver: ResizeObserver | null = null
 
   playback: PlaybackController = new PlaybackController(this, {
-    start: () => ({
-      handle: {
-        pause: () => this.svgEl?.pauseAnimations(),
-        resume: () => this.svgEl?.unpauseAnimations(),
-        finish: () => this.svgEl?.unpauseAnimations(),
-        cancel: () => this.svgEl?.unpauseAnimations(),
-      },
-    }),
-    applyFinalState: () => {},
-    applyInitialState: () => {},
+    start: () => {
+      this.svgEl?.unpauseAnimations()
+      return {
+        handle: {
+          pause: () => this.svgEl?.pauseAnimations(),
+          resume: () => this.svgEl?.unpauseAnimations(),
+          finish: () => this.still(),
+          cancel: () => this.still(),
+        },
+      }
+    },
+    applyFinalState: () => this.still(),
+    applyInitialState: () => this.still(),
   })
+
+  /** Stops the flow and rewinds it, leaving the distortion still. */
+  private still() {
+    this.svgEl?.pauseAnimations()
+    this.svgEl?.setCurrentTime(0)
+  }
+
+  private detachHover: (() => void) | null = null
 
   connectedCallback() {
     // eslint-disable-next-line wc/no-child-traversal-in-connectedcallback
     if (!this.text) this.text = this.textContent?.trim() ?? ''
     this.textContent = ''
     super.connectedCallback()
-    this.addEventListener('mouseenter', this.onEnter)
-    this.addEventListener('mouseleave', this.onLeave)
+    this.detachHover = pauseOnHover(
+      this,
+      () => this.pauseOnHover,
+      () => this.pause(),
+      () => void this.play(),
+    )
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.fit())
       this.resizeObserver.observe(this)
     }
+    if (this.hasUpdated && this.shouldAnimate) void this.play()
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.removeEventListener('mouseenter', this.onEnter)
-    this.removeEventListener('mouseleave', this.onLeave)
+    this.detachHover?.()
+    this.detachHover = null
     this.resizeObserver?.disconnect()
     this.resizeObserver = null
   }
@@ -161,14 +178,6 @@ export class MotionLiquid extends Controllable(LitElement) implements MotionLiqu
     svgEl.setAttribute('width', '0')
     svgEl.setAttribute('height', '0')
     svgEl.style.verticalAlign = ''
-  }
-
-  private onEnter = () => {
-    if (this.pauseOnHover) this.pause()
-  }
-
-  private onLeave = () => {
-    if (this.pauseOnHover && this.playState === 'paused') void this.play()
   }
 
   private get shouldAnimate() {

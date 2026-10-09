@@ -50,6 +50,28 @@ describe('motion-slider', () => {
     expect(ev.detail.index).toBe(1)
   })
 
+  it('next(), prev() and index move through the slides', async () => {
+    const el = await mount()
+    expect(el.index).toBe(0)
+    el.next()
+    el.next()
+    el.next()
+    expect(el.index).toBe(2)
+    el.prev()
+    expect(el.index).toBe(1)
+  })
+
+  it('goTo before the slider is built sets the slide it starts on', async () => {
+    const el = document.createElement('motion-slider') as MotionSlider
+    el.innerHTML = '<div>Slide 1</div><div>Slide 2</div><div>Slide 3</div>'
+    expect(() => el.goTo(5)).not.toThrow()
+    document.body.append(el)
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    expect(el.index).toBe(2)
+    expect(arrow(el, 'Next slide').getAttribute('aria-disabled')).toBe('true')
+    el.remove()
+  })
+
   it('clamps navigation at the boundaries', async () => {
     const el = await mount()
     let last = -1
@@ -135,5 +157,14 @@ describe('motion-slider', () => {
     const el = await mount()
     await elementUpdated(el)
     expect(el.tabIndex).toBe(0)
+  })
+
+  it('clamps goTo before the build to the slides it has', async () => {
+    const el = document.createElement('motion-slider') as MotionSlider
+    el.innerHTML = '<div>1</div><div>2</div><div>3</div>'
+    el.goTo(5)
+    expect(el.index).toBe(2)
+    el.goTo(Number.NaN)
+    expect(el.index).toBe(0)
   })
 })

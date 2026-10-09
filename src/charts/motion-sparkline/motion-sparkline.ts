@@ -16,7 +16,7 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
 /**
  * A small trend line that sits inside a sentence, a table cell or a stat
  * tile. It draws itself in when it scrolls into view, and springs to new
- * values when `values` changes.
+ * values when `values` or `data` changes.
  *
  * **Use it for:** a small trend next to a number, in a sentence, a table cell
  * or a stat tile, where the shape matters more than the exact values.
@@ -56,8 +56,10 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
  */
 @customElement('motion-sparkline')
 export class MotionSparkline extends Controllable(LitElement) implements MotionSparklineProps {
-  /** Comma-separated numbers. */
+  /** Comma-separated numbers. Ignored when `data` is set. */
   @property({ type: String }) values = ''
+  /** The numbers as an array, set from JavaScript. Takes precedence over `values`. */
+  @property({ attribute: false }) data: number[] | null = null
   /** Fills the area under the line with a light wash. */
   @property({ type: Boolean, converter: flag }) area = false
   /** When the draw-in runs: `'view'` (scrolled into view) or `'mount'`. */
@@ -146,9 +148,9 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
   }
 
   willUpdate(changed: Map<string, unknown>) {
-    if (!changed.has('values')) return
-    this.points = fromValues(this.values).series[0]?.values ?? []
-    const first = changed.get('values') === undefined
+    if (!changed.has('values') && !changed.has('data')) return
+    this.points = this.data ?? fromValues(this.values).series[0]?.values ?? []
+    const first = !this.hasUpdated
     if (first || this.playState === 'idle') {
       this.springs.set(this.points)
       if (first) this.draw.set([0])
@@ -170,7 +172,7 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
 
   updated(changed: Map<string, unknown>) {
     if (changed.has('trigger') && changed.get('trigger') !== undefined) this.arm()
-    if (changed.has('label') || changed.has('values')) this.describe()
+    if (changed.has('label') || changed.has('values') || changed.has('data')) this.describe()
   }
 
   /** Draws the line in again. */

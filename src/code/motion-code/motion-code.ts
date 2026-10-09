@@ -119,6 +119,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
 
   private tokens: Token[] = []
   private raw = ''
+  private codeSet = false
   private typePhase: 'delay' | 'typing' | 'gap' = 'delay'
   private phaseElapsed = 0
   private typeLoop = frameLoop((dt) => this.typeTick(dt))
@@ -336,7 +337,8 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
   connectedCallback() {
     super.connectedCallback()
     this.injectThemeVars()
-    this.processCode()
+    if (this.codeSet) this.setCode(this.raw)
+    else this.processCode()
   }
 
   disconnectedCallback() {
@@ -354,14 +356,26 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     }
   }
 
-  /** Set code programmatically — used by the Astro wrapper component */
+  /** The source shown, before highlighting. Setting it is the same as `setCode()`. */
+  get code(): string {
+    return this.raw
+  }
+
+  set code(raw: string) {
+    this.setCode(raw)
+  }
+
+  /** Replaces the code. A typing run in progress is cancelled with `motion-cancel`, and typing starts again. */
   setCode(raw: string) {
     this.raw = raw
+    this.codeSet = true
+    if (!this.isConnected) return
     const dedented = this.dedent(raw)
     this.tokens = this.tokenize(dedented)
     this.highlighted = this.renderTokens(this.tokens)
     this.hasCode = true
-    this.playback.teardown()
+    if (this.playState === 'running' || this.playState === 'paused') this.cancel()
+    else this.playback.teardown()
     if (this.typing) {
       if (!this.typingLoop) {
         // The observer fires immediately with the current intersection state,

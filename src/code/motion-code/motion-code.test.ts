@@ -135,4 +135,27 @@ echo $HOME | grep -i home</pre
     expect(cls('cw-comment')).toEqual(['$ ', '# note'])
     expect(cls('cw-tag')).toEqual(['|'])
   })
+
+  it('the code property reads and replaces the source', async () => {
+    const el = (await fixture(html`<motion-code></motion-code>`)) as MotionCode
+    el.code = 'let x = 1'
+    await elementUpdated(el)
+    expect(el.code).toBe('let x = 1')
+    expect(el.shadowRoot!.textContent).toContain('let x = 1')
+  })
+
+  it('keeps code set before it connects, and after it moves', async () => {
+    const el = document.createElement('motion-code') as MotionCode
+    el.code = 'let x = 1'
+    document.body.append(el)
+    await elementUpdated(el)
+    expect(el.code).toBe('let x = 1')
+    expect(el.shadowRoot!.textContent).toContain('let x = 1')
+    document.body.append(document.createElement('div'))
+    document.body.lastElementChild!.append(el)
+    await elementUpdated(el)
+    expect(el.code).toBe('let x = 1')
+    expect(el.shadowRoot!.textContent).toContain('let x = 1')
+    el.parentElement!.remove()
+  })
 })

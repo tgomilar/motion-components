@@ -31,6 +31,9 @@ const LABELS: Record<Unit, string> = {
 const ALL_UNITS: Unit[] = ['days', 'hours', 'minutes', 'seconds']
 const STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
 
+/** Offset that shows the digit at `index` of the strip, as a share of the strip's own height, so it holds at any size. */
+const at = (index: number) => `${(-index * 100) / STRIP.length}%`
+
 /**
  * Countdown timer with animated digit transitions. Supports flip (default) and
  * roll (slot-machine) modes. Customisable format, labels, and target date.
@@ -226,7 +229,10 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   }
 
   protected updated(changed: PropertyValues) {
-    if (changed.has('to') && this.interval !== null) this.tick()
+    if (!changed.has('to')) return
+    if (this.interval !== null) this.tick()
+    else if (this.playState === 'finished' && new Date(this.to).getTime() > Date.now())
+      void this.play()
   }
 
   private startTicking() {
@@ -252,8 +258,7 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
 
   private setDigit(el: HTMLElement, digit: number) {
     if (this.roll) {
-      const h = this.digitH(el)
-      if (h) animate(el, { y: -digit * h }, { duration: 0 })
+      animate(el, { y: at(digit) }, { duration: 0 })
     } else {
       el.textContent = String(digit)
     }
@@ -320,24 +325,21 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
   }
 
   private rollDigit(strip: HTMLElement, oldDigit: number, newDigit: number) {
-    const h = this.digitH(strip)
-    if (!h) return
-
     if (this.reduced) {
-      animate(strip, { y: -newDigit * h }, { duration: 0 })
+      animate(strip, { y: at(newDigit) }, { duration: 0 })
       return
     }
 
     const spring = { type: 'spring', stiffness: 220, damping: 28 } as const
     if (newDigit > oldDigit) {
       const epoch = this.flipEpoch
-      animate(strip, { y: -10 * h }, { duration: 0 })
+      animate(strip, { y: at(10) }, { duration: 0 })
       requestAnimationFrame(() => {
         if (epoch !== this.flipEpoch) return
-        this.retain(animate(strip, { y: -9 * h }, spring))
+        this.retain(animate(strip, { y: at(9) }, spring))
       })
     } else {
-      this.retain(animate(strip, { y: -newDigit * h }, spring))
+      this.retain(animate(strip, { y: at(newDigit) }, spring))
     }
   }
 
@@ -350,14 +352,6 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
     this.flipEpoch++
     for (const controls of this.flips) controls.stop()
     this.flips.clear()
-  }
-
-  private digitH(strip: HTMLElement): number {
-    const fromChild = (strip.firstElementChild as HTMLElement)?.offsetHeight
-    if (fromChild > 0) return fromChild
-    const fromFont = parseFloat(getComputedStyle(strip).fontSize)
-    if (fromFont > 0) return fromFont
-    return 56
   }
 
   private async flipDigit(el: HTMLElement, newVal: string) {

@@ -1,5 +1,46 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `pause()` and `pauseAll()` now hold. On `motion-circle`, `motion-curve`, `motion-arc`, `motion-perspective`, `motion-liquid` and `motion-ticker`, moving the pointer off a paused effect started it again. Leaving now only lifts a pause that the hover made.
+- `motion-liquid`: the text kept flowing after `cancel()` or `finish()`. It now stops and rests.
+- `motion-glitch`: with `trigger="hover"` or `"mount"`, `play()` started the endless loop. It now plays one burst as a normal run, with events, and `pause()`, `finish()` and `cancel()` act on it.
+- `motion-icon`: with `trigger="loop"`, the loop came back after `finish()` and slipped past `pauseAll()` between cycles. The loop is now one run. A hover or click that interrupts a run fires `motion-cancel`, and starting again after a finished run no longer does.
+- `motion-underline`, `motion-marker`, `motion-strike` and `motion-ring`: a loop now erases from its start, so the mark leaves at its end, and no dot stays behind at the end of the stroke. `motion-ring` drew a gap in the ellipse while it was erased.
+- `motion-underline`, `motion-marker`, `motion-strike` and `motion-ring`: hover drawing now runs through playback, so it fires events and `pause()`, `finish()` and `cancel()` act on it.
+- `motion-ticker`: `finish()` and `cancel()` froze the ticker where it was, like `pause()`. They now line the items up at the start.
+- `motion-chart`: line charts left an empty gap at both ends of the plot. They now run edge to edge, and the first and last labels sit inside the plot. The grid line at the top of a new scale popped in at the end of the change; grid lines now fade between the old and new scale.
+- `motion-countdown`: with `roll`, the digits slid out of their windows when the size changed.
+- `motion-countdown`: it now counts again when `to` is set to a future time after it finished.
+- `motion-slider`: `goTo()` threw when it was called before the slider was built. It now sets the slide the slider starts on. The documented unit of `initialVelocity` is px/s.
+- `motion-gallery`: after the gallery was moved in the page, its items no longer opened the lightbox.
+- `motion-progress`: under reduced motion, `playState` read `'finished'` while the bar followed scrolling. It now reads `'running'`.
+- `motion-blur` and `motion-font`: `replay()` now cancels and plays again, as on the other components.
+- `motion-code`: `setCode()` interrupted a typing run without firing `motion-cancel`.
+
+### Changed
+
+- `motion-icon`: `nudge-up`, `nudge-down`, `nudge-left` and `nudge-right` from 1.3.0 are now `slide-up`, `slide-down`, `slide-left` and `slide-right`. Icons inside a `summary` also react to hover on it.
+- `motion-blur`: under reduced motion it now fires `motion-start` and `motion-finish`, and `playState` reads `'finished'`.
+- `pauseAll()` now also disables `motion-stretch` and holds the `motion-state-icon` loading spinner.
+
+### Added
+
+- `motion-underline`, `motion-marker`, `motion-strike` and `motion-ring`: `sweep()` erases the drawn mark from its start, then draws it in again.
+- `motion-gallery`: `open(index)`, `close()`, `next()`, `prev()` and `index`, and `motion-open`, `motion-change` and `motion-close` events.
+- `motion-slider`: `next()`, `prev()` and `index`.
+- `motion-flip-card`: a `flipped` property and attribute, a `motion-change` event with `{ flipped }`, and `aria-pressed` with `trigger="click"`.
+- `motion-state-icon`: `flip()` switches `active` and fires `motion-change`.
+- `motion-dialog`: a `motion-open` event.
+- `motion-image-compare`: a `position` property and a `motion-change` event with `{ position }`.
+- `motion-sparkline`: `data` takes an array of numbers.
+- `motion-chart`: `animate-scale="false"` switches the scale at once when the data changes.
+- `motion-code`: a `code` property.
+- `motion-stretch`: a `disabled` attribute.
+- TypeScript: the `motion-*` events are typed on `addEventListener`, and the detail types (`MotionChangeDetail`, `SliderChangeDetail`, `GalleryIndexDetail`, `FlipCardChangeDetail`, `ImageCompareChangeDetail` and `StateIconChangeDetail`) are exported.
+
 ## 1.2.0 — 2026-10-05
 
 ### Breaking changes

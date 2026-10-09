@@ -2,7 +2,8 @@ import { animate } from 'motion'
 import type { AnimationPlaybackControls } from 'motion'
 import { BaseElement, defineElement } from '../../utils/define.js'
 import { readFlag } from '../../utils/attributes.js'
-export type { MotionSliderProps } from './motion-slider.types.js'
+export type { MotionSliderProps, SliderChangeDetail } from './motion-slider.types.js'
+export type { MotionChangeDetail } from '../../utils/events.js'
 
 /**
  * Horizontal slider with spring-snap drag, arrow-button navigation, and dot indicators.
@@ -46,7 +47,6 @@ export type { MotionSliderProps } from './motion-slider.types.js'
  * @fires motion-change - Dispatched when the active slide index changes. `detail: { index }`.
  *
  * @cssprop [--mc-color-accent=#2563eb] - Color of the keyboard focus ring on the arrows.
- *   `event.detail.index` contains the new index.
  *
  * @example
  * ```html
@@ -63,7 +63,7 @@ export class MotionSlider extends BaseElement {
   private dots: HTMLElement[] = []
   private arrows: [HTMLButtonElement, HTMLButtonElement] | null = null
   private anim: AnimationPlaybackControls | null = null
-  private index = 0
+  private current = 0
   private built = false
   private lastW = 0
   private ro: ResizeObserver | null = null
@@ -161,10 +161,8 @@ export class MotionSlider extends BaseElement {
       })
       this.slides.forEach((_, i) => {
         const dot = node('div', {
-          width: i === 0 ? '22px' : '6px',
           height: '6px',
           borderRadius: '99px',
-          background: i === 0 ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)',
           transition: 'width 0.3s ease, background 0.25s ease',
           pointerEvents: 'auto',
           cursor: 'pointer',
@@ -187,6 +185,9 @@ export class MotionSlider extends BaseElement {
     this.ro = new ResizeObserver(() => this.onResize())
     this.ro.observe(this)
 
+    this.current = this.clamp(this.current)
+    this.writeOffset(-this.current * this.slideW())
+    this.updateDots()
     this.updateArrows()
   }
 
@@ -200,7 +201,7 @@ export class MotionSlider extends BaseElement {
       slide.style.boxSizing = 'border-box'
     })
     this.anim?.stop()
-    this.writeOffset(-this.index * this.slideW())
+    this.writeOffset(-this.current * this.slideW())
   }
 
   private makeArrow(dir: 'prev' | 'next'): HTMLButtonElement {
@@ -233,7 +234,7 @@ export class MotionSlider extends BaseElement {
     btn.setAttribute('aria-label', dir === 'prev' ? 'Previous slide' : 'Next slide')
     btn.addEventListener('click', () => {
       if (btn.getAttribute('aria-disabled') === 'true') return
-      this.goTo(this.index + (dir === 'prev' ? -1 : 1))
+      this.goTo(this.current + (dir === 'prev' ? -1 : 1))
     })
     btn.addEventListener('focus', () => {
       if (btn.matches(':focus-visible'))
@@ -280,8 +281,8 @@ export class MotionSlider extends BaseElement {
   }
 
   private onKey = (e: KeyboardEvent) => {
-    if (e.key === 'ArrowLeft') this.goTo(this.index - 1)
-    if (e.key === 'ArrowRight') this.goTo(this.index + 1)
+    if (e.key === 'ArrowLeft') this.goTo(this.current - 1)
+    if (e.key === 'ArrowRight') this.goTo(this.current + 1)
   }
 
   private slideW(): number {
@@ -317,17 +318,40 @@ export class MotionSlider extends BaseElement {
     const offset = this.readOffset()
     const FLICK = 0.3
     let target: number
-    if (velPxMs < -FLICK) target = Math.min(this.slides.length - 1, this.index + 1)
-    else if (velPxMs > FLICK) target = Math.max(0, this.index - 1)
+    if (velPxMs < -FLICK) target = Math.min(this.slides.length - 1, this.current + 1)
+    else if (velPxMs > FLICK) target = Math.max(0, this.current - 1)
     else target = Math.round(-offset / sw)
-    this.goTo(Math.max(0, Math.min(this.slides.length - 1, target)), velPxMs * 1000)
+    this.goTo(target, velPxMs * 1000)
   }
 
-  /** Navigate to the slide at `index`. Pass `initialVelocity` (px/ms) for a flick-snap feel. */
+  /** Index of the active slide. */
+  get index(): number {
+    return this.current
+  }
+
+  /** Moves to the next slide. Does nothing on the last one. */
+  next() {
+    this.goTo(this.current + 1)
+  }
+
+  /** Moves to the previous slide. Does nothing on the first one. */
+  prev() {
+    this.goTo(this.current - 1)
+  }
+
+  /**
+   * Navigate to the slide at `index`. Pass `initialVelocity` (px/s) for a flick-snap feel.
+   * Called before the slider is built, it sets the slide the slider starts on.
+   */
   goTo(index: number, initialVelocity = 0) {
-    const from = this.index
-    this.index = Math.max(0, Math.min(this.slides.length - 1, index))
-    const targetX = -this.index * this.slideW()
+    if (!this.track) {
+      const last = Math.max(0, this.children.length - 1)
+      this.current = Math.max(0, Math.min(last, Math.round(index) || 0))
+      return
+    }
+    const from = this.current
+    this.current = this.clamp(index)
+    const targetX = -this.current * this.slideW()
 
     this.anim?.stop()
     if (this.reduced) {
@@ -341,19 +365,23 @@ export class MotionSlider extends BaseElement {
     }
     this.updateDots()
     this.updateArrows()
-    if (this.index === from) return
+    if (this.current === from) return
     this.dispatchEvent(
       new CustomEvent('motion-change', {
-        detail: { index: this.index },
+        detail: { index: this.current },
         bubbles: true,
         composed: true,
       }),
     )
   }
 
+  private clamp(index: number) {
+    return Math.max(0, Math.min(this.slides.length - 1, Math.round(index)))
+  }
+
   private updateDots() {
     this.dots.forEach((dot, i) => {
-      const active = i === this.index
+      const active = i === this.current
       dot.style.width = active ? '22px' : '6px'
       dot.style.background = active ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)'
     })
@@ -362,8 +390,8 @@ export class MotionSlider extends BaseElement {
   private updateArrows() {
     if (!this.arrows) return
     const [prev, next] = this.arrows
-    setDisabled(prev, this.index === 0)
-    setDisabled(next, this.index === this.slides.length - 1)
+    setDisabled(prev, this.current === 0)
+    setDisabled(next, this.current === this.slides.length - 1)
   }
 }
 

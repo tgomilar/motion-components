@@ -317,12 +317,12 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
     }
   }
 
-  /** Resets axes to their `from` values and re-arms the viewport observer. Only valid when `trigger="view"`. */
+  /** Runs the axes from `from` to `to` again. Only valid when `trigger="view"`. */
   replay() {
     if (this.trigger !== 'view') return
     this.viewport.reset()
     this.cancel()
-    this.setupIntersect()
+    void this.play()
   }
 
   render() {

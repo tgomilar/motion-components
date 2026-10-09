@@ -58,13 +58,16 @@ export class MotionUnderline extends MarkElement implements MotionUnderlineProps
   static styles = css`
     :host {
       --mc-_mark-ink: var(--mc-mark-color, currentColor);
+      --mc-_mark-drawn: min(var(--mc-_mark-progress, 0), 1);
+      --mc-_mark-from: clamp(0, var(--mc-_mark-tail, 0), 1);
+      --mc-_mark-len: max(calc(var(--mc-_mark-drawn) - var(--mc-_mark-from)), 0);
+      --mc-_mark-at: calc(var(--mc-_mark-from) / max(calc(1 - var(--mc-_mark-len)), 0.0001));
       display: inline;
       padding-bottom: 0.08em;
       background-image: linear-gradient(var(--mc-_mark-ink), var(--mc-_mark-ink));
       background-repeat: no-repeat;
-      background-position: 0 100%;
-      background-size: calc(min(var(--mc-_mark-progress, 0), 1) * 100%)
-        var(--mc-mark-thickness, 2px);
+      background-position: calc(var(--mc-_mark-at) * 100%) 100%;
+      background-size: calc(var(--mc-_mark-len) * 100%) var(--mc-mark-thickness, 2px);
       -webkit-box-decoration-break: clone;
       box-decoration-break: clone;
     }
@@ -85,7 +88,6 @@ export class MotionUnderline extends MarkElement implements MotionUnderlineProps
     }
     :host([shape='wave']),
     :host([shape='zigzag']) {
-      --mc-_mark-drawn: min(var(--mc-_mark-progress, 0), 1);
       display: inline-block;
       position: relative;
       white-space: nowrap;
@@ -104,8 +106,9 @@ export class MotionUnderline extends MarkElement implements MotionUnderlineProps
       stroke-width: var(--mc-mark-thickness, 2px);
       stroke-linecap: round;
       stroke-linejoin: round;
-      stroke-dasharray: var(--mc-_mark-drawn) calc(1 - var(--mc-_mark-drawn));
-      stroke-opacity: clamp(0, calc(var(--mc-_mark-drawn) * 50), 1);
+      stroke-dasharray: var(--mc-_mark-len) 2;
+      stroke-dashoffset: calc(-1 * var(--mc-_mark-from));
+      stroke-opacity: clamp(0, calc(var(--mc-_mark-len) * 50), 1);
     }
   `
 

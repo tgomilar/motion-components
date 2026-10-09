@@ -95,6 +95,42 @@ describe('motion-chart', () => {
     expect(table.querySelectorAll('td')).toHaveLength(3)
   })
 
+  it('runs a line from the left end of the plot to the right end, labels anchored inwards', async () => {
+    stubReducedMotion(true)
+    const el = await mount(
+      '<motion-chart type="line" trigger="mount" values="1, 4, 2, 5" labels="Jan, Feb, Mar, Apr" style="width: 400px"></motion-chart>',
+    )
+    await elementUpdated(el)
+    const root = el.shadowRoot!
+    const grid = root.querySelector('line.grid')!
+    const d = root.querySelector('.series-line')!.getAttribute('d')!
+    const xs = (d.match(/[ML][\d.]+/g) ?? []).map((m) => Number(m.slice(1)))
+    expect(xs).toHaveLength(4)
+    expect(xs[0]).toBeCloseTo(Number(grid.getAttribute('x1')), 1)
+    expect(xs[3]).toBeCloseTo(Number(grid.getAttribute('x2')), 1)
+    const ticks = [...root.querySelectorAll('text.tick')].filter((t) =>
+      /^[A-Z][a-z]+$/.test(t.textContent!),
+    )
+    expect(ticks[0].getAttribute('text-anchor')).toBe('start')
+    expect(ticks[ticks.length - 1].getAttribute('text-anchor')).toBe('end')
+  })
+
+  it('keeps bars inside their slots, away from the plot edges', async () => {
+    stubReducedMotion(true)
+    const el = await mount(
+      '<motion-chart trigger="mount" values="1, 4, 2" labels="A, B, C" style="width: 400px"></motion-chart>',
+    )
+    await elementUpdated(el)
+    const root = el.shadowRoot!
+    const grid = root.querySelector('line.grid')!
+    const first = bars(el)[0].getBBox()
+    expect(first.x).toBeGreaterThan(Number(grid.getAttribute('x1')) + 5)
+    const ticks = [...root.querySelectorAll('text.tick')].filter((t) =>
+      /^[A-Z]$/.test(t.textContent!),
+    )
+    expect(ticks.every((t) => t.getAttribute('text-anchor') === 'middle')).toBe(true)
+  })
+
   it('shows the final state at once under reduced motion', async () => {
     stubReducedMotion(true)
     const el = await mount('<motion-chart trigger="mount" values="4, 8"></motion-chart>')
@@ -144,5 +180,47 @@ describe('motion-chart', () => {
     const ticks = [...el.shadowRoot!.querySelectorAll('.tick')].map((t) => t.textContent)
     expect(ticks).toContain('4,000')
     expect(ticks).not.toContain('15,000')
+  })
+
+  it('brings in a new top grid line while the scale shrinks, fading it in', async () => {
+    const el = await mount(
+      '<motion-chart trigger="mount" values="29000, 11200" labels="A, B" duration="1"></motion-chart>',
+    )
+    await el.finished
+    await elementUpdated(el)
+    el.values = '21500, 8000'
+    await elementUpdated(el)
+    const top = () =>
+      [...el.shadowRoot!.querySelectorAll<SVGTextElement>('text.tick')].find(
+        (t) => t.textContent === '25,000',
+      )
+    const seen: number[] = []
+    const start = performance.now()
+    while (performance.now() - start < 1400) {
+      await new Promise((resolve) => requestAnimationFrame(resolve))
+      await elementUpdated(el)
+      const tick = top()
+      if (tick) seen.push(Number(tick.getAttribute('opacity')))
+    }
+    expect(seen.some((o) => o > 0.05 && o < 0.95)).toBe(true)
+    expect(seen[seen.length - 1]).toBe(1)
+    expect(top()!.getBoundingClientRect().top).toBeGreaterThan(0)
+  })
+
+  it('switches the scale at once with animate-scale="false"', async () => {
+    const el = await mount(
+      '<motion-chart trigger="mount" values="29000, 11200" labels="A, B" animate-scale="false"></motion-chart>',
+    )
+    await el.finished
+    await elementUpdated(el)
+    el.values = '21500, 8000'
+    await elementUpdated(el)
+    const ticks = [...el.shadowRoot!.querySelectorAll('text.tick')]
+    const labels = ticks.map((t) => t.textContent)
+    expect(labels).toContain('25,000')
+    expect(labels).not.toContain('30,000')
+    expect(
+      ticks.every((t) => !t.hasAttribute('opacity') || t.getAttribute('opacity') === '1'),
+    ).toBe(true)
   })
 })

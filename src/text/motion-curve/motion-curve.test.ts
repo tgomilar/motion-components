@@ -135,10 +135,10 @@ describe('motion-curve', () => {
     const el = (await fixture(
       html`<motion-curve text="Wave" pause-on-hover></motion-curve>`,
     )) as MotionCurve
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('paused')
     expect(frames.pending).toBe(0)
-    el.dispatchEvent(new MouseEvent('mouseleave'))
+    el.dispatchEvent(new PointerEvent('pointerleave'))
     expect(el.playState).toBe('running')
     expect(frames.pending).toBe(1)
   })
@@ -147,7 +147,7 @@ describe('motion-curve', () => {
     const el = (await fixture(
       html`<motion-curve text="Wave" pause-on-hover="false"></motion-curve>`,
     )) as MotionCurve
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('running')
   })
 

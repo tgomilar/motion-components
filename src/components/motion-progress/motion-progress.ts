@@ -94,11 +94,12 @@ export class MotionProgress extends Controllable(LitElement) implements MotionPr
         },
       }
     },
-    applyFinalState: () => (this.reduced ? this.bind() : this.setScale(1)),
+    applyFinalState: () => this.setScale(1),
     applyInitialState: () => {
       this.release()
       this.setScale(0)
     },
+    runsUnderReducedMotion: true,
   })
 
   private get reduced() {

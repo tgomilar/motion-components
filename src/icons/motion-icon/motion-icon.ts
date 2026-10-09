@@ -3,9 +3,11 @@ import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import type { AnimationPlaybackControlsWithThen, AnimationSequence } from 'motion'
 import { Controllable, PlaybackController, controlsHandle } from '../../utils/playback.js'
+import type { PlaybackRun } from '../../utils/playback.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 import { useIntersect } from '../../text/utils/use-intersect.js'
+import { LoopCycle } from '../../text/utils/loop.js'
 import type {
   IconAnimation,
   IconMotion,
@@ -28,17 +30,17 @@ const MOTIONS = new Set<string>([
   'rotate',
   'wiggle',
   'pulse',
-  'nudge-up',
-  'nudge-down',
-  'nudge-left',
-  'nudge-right',
+  'slide-up',
+  'slide-down',
+  'slide-left',
+  'slide-right',
 ])
 
-const NUDGE: Record<string, [x: number, y: number]> = {
-  'nudge-up': [0, -1],
-  'nudge-down': [0, 1],
-  'nudge-left': [-1, 0],
-  'nudge-right': [1, 0],
+const SLIDE: Record<string, [x: number, y: number]> = {
+  'slide-up': [0, -1],
+  'slide-down': [0, 1],
+  'slide-left': [-1, 0],
+  'slide-right': [1, 0],
 }
 
 type Segment = AnimationSequence[number]
@@ -123,15 +125,15 @@ function fetchIcon(url: string) {
 
 /**
  * Animates any SVG icon on a spring: it draws the strokes in, or makes the
- * icon pop, bounce, rotate, wiggle, pulse or nudge up, down, left or right.
+ * icon pop, bounce, rotate, wiggle, pulse or slide up, down, left or right.
  * It can also do both at once, as in `animation="draw wiggle"`. Every run
  * starts from where the icon is, so hovering again mid-animation never
- * makes it jump. With `trigger="hover"`, a nudge holds while the pointer is
+ * makes it jump. With `trigger="hover"`, a slide holds while the pointer is
  * over it and springs back on leave. Pass the icon as a URL in `src`, as an SVG
  * string in `icon`, or as a child `<svg>`. Stroke sets such as Lucide,
  * Tabler, Heroicons and Iconoir can draw; filled icons such as Phosphor and
- * Bootstrap pop instead. The icon takes `currentColor`. Inside a button or
- * link, `hover` and `click` follow that button or link.
+ * Bootstrap pop instead. The icon takes `currentColor`. Inside a button, a
+ * link or a `<summary>`, `hover` and `click` follow that element.
  *
  * **Use it for:** icons that draw in or move when people hover or click a
  * button or link, when they scroll into view, or once when the page loads.
@@ -185,7 +187,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   @property({ type: String }) src = ''
   /** SVG markup to render, for example `import { Heart } from 'lucide-static'`. Takes precedence over `src`. */
   @property({ type: String }) icon = ''
-  /** `'draw'`, `'pop'`, `'bounce'`, `'rotate'`, `'wiggle'`, `'pulse'`, `'nudge-up'`, `'nudge-down'`, `'nudge-left'` or `'nudge-right'`, or `draw` plus one of the others, such as `'draw nudge-right'`, to run both. `draw` needs a stroke icon and falls back to `pop`. */
+  /** `'draw'`, `'pop'`, `'bounce'`, `'rotate'`, `'wiggle'`, `'pulse'`, `'slide-up'`, `'slide-down'`, `'slide-left'` or `'slide-right'`, or `draw` plus one of the others, such as `'draw slide-right'`, to run both. `draw` needs a stroke icon and falls back to `pop`. */
   @property({ type: String, reflect: true }) animation: IconAnimation = 'draw'
   /** What starts the animation: `'hover'`, `'click'`, `'view'` (scrolled into view), `'mount'` or `'loop'`. */
   @property({ type: String, reflect: true }) trigger: IconTrigger = 'hover'
@@ -233,7 +235,6 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   private svg: SVGSVGElement | null = null
   private strokes: SVGElement[] = []
   private disconnectIntersect: (() => void) | null = null
-  private loopTimer: ReturnType<typeof setTimeout> | null = null
   private hovering = false
   private keepPose = false
 
@@ -252,32 +253,46 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   }
 
   playback: PlaybackController = new PlaybackController(this, {
-    start: () => {
-      if (!this.svg)
-        return {
-          handle: { pause() {}, resume() {}, finish() {}, cancel() {} },
-          done: Promise.resolve(),
-        }
-      const controls = this.run()
-      return {
-        handle: {
-          ...controlsHandle(controls),
-          cancel: () => (this.keepPose ? controls.stop() : controls.cancel()),
-        },
-        done: controls,
-      }
+    start: () => (this.trigger === 'loop' ? { handle: this.cycle.start() } : this.runOnce()),
+    applyFinalState: () => {
+      this.cycle.stop()
+      this.settle()
     },
-    applyFinalState: () => this.settle(),
-    applyInitialState: () => (this.startsHidden ? this.hide() : this.settle()),
+    applyInitialState: () => {
+      if (this.keepPose) return
+      this.cycle.stop()
+      if (this.startsHidden) this.hide()
+      else this.settle()
+    },
   })
+
+  private cycle: LoopCycle = new LoopCycle({
+    leg: (out: boolean) => (out ? null : this.runOnce()),
+    gap: () => this.interval,
+  })
+
+  private runOnce(): PlaybackRun {
+    if (!this.svg)
+      return {
+        handle: { pause() {}, resume() {}, finish() {}, cancel() {} },
+        done: Promise.resolve(),
+      }
+    const controls = this.run()
+    return {
+      handle: {
+        ...controlsHandle(controls),
+        cancel: () => (this.keepPose ? controls.stop() : controls.cancel()),
+      },
+      done: controls,
+    }
+  }
 
   connectedCallback() {
     super.connectedCallback()
-    this.target = this.closest<HTMLElement>('button, a, [role="button"]') ?? this
+    this.target = this.closest<HTMLElement>('button, a, summary, [role="button"]') ?? this
     this.target.addEventListener('pointerenter', this.onHover)
     this.target.addEventListener('pointerleave', this.onLeave)
     this.target.addEventListener('click', this.onClick)
-    this.addEventListener('motion-finish', this.onFinish)
     if (this.hasUpdated) this.setup()
   }
 
@@ -286,9 +301,8 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     this.target.removeEventListener('pointerenter', this.onHover)
     this.target.removeEventListener('pointerleave', this.onLeave)
     this.target.removeEventListener('click', this.onClick)
-    this.removeEventListener('motion-finish', this.onFinish)
     this.disconnectIntersect?.()
-    this.stopLoop()
+    this.cycle.stop()
   }
 
   updated(changed: Map<string, unknown>) {
@@ -327,7 +341,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     this.markup = markup
     this.disconnectIntersect?.()
     this.disconnectIntersect = null
-    this.stopLoop()
+    this.cycle.stop()
     const container = this.renderRoot.querySelector<HTMLElement>('.icon')
     if (markup && container) {
       const svg = parseSvg(markup)
@@ -372,14 +386,14 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     })
   }
 
-  private get holdsNudge() {
-    return this.trigger === 'hover' && this.parts.motion?.startsWith('nudge-')
+  private get holdsSlide() {
+    return this.trigger === 'hover' && this.parts.motion?.startsWith('slide-')
   }
 
   private run(): AnimationPlaybackControlsWithThen {
     const svg = this.svg!
     const { draw, motion } = this.parts
-    const leaving = this.holdsNudge && !this.hovering
+    const leaving = this.holdsSlide && !this.hovering
     const sequence: Segment[] = [
       ...(draw && !leaving ? this.draw(svg) : []),
       ...(motion ? this.move(svg, motion) : []),
@@ -449,12 +463,12 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
       ],
     ]
 
-    if (motion in NUDGE) {
-      const [dx, dy] = NUDGE[motion]
+    if (motion in SLIDE) {
+      const [dx, dy] = SLIDE[motion]
       const key = dx ? 'x' : 'y'
       const start = dx ? from.x : from.y
       const peak = (dx || dy) * size * 0.25
-      if (this.holdsNudge) return settle(key, start, this.hovering ? peak : 0)
+      if (this.holdsSlide) return settle(key, start, this.hovering ? peak : 0)
       return [out(key, start, peak), back(key, peak)]
     }
     if (motion === 'pop') return [out('scale', from.scale, 0.7), back('scale', 0.7)]
@@ -465,10 +479,13 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     return [out('scale', from.scale, 1.18), back('scale', 1.18)]
   }
 
+  /** Cancels an in-flight run without resetting the pose, so the next run starts where the icon is. */
   private restart() {
-    this.keepPose = true
-    this.playback.teardown()
-    this.keepPose = false
+    if (this.playState === 'running' || this.playState === 'paused') {
+      this.keepPose = true
+      this.cancel()
+      this.keepPose = false
+    }
     void this.play()
   }
 
@@ -492,28 +509,11 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
 
   private onLeave = () => {
     this.hovering = false
-    if (this.holdsNudge) this.restart()
+    if (this.holdsSlide) this.restart()
   }
 
   private onClick = () => {
     if (this.trigger === 'click') this.restart()
-  }
-
-  private onFinish = () => {
-    if (this.trigger !== 'loop' || !this.isConnected) return
-    this.stopLoop()
-    this.loopTimer = setTimeout(() => this.restart(), this.interval * 1000)
-  }
-
-  private stopLoop() {
-    if (this.loopTimer) clearTimeout(this.loopTimer)
-    this.loopTimer = null
-  }
-
-  /** Reverts to the initial state and returns to idle. Also stops a `loop` until it is played again. Fires `motion-cancel`. */
-  override cancel() {
-    this.stopLoop()
-    super.cancel()
   }
 
   /** Restarts the animation from its starting state. */

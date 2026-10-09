@@ -20,6 +20,10 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
  *
  * @slot - The text to scramble. Plain text only — read once on connect.
  *
+ * @fires motion-start - When a run starts.
+ * @fires motion-finish - When a run finishes, or `finish()` jumps to the end.
+ * @fires motion-cancel - When `cancel()` stops a run and resets it.
+ *
  * @example
  * ```html
  * <motion-scramble interval="0.035" iterations="3" trigger="hover">
@@ -136,7 +140,7 @@ export class MotionScramble
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     if (this.trigger === 'hover') {
-      this.addEventListener('mouseenter', this.begin)
+      this.addEventListener('pointerenter', this.begin)
     } else {
       this.viewport.arm()
     }
@@ -152,7 +156,7 @@ export class MotionScramble
   disconnectedCallback() {
     super.disconnectedCallback()
     this.viewport.disarm()
-    this.removeEventListener('mouseenter', this.begin)
+    this.removeEventListener('pointerenter', this.begin)
     this.detachPauseOnHover?.()
     this.detachPauseOnHover = null
   }

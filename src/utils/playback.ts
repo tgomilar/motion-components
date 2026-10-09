@@ -7,6 +7,7 @@ import type {
   PlaybackState,
 } from './playback.types.js'
 import { registerPlayback, unregisterPlayback } from './registry.js'
+export type { MotionChangeDetail } from './events.js'
 
 export type {
   MotionControllable,

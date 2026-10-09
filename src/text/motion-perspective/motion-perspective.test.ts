@@ -140,10 +140,10 @@ describe('motion-perspective', () => {
     const el = (await fixture(
       html`<motion-perspective text="ABC" loop pause-on-hover></motion-perspective>`,
     )) as MotionPerspective
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('paused')
     expect(frames.pending).toBe(0)
-    el.dispatchEvent(new MouseEvent('mouseleave'))
+    el.dispatchEvent(new PointerEvent('pointerleave'))
     expect(el.playState).toBe('running')
     expect(frames.pending).toBe(1)
   })
@@ -152,7 +152,7 @@ describe('motion-perspective', () => {
     const el = (await fixture(
       html`<motion-perspective text="ABC" loop pause-on-hover="false"></motion-perspective>`,
     )) as MotionPerspective
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    el.dispatchEvent(new PointerEvent('pointermove'))
     expect(el.playState).toBe('running')
   })
 

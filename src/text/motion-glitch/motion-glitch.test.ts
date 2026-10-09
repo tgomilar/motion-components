@@ -91,12 +91,16 @@ describe('motion-glitch', () => {
     expect((main[2] as { duration: number }).duration).toBeCloseTo(0.38 * 0.65)
   })
 
-  it('hover trigger bursts on mouseenter only', async () => {
+  it('hover trigger bursts on pointerenter only, as a playback run with events', async () => {
     const el = await mount('trigger="hover"')
     expect(animateMock).not.toHaveBeenCalled()
     expect(el.playState).toBe('idle')
-    el.dispatchEvent(new MouseEvent('mouseenter'))
+    let started = 0
+    el.addEventListener('motion-start', () => started++)
+    el.dispatchEvent(new PointerEvent('pointerenter'))
     expect(animateMock).toHaveBeenCalledTimes(3)
+    expect(started).toBe(1)
+    expect(['running', 'finished']).toContain(el.playState)
   })
 
   it('mount trigger bursts once and does not repeat', async () => {
@@ -173,5 +177,16 @@ describe('motion-glitch', () => {
     const hover = await mount('trigger="hover"')
     hover.dispatchEvent(new MouseEvent('mouseenter'))
     expect(animateMock).not.toHaveBeenCalled()
+  })
+
+  it('hover trigger still bursts after it is removed and added back', async () => {
+    const el = await mount('trigger="hover"')
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    let started = 0
+    el.addEventListener('motion-start', () => started++)
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    expect(started).toBe(1)
   })
 })

@@ -21,4 +21,5 @@ export interface MotionChartProps {
   tooltip: boolean
   legend: boolean
   label: string
+  animateScale: boolean
 }

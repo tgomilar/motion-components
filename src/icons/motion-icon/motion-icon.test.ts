@@ -83,8 +83,8 @@ describe('motion-icon', () => {
     expect(scaleOf(svg)).toBeCloseTo(1, 2)
   })
 
-  it('holds a nudge while hovered and springs back on leave', async () => {
-    const el = await mount('animation="nudge-right" duration="0.3" bounce="0"')
+  it('holds a slide while hovered and springs back on leave', async () => {
+    const el = await mount('animation="slide-right" duration="0.3" bounce="0"')
     const svg = el.querySelector('svg')!
     el.dispatchEvent(new PointerEvent('pointerenter'))
     await el.finished
@@ -95,8 +95,8 @@ describe('motion-icon', () => {
     expect(xOf(svg)).toBeCloseTo(0, 1)
   })
 
-  it('nudges out and back on other triggers', async () => {
-    const el = await mount('trigger="click" animation="nudge-up" duration="0.3"', FILLED)
+  it('slides out and back on other triggers', async () => {
+    const el = await mount('trigger="click" animation="slide-up" duration="0.3"', FILLED)
     const svg = el.querySelector('svg')!
     el.dispatchEvent(new MouseEvent('click'))
     await wait(120)
@@ -167,14 +167,27 @@ describe('motion-icon', () => {
     expect(svg.querySelector('path')!.hasAttribute('onclick')).toBe(false)
   })
 
-  it('loops with a pause between runs', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    const el = await mount('trigger="loop" interval="0.5"')
+  it('loops as one run: running between cycles, and finish() ends the loop', async () => {
+    const el = await mount('trigger="loop" interval="0.2" duration="0.2"')
+    expect(el.playState).toBe('running')
+    await new Promise((resolve) => setTimeout(resolve, 700))
+    expect(el.playState).toBe('running')
     el.finish()
     expect(el.playState).toBe('finished')
-    vi.advanceTimersByTime(500)
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    expect(el.playState).toBe('finished')
+    el.remove()
+  })
+
+  it('pause() holds a loop, gaps included, until play()', async () => {
+    const el = await mount('trigger="loop" interval="0.2" duration="0.2"')
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    el.pause()
+    expect(el.playState).toBe('paused')
+    await new Promise((resolve) => setTimeout(resolve, 700))
+    expect(el.playState).toBe('paused')
+    void el.play()
     expect(el.playState).toBe('running')
-    vi.useRealTimers()
     el.remove()
   })
 
@@ -276,6 +289,17 @@ describe('motion-icon', () => {
     expect(el.playState).toBe('running')
   })
 
+  it('follows hover on the surrounding summary of a details element', async () => {
+    const host = document.createElement('div')
+    host.innerHTML = `<details><summary>Show the code <motion-icon animation="slide-down">${STROKE}</motion-icon></summary></details>`
+    const details = await fixture(host.firstElementChild!)
+    const summary = details.querySelector('summary')!
+    const el = details.querySelector('motion-icon') as MotionIcon
+    await elementUpdated(el)
+    summary.dispatchEvent(new PointerEvent('pointerenter'))
+    expect(el.playState).toBe('running')
+  })
+
   it('fills outline icons with --mc-icon-fill and fades the fill in when drawing', async () => {
     const io = stubIntersectionObserver()
     const el = await mount('trigger="view" style="--mc-icon-fill: rgb(255, 0, 0)"')
@@ -301,5 +325,30 @@ describe('motion-icon', () => {
     await elementUpdated(el)
     io.enter()
     expect(el.playState).toBe('running')
+  })
+
+  it('an interrupted hover run reports motion-cancel, then plays again', async () => {
+    const el = await mount('duration="0.6"')
+    let cancelled = 0
+    let started = 0
+    el.addEventListener('motion-cancel', () => cancelled++)
+    el.addEventListener('motion-start', () => started++)
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    expect(cancelled).toBe(1)
+    expect(started).toBe(2)
+    expect(el.playState).toBe('running')
+  })
+
+  it('clicking again after a run finished starts a new run without a cancel event', async () => {
+    const el = await mount('trigger="click" duration="0.2"', FILLED)
+    const events: string[] = []
+    for (const type of ['motion-start', 'motion-finish', 'motion-cancel'])
+      el.addEventListener(type, () => events.push(type))
+    el.dispatchEvent(new MouseEvent('click'))
+    await el.finished
+    el.dispatchEvent(new MouseEvent('click'))
+    await el.finished
+    expect(events).toEqual(['motion-start', 'motion-finish', 'motion-start', 'motion-finish'])
   })
 })

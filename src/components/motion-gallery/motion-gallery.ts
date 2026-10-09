@@ -4,7 +4,8 @@ import '../../respond/motion-hover/motion-hover.js'
 import '../../reveal/motion-stagger/motion-stagger.js'
 import { BaseElement, defineElement } from '../../utils/define.js'
 import { readFlag } from '../../utils/attributes.js'
-export type { MotionGalleryProps } from './motion-gallery.types.js'
+export type { MotionGalleryProps, GalleryIndexDetail } from './motion-gallery.types.js'
+export type { MotionChangeDetail } from '../../utils/events.js'
 
 const SPRING_EXPAND = { type: 'spring', stiffness: 380, damping: 40, restDelta: 0.001 } as const
 const SPRING_COLLAPSE = { type: 'spring', stiffness: 460, damping: 48, restDelta: 0.001 } as const
@@ -56,6 +57,10 @@ const SPRING_COLLAPSE = { type: 'spring', stiffness: 460, damping: 48, restDelta
  * @attr {string} [aspect-ratio] - CSS `aspect-ratio` for each item. Unset by default, so items keep their intrinsic ratio.
  * @attr {boolean} [stagger=true] - Stagger the entrance animation. Set `"false"` to disable. Read once on connect.
  *
+ * @fires motion-open - The lightbox opened. `detail: { index }`.
+ * @fires motion-change - The lightbox moved to another item. `detail: { index }`.
+ * @fires motion-close - The lightbox closed.
+ *
  * @example
  * ```html
  * <motion-gallery columns="3" gap="16" aspect-ratio="4/3">
@@ -103,7 +108,12 @@ export class MotionGallery extends BaseElement {
   }
 
   connectedCallback() {
-    if (this.initialized) return
+    if (this.initialized) {
+      if (!this.items.length) return
+      this.addEventListener('click', this.onClick)
+      this.addEventListener('keydown', this.onItemKey)
+      return
+    }
     this.initialized = true
 
     this.setAttribute('role', 'group')
@@ -167,9 +177,17 @@ export class MotionGallery extends BaseElement {
     this.expandAnim = null
     this.clone?.remove()
     this.clone = null
+    const wasOpen = this.active
+    if (wasOpen) wasOpen.style.opacity = ''
     this.active = null
+    this.currentIndex = -1
+    this.lastFocus = null
+    this.hoverWrappers.forEach((w) => {
+      w.style.pointerEvents = ''
+    })
     this.backdrop = null
     this.controls = null
+    if (wasOpen) this.emit('motion-close')
   }
 
   attributeChangedCallback() {
@@ -336,7 +354,7 @@ export class MotionGallery extends BaseElement {
     return btn
   }
 
-  private open() {
+  private showOverlay() {
     this.backdrop!.style.display = 'block'
     this.controls!.style.display = 'block'
     animate(
@@ -347,7 +365,7 @@ export class MotionGallery extends BaseElement {
     document.addEventListener('keydown', this.onKey)
   }
 
-  private hide() {
+  private hideOverlay() {
     document.removeEventListener('keydown', this.onKey)
     animate(
       this.backdrop!,
@@ -373,7 +391,7 @@ export class MotionGallery extends BaseElement {
     const first = item.getBoundingClientRect()
     const { x: tx, y: ty, w: tw, h: th } = this.targetRect(first)
 
-    this.open()
+    this.showOverlay()
 
     const fromBR = this.brCache.get(item) ?? '4px'
     const clone = this.makeClone(item, first.left, first.top, first.width, first.height)
@@ -401,6 +419,7 @@ export class MotionGallery extends BaseElement {
     clone.addEventListener('click', () => this.collapse())
     requestAnimationFrame(() => this.closeBtn?.focus())
     this.updateUI()
+    this.emit('motion-open', { index: this.currentIndex })
   }
 
   private collapse() {
@@ -417,7 +436,7 @@ export class MotionGallery extends BaseElement {
       w.style.pointerEvents = ''
     })
 
-    this.hide()
+    this.hideOverlay()
     this.expandAnim?.stop()
     this.expandAnim = null
 
@@ -425,6 +444,7 @@ export class MotionGallery extends BaseElement {
       clone.remove()
       item.style.opacity = ''
       returning?.focus()
+      this.emit('motion-close')
       return
     }
 
@@ -448,14 +468,43 @@ export class MotionGallery extends BaseElement {
     })
 
     returning?.focus()
+    this.emit('motion-close')
   }
 
-  private prev() {
+  /** Index of the item open in the lightbox, or -1 while it is closed. */
+  get index(): number {
+    return this.currentIndex
+  }
+
+  /** Opens the lightbox on the item at `index`, or moves to it when the lightbox is already open. */
+  open(index = 0) {
+    const target = Math.max(0, Math.min(this.items.length - 1, Math.round(index)))
+    if (this.active) {
+      if (target !== this.currentIndex) this.navigateTo(target)
+      return
+    }
+    const item = this.items[target]
+    if (item) this.expand(item)
+  }
+
+  /** Closes the lightbox. */
+  close() {
+    this.collapse()
+  }
+
+  /** Moves the lightbox to the previous item. Does nothing on the first one or while closed. */
+  prev() {
     if (this.currentIndex > 0) this.navigateTo(this.currentIndex - 1)
   }
 
-  private next() {
-    if (this.currentIndex < this.items.length - 1) this.navigateTo(this.currentIndex + 1)
+  /** Moves the lightbox to the next item. Does nothing on the last one or while closed. */
+  next() {
+    if (this.active && this.currentIndex < this.items.length - 1)
+      this.navigateTo(this.currentIndex + 1)
+  }
+
+  private emit(name: string, detail?: { index: number }) {
+    this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }))
   }
 
   private navigateTo(newIndex: number) {
@@ -495,6 +544,7 @@ export class MotionGallery extends BaseElement {
 
     nextClone.addEventListener('click', () => this.collapse())
     this.updateUI()
+    this.emit('motion-change', { index: newIndex })
   }
 
   private makeClone(item: HTMLElement, l: number, t: number, w: number, h: number): HTMLElement {

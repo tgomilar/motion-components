@@ -97,4 +97,22 @@ describe('motion-ring', () => {
     expect(el.getClientRects()).toHaveLength(1)
     expect(el.textContent).toBe('reversible')
   })
+
+  it('closes the whole shape when drawn, and wraps a part drawn stroke around it', async () => {
+    const host = document.createElement('div')
+    host.innerHTML =
+      '<p style="font-size: 40px"><motion-ring trigger="mount">stroke</motion-ring></p>'
+    const p = await fixture(host.firstElementChild!)
+    const el = p.querySelector('motion-ring') as HTMLElement
+    await elementUpdated(el as never)
+    const stroke = el.shadowRoot!.querySelector('.stroke')!
+    const dashes = () =>
+      (getComputedStyle(stroke).strokeDasharray.match(/[\d.]+/g) ?? []).map(Number)
+    el.style.setProperty('--mc-_mark-progress', '1')
+    el.style.setProperty('--mc-_mark-tail', '0')
+    expect(dashes()[0]).toBeCloseTo(1, 2)
+    el.style.setProperty('--mc-_mark-progress', '0.3')
+    const [dash, gap] = dashes()
+    expect(dash + gap).toBeCloseTo(1, 2)
+  })
 })
