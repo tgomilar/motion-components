@@ -906,7 +906,6 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     return tokens
   }
 
-  // Python
   // Shell: prompts, commands, flags, strings, variables and comments
   private tokenizeSh(code: string): Token[] {
     const tokens: Token[] = []
@@ -943,17 +942,18 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
         continue
       }
       if (ch === '$' && /[{A-Za-z_]/.test(code[i + 1] ?? '')) {
-        const m = /^\$(\{[^}]*\}|[A-Za-z_][A-Za-z0-9_]*)/.exec(code.slice(i))!
-        tokens.push({ text: m[0], cls: 'cw-num' })
-        i += m[0].length
+        // An unclosed ${ runs to the end of the line
+        const text = /^\$(\{[^}\n]*\}?|[A-Za-z_][A-Za-z0-9_]*)/.exec(code.slice(i))![0]
+        tokens.push({ text, cls: 'cw-num' })
+        i += text.length
         command = false
         continue
       }
-      const op = /^(&&|\|\||[|;]|>>?)/.exec(code.slice(i))
+      const op = /^(&&|\|\||&>>?|>>?&?|[|;&])/.exec(code.slice(i))
       if (op) {
         tokens.push({ text: op[0], cls: 'cw-tag' })
         i += op[0].length
-        command = op[0] !== '>' && op[0] !== '>>'
+        command = !op[0].includes('>')
         continue
       }
       if (/\s/.test(ch)) {
@@ -961,7 +961,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
         i++
         continue
       }
-      const word = /^[^\s|;&>'"]+/.exec(code.slice(i))![0]
+      const word = /^[^\s|;&>'"]+/.exec(code.slice(i))?.[0] ?? ch
       const cls = command ? 'cw-keyword' : word.startsWith('-') ? 'cw-attr' : undefined
       tokens.push(cls ? { text: word, cls } : { text: word })
       i += word.length
@@ -970,6 +970,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
     return tokens
   }
 
+  // Python
   private tokenizePython(code: string): Token[] {
     const keywords = new Set([
       'def',
