@@ -120,6 +120,20 @@ describe('motion-image-compare', () => {
     expect(knob(el).getAttribute('aria-valuenow')).toBe('50')
   })
 
+  it('quick arrow presses step from where the split is heading', async () => {
+    stubReducedMotion(false)
+    const el = await mount()
+    await elementUpdated(el)
+    const positions: number[] = []
+    el.addEventListener('motion-change', (e) =>
+      positions.push((e as CustomEvent<{ position: number }>).detail.position),
+    )
+    knob(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    knob(el).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    expect(positions).toEqual([52, 54])
+    expect(el.position).toBe(54)
+  })
+
   it('Shift+Arrow takes a larger step', async () => {
     stubReducedMotion(true)
     const el = await mount()
