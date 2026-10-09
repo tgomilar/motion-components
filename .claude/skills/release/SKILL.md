@@ -44,9 +44,9 @@ If any step fails, the publish is aborted. Don't bypass with `--ignore-scripts`.
    Sort by what changed for the user, not by commit type: one `feat` commit can hold an addition and a behavior change, which become separate **Added** and **Changed** entries. Changed defaults go under **Changed** with the attribute that restores the old behavior; check the value in the diff. `chore`, `test` and docs-site commits need no entry. Don't commit it on its own; it goes into the version bump commit (step 10).
 9. **README.md** — every component directory under `src/*/motion-*` is listed with its docs link:
    ```bash
-   for d in src/*/motion-*; do n=$(basename $d); grep -q "\`$n\`" README.md || echo "missing in README: $n"; done
+   for d in src/*/motion-*; do n=$(basename $d); grep -q '@deprecated' $d/$n.ts && continue; grep -q "\`$n\`" README.md || echo "missing in README: $n"; done
    ```
-   Also update README examples when a release renames or removes an attribute, a CSS custom property or an export. README changes also go into the version bump commit, not a separate commit.
+   Deprecated aliases (a `@deprecated` tag in the source, such as `motion-state-icon`) are skipped and should not be listed. Also update README examples when a release renames or removes an attribute, a CSS custom property or an export. README changes also go into the version bump commit, not a separate commit.
 10. **Version bump** — one commit holds the new version, the changelog and any README changes, and the tag points at it. Use `patch` when the changelog has only **Fixed**, and `minor` when it has **Added** or **Changed**. The version must match the changelog heading. `npm version` refuses to run with uncommitted changes, so bump without git and commit by hand:
     ```bash
     npm version <patch|minor> --no-git-tag-version
