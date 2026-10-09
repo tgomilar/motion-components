@@ -83,6 +83,17 @@ describe('motion-icon', () => {
     expect(scaleOf(svg)).toBeCloseTo(1, 2)
   })
 
+  it('finishes an interrupted turn forward instead of spinning past it', async () => {
+    const el = await mount('animation="rotate" duration="0.4"')
+    const svg = el.querySelector('svg')!
+    svg.style.transform = 'rotate(250deg)'
+    el.dispatchEvent(new PointerEvent('pointerenter'))
+    await nextFrame()
+    await nextFrame()
+    const angle = Number(/rotate\((-?[\d.]+)deg\)/.exec(svg.style.transform)?.[1])
+    expect(angle).toBeGreaterThanOrEqual(250)
+  })
+
   it('holds a slide while hovered and springs back on leave', async () => {
     const el = await mount('animation="slide-right" duration="0.3" bounce="0"')
     const svg = el.querySelector('svg')!
