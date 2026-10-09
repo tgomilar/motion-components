@@ -161,4 +161,16 @@ describe('registry — loops', () => {
     expect(isLoopPaused(el)).toBe(false)
     unregisterLoop(el)
   })
+
+  it('a loop moved while held stays held', () => {
+    const el = document.body.appendChild(document.createElement('div'))
+    registerLoop(el, () => ({ pause: vi.fn(), play: vi.fn() }))
+
+    pauseAll()
+    unregisterLoop(el)
+    registerLoop(el, () => ({ pause: vi.fn(), play: vi.fn() }))
+    expect(isLoopPaused(el)).toBe(true)
+    resumeAll()
+    unregisterLoop(el)
+  })
 })
