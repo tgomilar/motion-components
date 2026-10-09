@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit'
 import { property } from 'lit/decorators.js'
 import { animate } from 'motion'
 import type { MotionFlipCardProps, FlipTrigger, FlipAxis } from './motion-flip-card.types.js'
+import { flag } from '../../utils/attributes.js'
 import { customElement } from '../../utils/define.js'
 
 export type {
@@ -68,7 +69,7 @@ export class MotionFlipCard extends LitElement implements MotionFlipCardProps {
   @property({ type: Number, reflect: true }) perspective = 1000
 
   /** Whether the back is showing. Setting it turns the card without firing `motion-change`. */
-  @property({ type: Boolean, reflect: true }) flipped = false
+  @property({ type: Boolean, converter: flag, reflect: true }) flipped = false
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches

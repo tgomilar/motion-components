@@ -157,4 +157,15 @@ describe('motion-flip-card', () => {
     expect(scene(el).style.transform).toBe('rotateY(180deg)')
     expect(animateMock).not.toHaveBeenCalled()
   })
+
+  it('stays on the front with flipped="false"', async () => {
+    const el = (await fixture(
+      html`<motion-flip-card flipped="false"
+        ><div slot="front">F</div><div slot="back">B</div></motion-flip-card
+      >`,
+    )) as MotionFlipCard
+    await elementUpdated(el)
+    expect(el.flipped).toBe(false)
+    expect(scene(el).style.transform).not.toBe('rotateY(180deg)')
+  })
 })
