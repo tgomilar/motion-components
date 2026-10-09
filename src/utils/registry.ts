@@ -8,7 +8,8 @@ const controllables = new Set<ControllableHost>()
 const disableables = new Set<DisableableHost>()
 const autoDisabled = new WeakSet<DisableableHost>()
 const loops = new Map<HTMLElement, () => LoopControls | null>()
-const pausedLoops = new WeakSet<HTMLElement>()
+// A Set, not a WeakSet, so resumeAll can release holds on loops that are out of the page
+const pausedLoops = new Set<HTMLElement>()
 
 export function registerPlayback(el: ControllableHost): void {
   controllables.add(el)
@@ -33,8 +34,6 @@ export function registerLoop(el: HTMLElement, controls: () => LoopControls | nul
 
 export function unregisterLoop(el: HTMLElement): void {
   loops.delete(el)
-  // resumeAll only reaches registered loops, so a hold must not outlive the registration
-  pausedLoops.delete(el)
 }
 
 /** Whether `pauseAll` is holding this element's loop, so a newly started loop should start paused. */
@@ -82,6 +81,8 @@ export function resumeAll(root: Node = document): void {
     pausedLoops.delete(el)
     controls()?.play()
   }
+  // A loop that was removed while held keeps its hold across a move, but not past a resume
+  for (const el of pausedLoops) if (!loops.has(el)) pausedLoops.delete(el)
 }
 
 /** Cancel every motion-* instance inside `root`, resetting to initial state. */
