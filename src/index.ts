@@ -6,7 +6,7 @@ export type { SliderChangeDetail } from './components/motion-slider/motion-slide
 export type { GalleryIndexDetail } from './components/motion-gallery/motion-gallery.types.js'
 export type { FlipCardChangeDetail } from './components/motion-flip-card/motion-flip-card.types.js'
 export type { ImageCompareChangeDetail } from './components/motion-image-compare/motion-image-compare.types.js'
-export type { StateIconChangeDetail } from './icons/motion-state-icon/motion-state-icon.types.js'
+export type { IconStateChangeDetail } from './icons/motion-icon-state/motion-icon-state.types.js'
 export { MotionHover } from './respond/motion-hover/motion-hover.js'
 export { MotionPress } from './respond/motion-press/motion-press.js'
 export { MotionReveal } from './reveal/motion-reveal/motion-reveal.js'
@@ -50,6 +50,8 @@ export { MotionDialog } from './components/motion-dialog/motion-dialog.js'
 export { MotionThemeIcon } from './components/motion-theme-icon/motion-theme-icon.js'
 export { MotionThemeToggle } from './components/motion-theme-toggle/motion-theme-toggle.js'
 export { MotionIcon } from './icons/motion-icon/motion-icon.js'
+export { MotionIconState } from './icons/motion-icon-state/motion-icon-state.js'
+/** @deprecated Use `MotionIconState`; `<motion-state-icon>` is now `<motion-icon-state>`. */
 export { MotionStateIcon } from './icons/motion-state-icon/motion-state-icon.js'
 
 export { MotionChart } from './charts/motion-chart/motion-chart.js'

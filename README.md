@@ -145,7 +145,7 @@ Typography & character effects
 
 Animated and state-morphing icons
 
-[`motion-icon`](https://www.motion-components.dev/docs/icons/motion-icon/) [`motion-state-icon`](https://www.motion-components.dev/docs/icons/motion-state-icon/)
+[`motion-icon`](https://www.motion-components.dev/docs/icons/motion-icon/) [`motion-icon-state`](https://www.motion-components.dev/docs/icons/motion-icon-state/)
 
 ### Scroll [🔗](https://www.motion-components.dev/docs/scroll/motion-parallax/)
 

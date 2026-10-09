@@ -1,11 +1,17 @@
 import { svg } from 'lit'
 import type { SVGTemplateResult } from 'lit'
-import type { StateIconName } from './motion-state-icon.types.js'
+import type { IconStateName } from './motion-icon-state.types.js'
 
 type Keyframes = Record<string, number | number[]>
 
-export interface StateIconDef {
-  /** Shapes on a 24 px grid. `.accent` shapes use `--mc-icon-accent`; `.dash` shapes are drawn in with `strokeDashoffset`. */
+/**
+ * Offset of an undrawn `.dash` shape. The dash pattern is `1 2`, so an offset a little past 1
+ * leaves no zero-length dash at the start of the path, which a round cap would paint as a dot.
+ */
+export const HIDDEN = 1.05
+
+export interface IconStateDef {
+  /** Shapes on a 24 px grid. `.dash` shapes are drawn in with `strokeDashoffset`. */
   shapes: SVGTemplateResult
   /** Per-part targets keyed by class name, for the inactive and active state. */
   off: Record<string, Keyframes>
@@ -14,7 +20,7 @@ export interface StateIconDef {
   spin?: string
 }
 
-export const ICONS: Record<StateIconName, StateIconDef> = {
+export const ICONS: Record<IconStateName, IconStateDef> = {
   menu: {
     shapes: svg`<line class="top" x1="4" y1="6" x2="20" y2="6" />
       <line class="mid" x1="4" y1="12" x2="20" y2="12" />
@@ -40,11 +46,11 @@ export const ICONS: Record<StateIconName, StateIconDef> = {
   copy: {
     shapes: svg`<rect class="sheet" x="8" y="8" width="13" height="13" rx="2" />
       <path class="back" d="M4 15V5a1 1 0 0 1 1-1h10" />
-      <path class="check accent dash" d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" />`,
+      <path class="check dash" d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" />`,
     off: {
       sheet: { opacity: 1, scale: 1 },
       back: { opacity: 1, scale: 1 },
-      check: { strokeDashoffset: 1 },
+      check: { strokeDashoffset: HIDDEN },
     },
     on: {
       sheet: { opacity: 0, scale: 0.7 },
@@ -74,9 +80,13 @@ export const ICONS: Record<StateIconName, StateIconDef> = {
   loading: {
     shapes: svg`<circle class="track" cx="12" cy="12" r="9" opacity="0.2" />
       <g class="arc"><circle cx="12" cy="12" r="9" stroke="none" /><path d="M21 12a9 9 0 0 0-9-9" /></g>
-      <circle class="ring accent dash" cx="12" cy="12" r="9" pathLength="1" />
-      <path class="check accent dash" d="M8 12.5l3 3 5-6" pathLength="1" />`,
-    off: { arc: { opacity: 1 }, ring: { strokeDashoffset: 1 }, check: { strokeDashoffset: 1 } },
+      <circle class="ring dash" cx="12" cy="12" r="9" pathLength="1" />
+      <path class="check dash" d="M8 12.5l3 3 5-6" pathLength="1" />`,
+    off: {
+      arc: { opacity: 1 },
+      ring: { strokeDashoffset: HIDDEN },
+      check: { strokeDashoffset: HIDDEN },
+    },
     on: { arc: { opacity: 0 }, ring: { strokeDashoffset: 0 }, check: { strokeDashoffset: 0 } },
     spin: 'arc',
   },
@@ -87,7 +97,7 @@ export const ICONS: Record<StateIconName, StateIconDef> = {
       />
       <circle class="pupil" cx="12" cy="12" r="3" />
       <line class="slash dash" x1="3" y1="3" x2="21" y2="21" pathLength="1" />`,
-    off: { pupil: { scale: 1 }, slash: { strokeDashoffset: 1 } },
+    off: { pupil: { scale: 1 }, slash: { strokeDashoffset: HIDDEN } },
     on: { pupil: { scale: 0.7 }, slash: { strokeDashoffset: 0 } },
   },
 }

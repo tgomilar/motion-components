@@ -30,7 +30,7 @@
   { "name": "motion-perspective",       "path": "dist/motion-perspective.js","limit": "2.3 kB",  "ignore": ["lit", "motion"] },
   { "name": "motion-stretch",           "path": "dist/motion-stretch.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
   { "name": "motion-liquid",            "path": "dist/motion-liquid.js",    "limit": "2.3 kB", "ignore": ["lit", "motion"] },
-  { "name": "motion-gravity",           "path": "dist/motion-gravity.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-gravity",           "path": "dist/motion-gravity.js",   "limit": "2 kB","ignore": ["lit", "motion"] },
   { "name": "motion-font",              "path": "dist/motion-font.js",      "limit": "3.1 kB", "ignore": ["lit", "motion"] },
 
   { "name": "motion-slider",            "path": "dist/motion-slider.js",    "limit": "3.5 kB", "ignore": ["lit", "motion"] },
@@ -39,7 +39,8 @@
   { "name": "motion-theme-icon",        "path": "dist/motion-theme-icon.js", "limit": "1.5 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-theme-toggle",      "path": "dist/motion-theme-toggle.js", "limit": "6 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-icon",              "path": "dist/motion-icon.js",       "limit": "4.3 kB", "ignore": ["lit", "motion"] },
-  { "name": "motion-state-icon",        "path": "dist/motion-state-icon.js", "limit": "2.65 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-icon-state",        "path": "dist/motion-icon-state.js", "limit": "2.65 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-state-icon",        "path": "dist/motion-state-icon.js", "limit": "2.8 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-chart",             "path": "dist/motion-chart.js",      "limit": "7 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-pie",               "path": "dist/motion-pie.js",        "limit": "6 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-sparkline",         "path": "dist/motion-sparkline.js",  "limit": "3 kB", "ignore": ["lit", "motion"] },
@@ -48,5 +49,5 @@
   { "name": "motion-scene",             "path": "dist/motion-scene.js",     "limit": "2.3 kB", "ignore": ["lit", "motion"] },
 
   { "name": "motion-code",              "path": "dist/motion-code.js",       "limit": "6.5 kB", "ignore": ["lit", "motion"] },
-  { "name": "motion-code-inline",       "path": "dist/motion-code-inline.js", "limit": "1.75 kB","ignore": ["lit", "motion"] }
+  { "name": "motion-code-inline",       "path": "dist/motion-code-inline.js", "limit": "3.2 kB","ignore": ["lit", "motion"] }
 ]

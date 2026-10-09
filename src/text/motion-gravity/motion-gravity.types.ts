@@ -1,3 +1,5 @@
+export type GravityTrigger = 'mount' | 'view'
+
 export interface MotionGravityProps {
   text?: string
   height: number
@@ -5,4 +7,5 @@ export interface MotionGravityProps {
   duration: number
   bounce: number
   delay: number
+  trigger: GravityTrigger
 }

@@ -1,4 +1,4 @@
-export type StateIconName =
+export type IconStateName =
   | 'menu'
   | 'play'
   | 'copy'
@@ -8,12 +8,12 @@ export type StateIconName =
   | 'loading'
   | 'eye'
 
-export interface StateIconChangeDetail {
+export interface IconStateChangeDetail {
   active: boolean
 }
 
-export interface MotionStateIconProps {
-  name: StateIconName
+export interface MotionIconStateProps {
+  name: IconStateName
   active: boolean
   toggle: boolean
   label: string

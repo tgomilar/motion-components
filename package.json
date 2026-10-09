@@ -122,6 +122,11 @@
       "import": "./dist/motion-icon.js",
       "default": "./dist/motion-icon.js"
     },
+    "./motion-icon-state": {
+      "types": "./dist/icons/motion-icon-state/motion-icon-state.d.ts",
+      "import": "./dist/motion-icon-state.js",
+      "default": "./dist/motion-icon-state.js"
+    },
     "./motion-image-compare": {
       "types": "./dist/components/motion-image-compare/motion-image-compare.d.ts",
       "import": "./dist/motion-image-compare.js",
