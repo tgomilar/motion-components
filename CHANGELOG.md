@@ -1,9 +1,22 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 — 2026-10-09
+
+### Breaking changes
+
+- `motion-icon-state` (formerly `motion-state-icon`): `--mc-icon-accent` is removed. Use `--mc-icon-color-active`, which colors the whole icon in its second state. The second state now takes the line color by default, instead of a red heart and green checks; set `--mc-icon-color-active` to keep a color, for example `--mc-icon-color-active: #e11d48` on the heart.
 
 ### Fixed
 
+- `motion-strike`: the line was drawn under the text. It is now drawn in front, one segment per wrapped line.
+- `motion-arc`: `align="top"` put the text on the left of the circle and `align="bottom"` on the right. Top now arcs over the top, and bottom arcs along the bottom, reading left to right with upright letters.
+- `motion-image-compare`: while dragging, the divider snapped back toward the point where the drag started. It now follows the pointer. Only the main mouse button drags, a cancelled pointer ends the drag, and changing the orientation clears the old handle position.
+- `motion-image-compare`: in Safari, dragging selected the images or dragged them out of the page.
+- `motion-dialog`: the backdrop blur was cut off inside an element with `backdrop-filter`, such as a sticky header. The blur is now on `dialog::backdrop`, which is drawn in the top layer. In Safari before 17.4 and Chrome before 122, the backdrop appears without a fade and uses the default color and blur.
+- `motion-code`: with `typing-loop="false"`, the full code showed before the block scrolled into view. The block now stays empty until then. Under reduced motion the code still shows at once.
+- `motion-code`: in blocks narrower than 30rem the code and padding are smaller, and iOS Safari no longer enlarges the text.
+- `motion-code-inline`: with `copy` and without `copy-visible`, the hidden copy button left a gap in the text. The button now appears just after the code on hover or focus, without taking space.
+- `motion-gravity`, `motion-perspective`, `motion-curve` and `motion-text-mask`: the plain text flashed before the component loaded, then blinked or jumped. They are now hidden until they are defined, like the other text components.
 - `pause()` and `pauseAll()` now hold. On `motion-circle`, `motion-curve`, `motion-arc`, `motion-perspective`, `motion-liquid` and `motion-ticker`, moving the pointer off a paused effect started it again. Leaving now only lifts a pause that the hover made.
 - `motion-liquid`: the text kept flowing after `cancel()` or `finish()`. It now stops and rests.
 - `motion-glitch`: with `trigger="hover"` or `"mount"`, `play()` started the endless loop. It now plays one burst as a normal run, with events, and `pause()`, `finish()` and `cancel()` act on it.
@@ -19,20 +32,27 @@
 - `motion-progress`: under reduced motion, `playState` read `'finished'` while the bar followed scrolling. It now reads `'running'`.
 - `motion-blur` and `motion-font`: `replay()` now cancels and plays again, as on the other components.
 - `motion-code`: `setCode()` interrupted a typing run without firing `motion-cancel`.
+- `motion-icon-state`: a dot showed at the start of an undrawn line, such as the check of `copy` and `loading` or the slash of `eye`. Undrawn lines are now fully hidden.
+- `motion-image-compare`: pressing an arrow key again while the split was still moving stepped from where it was, not from where it was heading, so quick presses moved it less than the step.
 
 ### Changed
 
-- `motion-icon`: `nudge-up`, `nudge-down`, `nudge-left` and `nudge-right` from 1.3.0 are now `slide-up`, `slide-down`, `slide-left` and `slide-right`. Icons inside a `summary` also react to hover on it.
+- `motion-state-icon` is renamed to `motion-icon-state`, so both icon components start with `motion-icon`. Import `motion-components/motion-icon-state` and use `<motion-icon-state>`; the class is `MotionIconState` and the types are `IconStateName` and `IconStateChangeDetail`. The old tag, import, class and type names still work, log a one-time warning, and will be removed in 2.0.
+- `motion-code-inline`: the copy icon is a `motion-icon-state` that morphs into a check after copying, and it now scales with the text instead of staying 13px. `--mc-icon-color-active` sets the color of the check.
+- `motion-perspective`: the default `duration` is now `3` seconds instead of `0.667`, because the old cycle was too fast for large text. Set `duration="0.667"` to keep the faster speed.
+- `motion-icon`: hover, click and loop runs start from the icon's current position instead of resetting it, so hovering again never makes the icon jump. `wiggle` and `pulse` are springs instead of keyframes. Icons inside a `summary` also react to hover on it.
 - `motion-blur`: under reduced motion it now fires `motion-start` and `motion-finish`, and `playState` reads `'finished'`.
-- `pauseAll()` now also disables `motion-stretch` and holds the `motion-state-icon` loading spinner.
+- `pauseAll()` now also disables `motion-stretch` and holds the `motion-icon-state` loading spinner.
 
 ### Added
 
+- `motion-icon`: `slide-up`, `slide-down`, `slide-left` and `slide-right` animations. On hover, the icon stays moved while the pointer is over it and springs back when the pointer leaves.
+- `motion-code`: highlighting for shell code, in `.sh`, `.bash` and `.zsh` files and with `code-lang="sh"`: prompts, commands, flags, strings, variables, pipes and comments.
 - `motion-underline`, `motion-marker`, `motion-strike` and `motion-ring`: `sweep()` erases the drawn mark from its start, then draws it in again.
 - `motion-gallery`: `open(index)`, `close()`, `next()`, `prev()` and `index`, and `motion-open`, `motion-change` and `motion-close` events.
 - `motion-slider`: `next()`, `prev()` and `index`.
 - `motion-flip-card`: a `flipped` property and attribute, a `motion-change` event with `{ flipped }`, and `aria-pressed` with `trigger="click"`.
-- `motion-state-icon`: `flip()` switches `active` and fires `motion-change`.
+- `motion-icon-state`: `flip()` switches `active` and fires `motion-change`.
 - `motion-dialog`: a `motion-open` event.
 - `motion-image-compare`: a `position` property and a `motion-change` event with `{ position }`.
 - `motion-sparkline`: `data` takes an array of numbers.
@@ -40,6 +60,8 @@
 - `motion-code`: a `code` property.
 - `motion-stretch`: a `disabled` attribute.
 - TypeScript: the `motion-*` events are typed on `addEventListener`, and the detail types (`MotionChangeDetail`, `SliderChangeDetail`, `GalleryIndexDetail`, `FlipCardChangeDetail`, `ImageCompareChangeDetail` and `StateIconChangeDetail`) are exported.
+- `motion-icon-state`: `--mc-icon-color-active` colors any icon in its second state, such as the close cross of `menu`, the filled heart or the copy check.
+- `motion-gravity`: `trigger="view"` drops the letters the first time half of the text scrolls into view. The default, `"mount"`, plays as soon as it renders.
 
 ## 1.2.0 — 2026-10-05
 
