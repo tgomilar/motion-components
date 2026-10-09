@@ -189,4 +189,20 @@ describe('motion-glitch', () => {
     el.dispatchEvent(new PointerEvent('pointerenter'))
     expect(started).toBe(1)
   })
+
+  it('mount trigger does not burst again when it is moved in the page', async () => {
+    const el = await mount('trigger="mount"')
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    expect(animateMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('loop trigger starts again after it is removed and added back', async () => {
+    const el = await mount()
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    expect(el.playState).toBe('running')
+  })
 })
