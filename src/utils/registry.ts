@@ -33,6 +33,8 @@ export function registerLoop(el: HTMLElement, controls: () => LoopControls | nul
 
 export function unregisterLoop(el: HTMLElement): void {
   loops.delete(el)
+  // resumeAll only reaches registered loops, so a hold must not outlive the registration
+  pausedLoops.delete(el)
 }
 
 /** Whether `pauseAll` is holding this element's loop, so a newly started loop should start paused. */
