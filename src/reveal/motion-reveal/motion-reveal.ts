@@ -6,6 +6,7 @@ import { Controllable, PlaybackController, controlsRun } from '../../utils/playb
 import type { MotionRevealProps } from './motion-reveal.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
+import { LoopTrigger } from '../../utils/loop.js'
 
 export type { MotionRevealProps } from './motion-reveal.types.js'
 
@@ -70,8 +71,11 @@ export class MotionReveal extends Controllable(LitElement) implements MotionReve
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
-  private observer: IntersectionObserver | null = null
-  private revealed = false
+  private viewport = new LoopTrigger(this, {
+    threshold: () => this.threshold,
+    once: () => this.once,
+    loop: () => false,
+  })
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () =>
@@ -95,35 +99,17 @@ export class MotionReveal extends Controllable(LitElement) implements MotionReve
   connectedCallback() {
     this.style.opacity = this.reduced ? '1' : '0'
     super.connectedCallback()
-    if (this.reduced) return
-    this.observer = new IntersectionObserver(this.onIntersect, {
-      threshold: this.threshold,
-    })
-    this.observer.observe(this)
+    if (!this.reduced) this.viewport.arm()
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.observer?.disconnect()
-  }
-
-  private onIntersect = (entries: IntersectionObserverEntry[]) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting && !this.revealed && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.revealed = true
-          this.observer?.disconnect()
-        }
-      } else if (!entry.isIntersecting) {
-        if (!this.once && this.playState !== 'idle') this.cancel()
-      }
-    }
+    this.viewport.disarm()
   }
 
   /** Re-runs the reveal animation from its hidden initial state. */
   replay() {
-    this.revealed = false
+    this.viewport.reset()
     this.cancel()
     void this.play()
   }

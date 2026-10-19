@@ -6,6 +6,7 @@ import { Controllable, PlaybackController, controlsRun } from '../../utils/playb
 import type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
+import { LoopTrigger } from '../../utils/loop.js'
 
 export type { MotionStaggerProps, StaggerFrom } from './motion-stagger.types.js'
 
@@ -78,8 +79,12 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 
-  private observer: IntersectionObserver | null = null
-  private animated = false
+  private viewport = new LoopTrigger(this, {
+    threshold: () => 0.1,
+    once: () => this.once,
+    loop: () => false,
+    observe: () => this.slotEl.assignedElements()[0] ?? this,
+  })
 
   playback: PlaybackController = new PlaybackController(this, {
     start: () =>
@@ -122,7 +127,7 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.observer?.disconnect()
+    this.viewport.disarm()
   }
 
   private onSlotChange = () => {
@@ -137,29 +142,12 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
     }
 
     animate(elements, { opacity: 0, y: this.y }, { duration: 0 })
-
-    this.observer?.disconnect()
-    this.observer = new IntersectionObserver(this.onIntersect, { threshold: 0.1 })
-    this.observer.observe(elements[0])
-  }
-
-  private onIntersect = (entries: IntersectionObserverEntry[]) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting && !this.animated && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.animated = true
-          this.observer?.disconnect()
-        }
-      } else if (!entry.isIntersecting) {
-        if (!this.once && this.playState !== 'idle') this.cancel()
-      }
-    }
+    this.viewport.arm()
   }
 
   /** Resets and re-runs the staggered reveal. */
   replay() {
-    this.animated = false
+    this.viewport.reset()
     this.cancel()
     void this.play()
   }

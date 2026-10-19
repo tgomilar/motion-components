@@ -5,6 +5,7 @@ import { Controllable, PlaybackController, controlsRun } from '../../utils/playb
 import type { MotionBlurInProps } from './motion-blur-in.types.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
+import { LoopTrigger } from '../../utils/loop.js'
 
 export type { MotionBlurInProps } from './motion-blur-in.types.js'
 
@@ -69,8 +70,11 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
     }
   `
 
-  private observer: IntersectionObserver | null = null
-  private revealed = false
+  private viewport = new LoopTrigger(this, {
+    threshold: () => this.threshold,
+    once: () => this.once,
+    loop: () => false,
+  })
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -112,33 +116,17 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
     if (!this.reduced) {
       this.style.filter = `blur(${this.intensity}px)`
     }
-
-    this.observer = new IntersectionObserver(this.onIntersect, { threshold: this.threshold })
-    this.observer.observe(this)
+    this.viewport.arm()
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.observer?.disconnect()
-  }
-
-  private onIntersect = (entries: IntersectionObserverEntry[]) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting && !this.revealed && this.playState === 'idle') {
-        void this.play()
-        if (this.once) {
-          this.revealed = true
-          this.observer?.disconnect()
-        }
-      } else if (!entry.isIntersecting) {
-        if (!this.once && this.playState !== 'idle') this.cancel()
-      }
-    }
+    this.viewport.disarm()
   }
 
   /** Resets to the blurred initial state and re-runs the reveal. */
   replay() {
-    this.revealed = false
+    this.viewport.reset()
     this.cancel()
     void this.play()
   }
