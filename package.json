@@ -2,7 +2,7 @@
   "name": "motion-components",
   "version": "1.3.0",
   "type": "module",
-  "description": "Framework-agnostic web components with physics-based motion. Built on Motion and Lit.",
+  "description": "Framework-agnostic web components for animated UI, powered by spring physics. Built on Motion and Lit.",
   "author": "Tanja Gomilar <tanja.gomilar@gmail.com>",
   "homepage": "https://www.motion-components.dev",
   "repository": {
@@ -303,6 +303,8 @@
     "web-components",
     "custom-elements",
     "animation",
+    "ui",
+    "ui-components",
     "motion",
     "lit",
     "motion-one",

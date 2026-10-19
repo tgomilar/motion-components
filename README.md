@@ -1,16 +1,25 @@
 <p>
-  <img src="https://img.shields.io/npm/v/motion-components" alt="npm">
-  <img src="https://img.shields.io/bundlephobia/minzip/motion-components" alt="size">
+  <a href="https://www.npmjs.com/package/motion-components"><img src="https://img.shields.io/npm/v/motion-components" alt="npm"></a>
   <a href="https://github.com/tgomilar/motion-components/actions/workflows/test.yml"><img src="https://github.com/tgomilar/motion-components/actions/workflows/test.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/npm/types/motion-components" alt="TypeScript types">
+  <a href="#quick-start"><img src="https://img.shields.io/badge/tree--shakeable-per--component%20imports-brightgreen" alt="tree-shakeable"></a>
+  <a href=".size-limit.json"><img src="https://img.shields.io/badge/size-~2.4%20kB%20gzip%20per%20component-blue" alt="size"></a>
 </p>
 
 # motion-components
 
-**Drop-in web components with spring-physics animations. Works in any framework - or no framework at all.**
+**Drop-in web components for animated UI, powered by spring physics. Works in any framework, or with none.**
 
 Architected with animation as a core concern from day one - not bolted on as an afterthought. Every component leverages spring physics, interruptible animations, and composable primitives to deliver interactions that feel natural and responsive.
 
-▸ Reveal elements on scroll  ▸ Hover/press/tilt responses  ▸ Character-by-character text effects  ▸ Parallax & scroll scenes  ▸ Sliders, dialogs, image comparisons & more
+- **[Reveal](https://www.motion-components.dev/showcase/reveal/)**: fade, blur and stagger elements in on scroll. [reveal](https://www.motion-components.dev/docs/reveal/motion-reveal/), [blur-in](https://www.motion-components.dev/docs/reveal/motion-blur-in/), [stagger](https://www.motion-components.dev/docs/reveal/motion-stagger/)
+- **[Respond](https://www.motion-components.dev/showcase/respond/)**: react to the pointer. [hover](https://www.motion-components.dev/docs/respond/motion-hover/), [press](https://www.motion-components.dev/docs/respond/motion-press/), [tilt](https://www.motion-components.dev/docs/respond/motion-tilt/), [magnetic](https://www.motion-components.dev/docs/respond/motion-magnetic/)
+- **[Text](https://www.motion-components.dev/showcase/text/)**: animate words and characters. [split](https://www.motion-components.dev/docs/text/motion-split/), [typewriter](https://www.motion-components.dev/docs/text/motion-typewriter/), [scramble](https://www.motion-components.dev/docs/text/motion-scramble/), [counter](https://www.motion-components.dev/docs/text/motion-counter/)
+- **[Scroll](https://www.motion-components.dev/showcase/scroll/)**: tie motion to scroll position. [parallax](https://www.motion-components.dev/docs/scroll/motion-parallax/), [scene](https://www.motion-components.dev/docs/scroll/motion-scene/)
+- **[Components](https://www.motion-components.dev/showcase/components/)**: ready-made interactive UI. [slider](https://www.motion-components.dev/docs/components/motion-slider/), [dialog](https://www.motion-components.dev/docs/components/motion-dialog/), [image compare](https://www.motion-components.dev/docs/components/motion-image-compare/), [gallery](https://www.motion-components.dev/docs/components/motion-gallery/)
+- **[Charts](https://www.motion-components.dev/showcase/charts/)**: data that draws itself in. [chart](https://www.motion-components.dev/docs/charts/motion-chart/), [pie](https://www.motion-components.dev/docs/charts/motion-pie/), [sparkline](https://www.motion-components.dev/docs/charts/motion-sparkline/)
+- **[Code](https://www.motion-components.dev/showcase/code/)**: animated code blocks. [code](https://www.motion-components.dev/docs/code/motion-code/), [inline code](https://www.motion-components.dev/docs/code/motion-code-inline/)
+- **[Icons](https://www.motion-components.dev/showcase/icons/)**: icons that animate between states. [icon](https://www.motion-components.dev/docs/icons/motion-icon/), [icon state](https://www.motion-components.dev/docs/icons/motion-icon-state/)
 
 **[👉 Docs & Live Preview](https://www.motion-components.dev)**
 
