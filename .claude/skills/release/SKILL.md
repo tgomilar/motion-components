@@ -57,6 +57,12 @@ If any step fails, the publish is aborted. Don't bypass with `--ignore-scripts`.
     git push --follow-tags
     ```
 11. **Publish** — `npm publish`. Runs `prepublishOnly` again as a safety net.
+12. **GitHub release** — create it from the version's CHANGELOG section, so the notes never drift from the changelog. Dependabot and Renovate show these notes in their update pull requests:
+    ```bash
+    V=$(node -p "require('./package.json').version")
+    awk -v v="$V" '$0 ~ "^## "v" " {f=1; next} f && /^## / {exit} f' CHANGELOG.md | sed '1{/^$/d;}' > /tmp/notes.md
+    gh release create "v$V" --title "$V" --notes-file /tmp/notes.md --latest
+    ```
 
 ## Things that are easy to forget
 
