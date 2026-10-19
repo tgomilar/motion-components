@@ -48,6 +48,18 @@ describe('motion-reveal', () => {
     expect(io.observed).toHaveLength(0)
   })
 
+  it('reveals again after it is moved in the DOM', async () => {
+    const el = await mount()
+    io.enter()
+    el.finish()
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    expect(el.style.opacity).toBe('0')
+    io.enter()
+    expect(el.playState).toBe('running')
+  })
+
   it('replay() resets and runs again', async () => {
     const el = await mount()
     io.enter()

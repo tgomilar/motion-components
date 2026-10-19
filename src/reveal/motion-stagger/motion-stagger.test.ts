@@ -106,6 +106,18 @@ describe('motion-stagger', () => {
     expect(delay(2, 3)).toBeCloseTo(0.5)
   })
 
+  it('reveals again after it is moved in the DOM', async () => {
+    const el = await mount()
+    io.enter()
+    el.finish()
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    expect(io.observed).toContain(items(el)[0])
+    io.enter()
+    expect(el.playState).toBe('running')
+  })
+
   it('reveals all children in sequence with a spring on enter', async () => {
     const el = await mount()
     io.enter()

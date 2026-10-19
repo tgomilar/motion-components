@@ -110,6 +110,7 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
     if (!this.reduced) {
       this.style.opacity = '0'
     }
+    if (this.hasUpdated) this.viewport.arm()
   }
 
   firstUpdated() {
@@ -122,6 +123,7 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
   disconnectedCallback() {
     super.disconnectedCallback()
     this.viewport.disarm()
+    this.viewport.reset()
   }
 
   /** Resets to the blurred initial state and re-runs the reveal. */

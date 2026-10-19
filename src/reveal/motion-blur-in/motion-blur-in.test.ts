@@ -119,6 +119,18 @@ describe('motion-blur-in', () => {
     expect(el.playState).toBe('finished')
   })
 
+  it('reveals again after it is moved in the DOM', async () => {
+    const el = await mount()
+    io.enter()
+    el.finish()
+    const parent = el.parentElement!
+    el.remove()
+    parent.append(el)
+    expect(io.observed).toContain(el)
+    io.enter()
+    expect(el.playState).toBe('running')
+  })
+
   it('with `once`, disconnects the observer after the first reveal', async () => {
     const el = await mount()
     io.enter()

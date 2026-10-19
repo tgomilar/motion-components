@@ -119,6 +119,7 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
     ;(Array.from(this.children) as HTMLElement[]).forEach((child) => {
       child.style.opacity = '0'
     })
+    if (this.hasUpdated) this.viewport.arm()
   }
 
   firstUpdated() {
@@ -128,6 +129,7 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
   disconnectedCallback() {
     super.disconnectedCallback()
     this.viewport.disarm()
+    this.viewport.reset()
   }
 
   private onSlotChange = () => {

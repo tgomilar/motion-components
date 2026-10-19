@@ -105,6 +105,7 @@ export class MotionReveal extends Controllable(LitElement) implements MotionReve
   disconnectedCallback() {
     super.disconnectedCallback()
     this.viewport.disarm()
+    this.viewport.reset()
   }
 
   /** Re-runs the reveal animation from its hidden initial state. */
