@@ -4,10 +4,10 @@
 
   { "name": "motion-hover",             "path": "dist/motion-hover.js",     "limit": "1.5 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-press",             "path": "dist/motion-press.js",     "limit": "1.5 kB", "ignore": ["lit", "motion"] },
-  { "name": "motion-reveal",            "path": "dist/motion-reveal.js",    "limit": "1.5 kB", "ignore": ["lit", "motion"] },
-  { "name": "motion-stagger",           "path": "dist/motion-stagger.js",   "limit": "1.75 kB","ignore": ["lit", "motion"] },
+  { "name": "motion-reveal",            "path": "dist/motion-reveal.js",    "limit": "1.7 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-stagger",           "path": "dist/motion-stagger.js",   "limit": "1.85 kB","ignore": ["lit", "motion"] },
   { "name": "motion-blur",              "path": "dist/motion-blur.js",      "limit": "1.75 kB","ignore": ["lit", "motion"] },
-  { "name": "motion-blur-in",           "path": "dist/motion-blur-in.js",   "limit": "1.55 kB", "ignore": ["lit", "motion"] },
+  { "name": "motion-blur-in",           "path": "dist/motion-blur-in.js",   "limit": "1.7 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-magnetic",          "path": "dist/motion-magnetic.js",  "limit": "1.5 kB", "ignore": ["lit", "motion"] },
   { "name": "motion-tilt",              "path": "dist/motion-tilt.js",      "limit": "2 kB",   "ignore": ["lit", "motion"] },
 

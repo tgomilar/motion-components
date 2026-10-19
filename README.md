@@ -3,7 +3,7 @@
   <a href="https://github.com/tgomilar/motion-components/actions/workflows/test.yml"><img src="https://github.com/tgomilar/motion-components/actions/workflows/test.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/npm/types/motion-components" alt="TypeScript types">
   <a href="#quick-start"><img src="https://img.shields.io/badge/tree--shakeable-per--component%20imports-brightgreen" alt="tree-shakeable"></a>
-  <a href=".size-limit.json"><img src="https://img.shields.io/badge/size-~2.4%20kB%20gzip%20per%20component-blue" alt="size"></a>
+  <a href=".size-limit.json"><img src="https://img.shields.io/badge/size-~2.4%20kB%20brotli%20per%20component-blue" alt="size"></a>
 </p>
 
 # motion-components
