@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { useIntersect } from './use-intersect.js'
-import { stubIntersectionObserver } from '../../test/helpers.js'
+import { stubIntersectionObserver } from '../test/helpers.js'
 
 afterEach(() => {
   document.body.replaceChildren()

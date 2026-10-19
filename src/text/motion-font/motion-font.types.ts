@@ -1,4 +1,4 @@
-import type { LoopProps } from '../utils/loop.js'
+import type { LoopProps } from '../../utils/loop.js'
 
 export type FontTrigger = 'view' | 'hover' | 'scroll'
 

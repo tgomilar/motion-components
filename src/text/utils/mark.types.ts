@@ -1,4 +1,4 @@
-import type { LoopProps } from './loop.js'
+import type { LoopProps } from '../../utils/loop.js'
 
 export type MarkTrigger = 'view' | 'hover' | 'mount'
 

@@ -1,4 +1,4 @@
-import type { PlaybackHandle, PlaybackRun, PlaybackState } from '../../utils/playback.js'
+import type { PlaybackHandle, PlaybackRun, PlaybackState } from './playback.js'
 import { useIntersect } from './use-intersect.js'
 
 /** The shared loop surface. Implemented by every component that can repeat. */

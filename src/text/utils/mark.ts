@@ -9,8 +9,8 @@ import {
 } from '../../utils/playback.js'
 import type { PlaybackHandle, PlaybackRun } from '../../utils/playback.js'
 import { flag } from '../../utils/attributes.js'
-import { LoopCycle, LoopTrigger, pauseOnHover } from './loop.js'
-import type { LoopProps } from './loop.js'
+import { LoopCycle, LoopTrigger, pauseOnHover } from '../../utils/loop.js'
+import type { LoopProps } from '../../utils/loop.js'
 import type { MarkProps, MarkTrigger } from './mark.types.js'
 
 export type { MarkProps, MarkTrigger } from './mark.types.js'

@@ -6,7 +6,7 @@ import { Controllable, PlaybackController, frameLoop } from '../../utils/playbac
 import type { FrameLoop } from '../../utils/playback.js'
 import type { MotionCurveProps } from './motion-curve.types.js'
 import { charsByWord } from '../utils/chars-by-word.js'
-import { pauseOnHover } from '../utils/loop.js'
+import { pauseOnHover } from '../../utils/loop.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 

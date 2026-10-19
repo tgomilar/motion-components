@@ -4,7 +4,7 @@ import { animate } from 'motion'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { PlaybackRun } from '../../utils/playback.js'
 import type { MotionCircleProps, CircleDirection } from './motion-circle.types.js'
-import { pauseOnHover } from '../utils/loop.js'
+import { pauseOnHover } from '../../utils/loop.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 

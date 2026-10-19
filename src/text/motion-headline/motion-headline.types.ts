@@ -1,4 +1,4 @@
-import type { LoopProps } from '../utils/loop.js'
+import type { LoopProps } from '../../utils/loop.js'
 
 export type HeadlineBy = 'words' | 'chars' | 'lines'
 export type HeadlineVariant = 'slide' | 'flip'

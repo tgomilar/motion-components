@@ -4,7 +4,7 @@ import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { MotionGravityProps, GravityTrigger } from './motion-gravity.types.js'
 import { charsByWord } from '../utils/chars-by-word.js'
-import { useIntersect } from '../utils/use-intersect.js'
+import { useIntersect } from '../../utils/use-intersect.js'
 import { customElement } from '../../utils/define.js'
 
 export type { MotionGravityProps, GravityTrigger } from './motion-gravity.types.js'

@@ -1,4 +1,4 @@
-import type { LoopProps } from '../utils/loop.js'
+import type { LoopProps } from '../../utils/loop.js'
 
 export type SplitBy = 'words' | 'chars' | 'lines'
 

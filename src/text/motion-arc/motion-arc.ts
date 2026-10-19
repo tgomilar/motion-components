@@ -4,7 +4,7 @@ import { animate } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { PlaybackHandle } from '../../utils/playback.types.js'
 import type { MotionArcProps, ArcAlign, ArcDirection } from './motion-arc.types.js'
-import { pauseOnHover } from '../utils/loop.js'
+import { pauseOnHover } from '../../utils/loop.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 

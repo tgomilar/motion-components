@@ -6,8 +6,8 @@ import { Controllable, PlaybackController, controlsHandle } from '../../utils/pl
 import type { PlaybackRun } from '../../utils/playback.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
-import { useIntersect } from '../../text/utils/use-intersect.js'
-import { LoopCycle } from '../../text/utils/loop.js'
+import { useIntersect } from '../../utils/use-intersect.js'
+import { LoopCycle } from '../../utils/loop.js'
 import type {
   IconAnimation,
   IconMotion,

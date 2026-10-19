@@ -2,7 +2,7 @@ import { LitElement, html, css, svg, nothing } from 'lit'
 import { property, query } from 'lit/decorators.js'
 import { Controllable, PlaybackController } from '../../utils/playback.js'
 import type { MotionLiquidProps } from './motion-liquid.types.js'
-import { pauseOnHover } from '../utils/loop.js'
+import { pauseOnHover } from '../../utils/loop.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 

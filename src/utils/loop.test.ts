@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { LoopCycle, delayedRun, pauseOnHover } from './loop.js'
-import type { PlaybackRun, PlaybackState } from '../../utils/playback.js'
+import type { PlaybackRun, PlaybackState } from './playback.js'
 
 afterEach(() => {
   vi.useRealTimers()
