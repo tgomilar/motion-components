@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { fixture, elementUpdated } from '@open-wc/testing-helpers'
-import { stubIntersectionObserver, stubReducedMotion } from '../../test/helpers.js'
+import { stubIntersectionObserver, stubReducedMotion, waitFor } from '../../test/helpers.js'
 import type { MotionPie } from './motion-pie.js'
 import './motion-pie.js'
 
@@ -9,7 +9,10 @@ async function mount(html: string) {
   host.innerHTML = html
   const el = (await fixture(host.firstElementChild!)) as MotionPie
   el.style.width = '400px'
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  // Nothing is drawn until the ResizeObserver reports a width; a fixed wait
+  // is too short on slow CI runners.
+  const measured = el as unknown as { size: { width: number } }
+  await waitFor(() => measured.size.width > 0, 'chart was never measured')
   await elementUpdated(el)
   return el
 }
