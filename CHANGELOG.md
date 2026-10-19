@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0 — 2026-10-19
+
+### Fixed
+
+- `motion-reveal`, `motion-blur-in`, `motion-stagger`: with `once`, moving a revealed element in the page, for example when a framework reorders a list, hid its content for good. It now reveals again the next time it enters the viewport.
+
+### Changed
+
+- `motion-countdown`: the unit labels are darker (opacity 0.6 instead of 0.4), so small labels meet WCAG AA contrast on plain backgrounds. For lighter labels, set `--mc-countdown-label-color` to a lighter color.
+
+### Added
+
+- `delay`, in seconds, on `motion-reveal`, `motion-blur-in`, `motion-stagger`, `motion-split`, `motion-counter`, `motion-chart`, `motion-pie` and `motion-sparkline`. On `motion-stagger` it delays the whole sequence and the gap between children stays `interval`. With `loop`, `motion-split` and `motion-counter` wait only before the first run. The charts wait only for their entrance; later data changes animate at once. `pause()`, `cancel()` and `finish()` also stop the wait.
+- `threshold` on `motion-stagger`, `motion-split`, `motion-counter`, `motion-swap`, `motion-font`, `motion-scramble`, `motion-typewriter`, `motion-gravity`, `motion-code`, `motion-chart`, `motion-pie`, `motion-sparkline` and `motion-icon`: how much of the element (0–1) must be visible before it starts, as on `motion-reveal` and `motion-headline`. The defaults are the values used before, so nothing changes unless you set it.
+
 ## 1.3.0 — 2026-10-09
 
 ### Breaking changes
