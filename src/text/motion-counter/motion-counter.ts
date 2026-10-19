@@ -60,6 +60,8 @@ export class MotionCounter
   @property({ type: Number }) duration = 1.5
   /** Delay before counting starts, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which counting starts. */
+  @property({ type: Number }) threshold = 0.2
   /** Number of decimal places to render. */
   @property({ type: Number }) decimals = 0
   /** Text rendered before the number (e.g. `"$"`). */
@@ -112,7 +114,7 @@ export class MotionCounter
   })
 
   private viewport = new LoopTrigger(this, {
-    threshold: () => 0.2,
+    threshold: () => this.threshold,
     once: () => this.once,
     loop: () => this.loop,
   })

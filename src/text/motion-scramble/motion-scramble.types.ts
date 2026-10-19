@@ -5,6 +5,7 @@ export type ScrambleTrigger = 'view' | 'hover'
 export interface MotionScrambleProps extends LoopProps {
   interval: number
   delay: number
+  threshold: number
   iterations: number
   once: boolean
   trigger: ScrambleTrigger

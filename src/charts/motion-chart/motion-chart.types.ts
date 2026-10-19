@@ -17,6 +17,7 @@ export interface MotionChartProps {
   trigger: ChartTrigger
   duration: number
   delay: number
+  threshold: number
   bounce: number
   interval: number
   tooltip: boolean

@@ -5,6 +5,7 @@ export interface MotionCounterProps extends LoopProps {
   to: number
   duration: number
   delay: number
+  threshold: number
   decimals: number
   prefix: string
   suffix: string

@@ -112,6 +112,8 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
   @property({ type: Number }) duration = 0.8
   /** Delay before the entrance starts, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the entrance starts, with `trigger="view"`. */
+  @property({ type: Number }) threshold = 0.3
   /** Spring bounciness (0 = no overshoot). */
   @property({ type: Number }) bounce = 0.25
   /** Seconds between one bar group and the next on entrance. */
@@ -368,7 +370,7 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
       void this.play()
       return
     }
-    this.disconnectIntersect = useIntersect(this, 0.3, () => {
+    this.disconnectIntersect = useIntersect(this, this.threshold, () => {
       this.disconnectIntersect?.()
       this.disconnectIntersect = null
       void this.play()

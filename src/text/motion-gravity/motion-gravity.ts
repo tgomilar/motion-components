@@ -63,6 +63,8 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
   @property({ type: Number }) bounce = 0.45
   /** Delay before the first character starts falling, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the characters start falling, with `trigger="view"`. */
+  @property({ type: Number }) threshold = 0.5
   /** When the letters drop: `'mount'` (as soon as it renders) or `'view'` (the first time half of it is in view). */
   @property({ type: String, reflect: true }) trigger: GravityTrigger = 'mount'
 
@@ -150,7 +152,7 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
 
   private arm() {
     this.disarm?.()
-    this.disarm = useIntersect(this, 0.5, () => {
+    this.disarm = useIntersect(this, this.threshold, () => {
       this.seen = true
       this.disarm?.()
       this.disarm = null

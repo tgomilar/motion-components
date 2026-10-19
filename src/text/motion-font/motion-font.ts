@@ -86,6 +86,8 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   @property({ type: Number }) bounce = 0
   /** Delay before the transition starts, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the animation starts, with `trigger="view"`. */
+  @property({ type: Number }) threshold = 0.2
   /** Trigger source: `'view'` (when scrolled into view), `'hover'`, or `'scroll'` (progress-mapped). */
   @property({ type: String, reflect: true }) trigger: FontTrigger = 'view'
   /** When `true` and `trigger="view"`, only animate the first time it enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
@@ -112,7 +114,7 @@ export class MotionFont extends Controllable(LitElement) implements MotionFontPr
   private detachPauseOnHover: (() => void) | null = null
 
   private viewport = new LoopTrigger(this, {
-    threshold: () => 0.2,
+    threshold: () => this.threshold,
     once: () => this.once,
     loop: () => this.loop,
   })

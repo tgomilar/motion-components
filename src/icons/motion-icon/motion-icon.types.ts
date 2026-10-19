@@ -11,6 +11,7 @@ export interface MotionIconProps {
   duration: number
   bounce: number
   delay: number
+  threshold: number
   interval: number
   once: boolean
   label: string

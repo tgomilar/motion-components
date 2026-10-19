@@ -40,6 +40,8 @@ export class MotionScramble
   @property({ type: Number }) interval = 0.04
   /** Delay before scrambling starts, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the scramble starts, with `trigger="view"`. */
+  @property({ type: Number }) threshold = 0.2
   /** Number of random-glyph frames per character before locking in. */
   @property({ type: Number }) iterations = 2
   /** When `true`, only scramble the first time the element enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
@@ -85,7 +87,7 @@ export class MotionScramble
   })
 
   private viewport = new LoopTrigger(this, {
-    threshold: () => 0.2,
+    threshold: () => this.threshold,
     once: () => this.once,
     loop: () => this.loop,
   })

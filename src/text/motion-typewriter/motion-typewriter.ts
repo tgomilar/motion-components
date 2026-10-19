@@ -59,6 +59,8 @@ export class MotionTypewriter
   @property({ type: Number }) interval = 0.05
   /** Delay before typing starts after viewport entry, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which typing starts. */
+  @property({ type: Number }) threshold = 0.2
   /** Time to hold the finished line before erasing (loop mode), in seconds. */
   @property({ type: Number }) hold = 1.8
   /** When `true`, type → hold → erase → retype on repeat. */
@@ -163,7 +165,7 @@ export class MotionTypewriter
           if (this.playState === 'idle') void this.play()
         }
       },
-      { threshold: 0.2 },
+      { threshold: this.threshold },
     )
     this.observer.observe(this)
     this.detachPauseOnHover = pauseOnHover(

@@ -10,4 +10,5 @@ export interface MotionSwapProps extends LoopProps {
   bounce: number
   once: boolean
   delay: number
+  threshold: number
 }

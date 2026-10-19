@@ -10,6 +10,7 @@ export interface MotionFontProps extends LoopProps {
   duration: number
   bounce: number
   delay: number
+  threshold: number
   trigger: FontTrigger
   once: boolean
 }

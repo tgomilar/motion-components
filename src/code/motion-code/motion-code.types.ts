@@ -10,4 +10,5 @@ export interface MotionCodeProps {
   typingDelay: number
   typingLoop: boolean
   typingHold: number
+  threshold: number
 }

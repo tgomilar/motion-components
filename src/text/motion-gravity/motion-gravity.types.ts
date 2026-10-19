@@ -7,5 +7,6 @@ export interface MotionGravityProps {
   duration: number
   bounce: number
   delay: number
+  threshold: number
   trigger: GravityTrigger
 }

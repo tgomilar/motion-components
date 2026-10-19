@@ -60,6 +60,8 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
   @property({ type: Number }) duration = 0.5
   /** Delay before the first child starts, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
+  @property({ type: Number }) threshold = 0.1
   /** Initial vertical offset in pixels for each child; rises to 0. */
   @property({ type: Number }) y = 16
   /** Stagger origin: `'first'`, `'last'` or `'center'`. */
@@ -80,7 +82,7 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
   }
 
   private viewport = new LoopTrigger(this, {
-    threshold: () => 0.1,
+    threshold: () => this.threshold,
     once: () => this.once,
     loop: () => false,
     observe: () => this.slotEl.assignedElements()[0] ?? this,

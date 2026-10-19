@@ -111,6 +111,8 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
   @property({ type: Boolean, converter: flag, attribute: 'typing-loop' }) typingLoop = true
   /** Seconds to hold the completed text before restarting. Ignored when `typing-loop="false"`. */
   @property({ type: Number, attribute: 'typing-hold' }) typingHold = 1.5
+  /** IntersectionObserver threshold (0–1) at which typing starts, with `typing-loop="false"`. */
+  @property({ type: Number }) threshold = 0.2
 
   @state() private copied = false
   @state() private highlighted = ''
@@ -470,7 +472,7 @@ export class MotionCode extends Controllable(LitElement) implements MotionCodePr
           }
         }
       },
-      { threshold: 0.2 },
+      { threshold: this.threshold },
     )
     this.revealObserver.observe(this)
   }

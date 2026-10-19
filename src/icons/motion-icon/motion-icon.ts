@@ -197,6 +197,8 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
   @property({ type: Number }) bounce = 0.4
   /** Seconds to wait before the animation starts. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the animation starts, with `trigger="view"`. */
+  @property({ type: Number }) threshold = 0.4
   /** Seconds to pause between runs when `trigger="loop"`. */
   @property({ type: Number }) interval = 1.2
   /** With `trigger="view"`, only animate the first time. Set `once="false"` to replay on every entry. */
@@ -366,7 +368,7 @@ export class MotionIcon extends Controllable(LitElement) implements MotionIconPr
     if (this.trigger === 'view') {
       this.disconnectIntersect = useIntersect(
         this,
-        0.4,
+        this.threshold,
         () => {
           if (this.playState !== 'idle') return
           void this.play()

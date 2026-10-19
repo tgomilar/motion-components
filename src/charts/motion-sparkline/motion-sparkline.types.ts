@@ -7,6 +7,7 @@ export interface MotionSparklineProps {
   trigger: SparklineTrigger
   duration: number
   delay: number
+  threshold: number
   bounce: number
   label: string
 }

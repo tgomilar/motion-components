@@ -68,6 +68,8 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
   @property({ type: Number }) duration = 1
   /** Delay before the entrance starts, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the entrance starts, with `trigger="view"`. */
+  @property({ type: Number }) threshold = 0.5
   /** Spring bounciness when the values change. */
   @property({ type: Number }) bounce = 0.2
   /** Accessible name. Without it the name describes the trend, for example "from 3 to 11, low 3, high 11". */
@@ -206,7 +208,7 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
       void this.play()
       return
     }
-    this.disconnectIntersect = useIntersect(this, 0.5, () => {
+    this.disconnectIntersect = useIntersect(this, this.threshold, () => {
       this.disconnectIntersect?.()
       this.disconnectIntersect = null
       void this.play()

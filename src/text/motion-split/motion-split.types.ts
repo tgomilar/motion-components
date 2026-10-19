@@ -7,6 +7,7 @@ export interface MotionSplitProps extends LoopProps {
   interval: number
   duration: number
   delay: number
+  threshold: number
   y: number
   once: boolean
 }

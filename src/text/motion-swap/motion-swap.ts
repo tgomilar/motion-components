@@ -88,6 +88,8 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
 
   /** Delay in seconds before the animation starts. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the swap starts, with `trigger="view"`. */
+  @property({ type: Number }) threshold = 0.1
 
   static styles = css`
     :host {
@@ -105,7 +107,7 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
   private detachPauseOnHover: (() => void) | null = null
 
   private viewport = new LoopTrigger(this, {
-    threshold: () => 0.1,
+    threshold: () => this.threshold,
     once: () => this.once,
     loop: () => this.loop,
   })

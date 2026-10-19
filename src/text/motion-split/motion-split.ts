@@ -67,6 +67,8 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
   @property({ type: Number }) y = 20
   /** Delay before the first unit reveals, in seconds. */
   @property({ type: Number }) delay = 0
+  /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
+  @property({ type: Number }) threshold = 0.1
   /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
   /** Reveal the units, hold, hide them again, then repeat. */
@@ -98,7 +100,7 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
   })
 
   private viewport = new LoopTrigger(this, {
-    threshold: () => 0.1,
+    threshold: () => this.threshold,
     once: () => this.once,
     loop: () => this.loop,
     observe: () => this.spans[0] ?? this,
