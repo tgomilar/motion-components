@@ -65,6 +65,8 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
   @property({ type: Number }) duration = 0.6
   /** Initial vertical offset in pixels for each unit. */
   @property({ type: Number }) y = 20
+  /** Delay before the first unit reveals, in seconds. */
+  @property({ type: Number }) delay = 0
   /** When `true`, only animate the first time the element enters view. Set `once="false"` to turn it off. Ignored with `loop`. */
   @property({ type: Boolean, converter: flag }) once = true
   /** Reveal the units, hold, hide them again, then repeat. */
@@ -89,9 +91,10 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
   private detachPauseOnHover: (() => void) | null = null
 
   private cycle: LoopCycle = new LoopCycle({
-    leg: (out) => this.animateUnits(out),
+    leg: (out) => this.animateUnits(out, 0),
     hold: () => this.hold,
     gap: () => this.gap,
+    delay: () => this.delay,
   })
 
   private viewport = new LoopTrigger(this, {
@@ -117,13 +120,13 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
     },
   })
 
-  private animateUnits(out: boolean): PlaybackRun {
+  private animateUnits(out: boolean, startDelay = this.delay): PlaybackRun {
     return controlsRun(
       animate(
         this.spans,
         out ? { opacity: [1, 0], y: [0, this.y] } : { opacity: [0, 1], y: [this.y, 0] },
         {
-          ...(out ? {} : { delay: stagger(this.interval) }),
+          ...(out ? {} : { delay: stagger(this.interval, { startDelay }) }),
           ...REVEAL_SPRING,
           duration: this.duration,
         },

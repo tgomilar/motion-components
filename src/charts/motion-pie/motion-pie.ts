@@ -98,6 +98,8 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
   @property({ type: String, reflect: true }) trigger: PieTrigger = 'view'
   /** Spring duration in seconds. */
   @property({ type: Number }) duration = 0.8
+  /** Delay before the entrance starts, in seconds. */
+  @property({ type: Number }) delay = 0
   /** Spring bounciness when the values change (0 = no overshoot). */
   @property({ type: Number }) bounce = 0.25
   /** Shows a tooltip on hover and keyboard focus. A donut shows the hovered slice in its center instead. Set `tooltip="false"` to hide it. */
@@ -144,7 +146,12 @@ export class MotionPie extends Controllable(LitElement) implements MotionPieProp
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
       this.springs.set(this.model.values)
-      this.sweep.to([1], () => ({ type: 'spring', bounce: 0, duration: this.duration * 1.6 }))
+      this.sweep.to([1], () => ({
+        type: 'spring',
+        bounce: 0,
+        duration: this.duration * 1.6,
+        delay: this.delay,
+      }))
       return {
         handle: {
           pause: () => this.sweep.pause(),

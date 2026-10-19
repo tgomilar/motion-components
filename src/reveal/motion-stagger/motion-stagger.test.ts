@@ -97,6 +97,15 @@ describe('motion-stagger', () => {
     expect(el.playState).toBe('idle')
   })
 
+  it('offsets the whole sequence by `delay`', async () => {
+    const el = await mount()
+    el.delay = 0.3
+    io.enter()
+    const delay = (revealCall()[2] as { delay: Delay }).delay
+    expect(delay(0, 3)).toBeCloseTo(0.3)
+    expect(delay(2, 3)).toBeCloseTo(0.5)
+  })
+
   it('reveals all children in sequence with a spring on enter', async () => {
     const el = await mount()
     io.enter()

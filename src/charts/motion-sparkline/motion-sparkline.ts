@@ -66,6 +66,8 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
   @property({ type: String, reflect: true }) trigger: SparklineTrigger = 'view'
   /** Spring duration in seconds. */
   @property({ type: Number }) duration = 1
+  /** Delay before the entrance starts, in seconds. */
+  @property({ type: Number }) delay = 0
   /** Spring bounciness when the values change. */
   @property({ type: Number }) bounce = 0.2
   /** Accessible name. Without it the name describes the trend, for example "from 3 to 11, low 3, high 11". */
@@ -112,7 +114,12 @@ export class MotionSparkline extends Controllable(LitElement) implements MotionS
   playback: PlaybackController = new PlaybackController(this, {
     start: () => {
       this.springs.set(this.points)
-      this.draw.to([1], () => ({ type: 'spring', bounce: 0, duration: this.duration }))
+      this.draw.to([1], () => ({
+        type: 'spring',
+        bounce: 0,
+        duration: this.duration,
+        delay: this.delay,
+      }))
       return {
         handle: {
           pause: () => this.draw.pause(),

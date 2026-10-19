@@ -14,6 +14,7 @@ export interface MotionPieProps {
   totalLabel: string
   trigger: PieTrigger
   duration: number
+  delay: number
   bounce: number
   tooltip: boolean
   legend: boolean

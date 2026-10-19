@@ -51,6 +51,8 @@ export type { MotionRevealProps } from './motion-reveal.types.js'
 export class MotionReveal extends Controllable(LitElement) implements MotionRevealProps {
   /** Spring duration of the reveal animation, in seconds. */
   @property({ type: Number }) duration = 0.6
+  /** Delay before the reveal starts, in seconds. */
+  @property({ type: Number }) delay = 0
   /** Initial vertical offset in pixels; element rises to 0 on reveal. */
   @property({ type: Number }) y = 24
   /** IntersectionObserver threshold (0–1) at which the reveal triggers. */
@@ -77,7 +79,7 @@ export class MotionReveal extends Controllable(LitElement) implements MotionReve
         animate(
           this,
           { opacity: [0, 1], y: [this.y, 0] },
-          { ...REVEAL_SPRING, duration: this.duration },
+          { ...REVEAL_SPRING, duration: this.duration, delay: this.delay },
         ),
       ),
     applyFinalState: () => {

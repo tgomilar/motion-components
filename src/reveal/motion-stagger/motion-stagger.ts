@@ -57,6 +57,8 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
   @property({ type: Number }) interval = 0.06
   /** Spring duration of each child's reveal, in seconds. */
   @property({ type: Number }) duration = 0.5
+  /** Delay before the first child starts, in seconds. */
+  @property({ type: Number }) delay = 0
   /** Initial vertical offset in pixels for each child; rises to 0. */
   @property({ type: Number }) y = 16
   /** Stagger origin: `'first'`, `'last'` or `'center'`. */
@@ -86,7 +88,7 @@ export class MotionStagger extends Controllable(LitElement) implements MotionSta
           this.slotEl.assignedElements(),
           { opacity: [0, 1], y: [this.y, 0] },
           {
-            delay: stagger(this.interval, { from: this.from }),
+            delay: stagger(this.interval, { from: this.from, startDelay: this.delay }),
             ...REVEAL_SPRING,
             duration: this.duration,
           },

@@ -110,6 +110,8 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
   @property({ type: String, reflect: true }) trigger: ChartTrigger = 'view'
   /** Spring duration in seconds. */
   @property({ type: Number }) duration = 0.8
+  /** Delay before the entrance starts, in seconds. */
+  @property({ type: Number }) delay = 0
   /** Spring bounciness (0 = no overshoot). */
   @property({ type: Number }) bounce = 0.25
   /** Seconds between one bar group and the next on entrance. */
@@ -173,11 +175,16 @@ export class MotionChart extends Controllable(LitElement) implements MotionChart
         this.draw.set([1])
         this.springs.to(this.targets(), (i) => ({
           ...this.spring(),
-          delay: (i % Math.max(1, this.model.labels.length)) * this.interval,
+          delay: this.delay + (i % Math.max(1, this.model.labels.length)) * this.interval,
         }))
       } else {
         this.springs.set(this.targets())
-        this.draw.to([1], () => ({ type: 'spring', bounce: 0, duration: this.duration * 1.6 }))
+        this.draw.to([1], () => ({
+          type: 'spring',
+          bounce: 0,
+          duration: this.duration * 1.6,
+          delay: this.delay,
+        }))
       }
       return {
         handle: {

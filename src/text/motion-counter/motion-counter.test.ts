@@ -39,6 +39,16 @@ describe('motion-counter', () => {
     expect(el.playState).toBe('running')
   })
 
+  it('holds at `from` until `delay` has passed', async () => {
+    const el = (await fixture(
+      html`<motion-counter from="0" to="100" duration="0.2" delay="0.3"></motion-counter>`,
+    )) as MotionCounter
+    io.enter()
+    await wait(150)
+    expect(text(el)).toBe('0')
+    await waitFor(() => text(el) === '100', 'never counted after the delay')
+  })
+
   it('replay() resets to `from` and runs again', async () => {
     const el = (await fixture(
       html`<motion-counter from="0" to="100"></motion-counter>`,

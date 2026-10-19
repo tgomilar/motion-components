@@ -6,6 +6,7 @@ export interface MotionSplitProps extends LoopProps {
   by: SplitBy
   interval: number
   duration: number
+  delay: number
   y: number
   once: boolean
 }

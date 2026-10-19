@@ -147,7 +147,9 @@ describe('motion-split', () => {
 
   it('animates every unit with stagger and spring options on entering view', async () => {
     const el = await mount(
-      html`<motion-split interval="0.1" duration="0.8" y="40">Hello world</motion-split>`,
+      html`<motion-split interval="0.1" duration="0.8" y="40" delay="0.3"
+        >Hello world</motion-split
+      >`,
     )
     io.enter()
     expect(el.playState).toBe('running')
@@ -155,9 +157,9 @@ describe('motion-split', () => {
     const [targets, keyframes, options] = animateMock.mock.calls[0]
     expect(targets).toEqual(units(el))
     expect(keyframes).toEqual({ opacity: [0, 1], y: [40, 0] })
-    expect(staggerMock).toHaveBeenCalledWith(0.1)
+    expect(staggerMock).toHaveBeenCalledWith(0.1, { startDelay: 0.3 })
     expect(options).toMatchObject({
-      delay: { stagger: 0.1 },
+      delay: { stagger: 0.1, startDelay: 0.3 },
       type: 'spring',
       bounce: 0.2,
       duration: 0.8,

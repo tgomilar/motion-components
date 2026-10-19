@@ -52,6 +52,8 @@ export type { MotionBlurInProps } from './motion-blur-in.types.js'
 export class MotionBlurIn extends Controllable(LitElement) implements MotionBlurInProps {
   /** Spring duration of the reveal animation, in seconds. */
   @property({ type: Number }) duration = 0.7
+  /** Delay before the reveal starts, in seconds. */
+  @property({ type: Number }) delay = 0
   /** Initial blur in pixels; animates to 0 on reveal. */
   @property({ type: Number }) intensity = 10
   /** Initial vertical offset in pixels; animates to 0 on reveal. */
@@ -84,7 +86,7 @@ export class MotionBlurIn extends Controllable(LitElement) implements MotionBlur
             filter: [`blur(${this.intensity}px)`, 'blur(0px)'],
             y: [this.y, 0],
           },
-          { duration: this.duration, type: 'spring', bounce: 0.1 },
+          { duration: this.duration, delay: this.delay, type: 'spring', bounce: 0.1 },
         ),
       ),
     applyFinalState: () => {

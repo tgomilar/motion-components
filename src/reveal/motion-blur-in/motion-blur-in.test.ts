@@ -100,7 +100,14 @@ describe('motion-blur-in', () => {
       filter: ['blur(12px)', 'blur(0px)'],
       y: [8, 0],
     })
-    expect(options).toEqual({ duration: 0.5, type: 'spring', bounce: 0.1 })
+    expect(options).toEqual({ duration: 0.5, delay: 0, type: 'spring', bounce: 0.1 })
+  })
+
+  it('holds the reveal back by `delay`', async () => {
+    const el = await mount()
+    el.delay = 0.4
+    io.enter()
+    expect(animateMock.mock.calls[0][2]).toMatchObject({ delay: 0.4 })
   })
 
   it('settles to finished when the animation completes', async () => {

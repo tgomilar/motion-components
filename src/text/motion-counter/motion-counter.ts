@@ -58,6 +58,8 @@ export class MotionCounter
   @property({ type: Number }) to = 100
   /** Spring duration of the count animation, in seconds. */
   @property({ type: Number }) duration = 1.5
+  /** Delay before counting starts, in seconds. */
+  @property({ type: Number }) delay = 0
   /** Number of decimal places to render. */
   @property({ type: Number }) decimals = 0
   /** Text rendered before the number (e.g. `"$"`). */
@@ -102,10 +104,11 @@ export class MotionCounter
         this.value = this.from
         return null
       }
-      return this.count()
+      return this.count(0)
     },
     hold: () => this.hold,
     gap: () => this.gap,
+    delay: () => this.delay,
   })
 
   private viewport = new LoopTrigger(this, {
@@ -116,7 +119,7 @@ export class MotionCounter
 
   private detachPauseOnHover: (() => void) | null = null
 
-  private count(): PlaybackRun {
+  private count(delay = this.delay): PlaybackRun {
     const counter = { value: this.from }
     return controlsRun(
       animate(
@@ -124,6 +127,7 @@ export class MotionCounter
         { value: this.to },
         {
           duration: this.duration,
+          delay,
           type: 'spring',
           bounce: 0.05,
           onUpdate: () => {
