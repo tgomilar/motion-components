@@ -168,7 +168,8 @@ export class MotionCountdown extends Controllable(LitElement) implements MotionC
       text-transform: uppercase;
       letter-spacing: 0.12em;
       color: var(--mc-countdown-label-color, currentColor);
-      opacity: 0.4;
+      /* 0.6 keeps small labels above WCAG AA contrast (4.5:1) on plain backgrounds */
+      opacity: 0.6;
     }
 
     .sep {

@@ -335,6 +335,7 @@
     "@typescript-eslint/parser": "^8.59.2",
     "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.10",
+    "axe-core": "^4.14.0",
     "custom-element-jet-brains-integration": "^1.7.0",
     "custom-element-vs-code-integration": "^1.5.0",
     "eslint": "^10.3.0",
