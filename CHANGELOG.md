@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.1 — 2026-10-22
+
+### Fixed
+
+- `motion-headline`, `motion-split` and `motion-swap`: translating the page with the browser repeated and scrambled the words, for example "mo otio on co ompo onents". The split letters and words are now `translate="no"`, and the component splits the translated text again. Turning translation off brings back the original text.
+- `motion-arc`, `motion-circle`, `motion-curve`, `motion-gravity`, `motion-perspective`, `motion-stretch` and `motion-typewriter`: the animated letters are now `translate="no"`, so a translator cannot scramble them.
+- `motion-scramble`: screen readers read the random glyphs while the text scrambled. They now read the full text at all times from a visually hidden copy, and the glyphs are `aria-hidden`.
+- Editor docs (`web-types.json` for JetBrains IDEs, `vscode.html-custom-data.json` for VS Code): the external documentation link of every element was empty. It now opens the element's page on motion-components.dev. The hover docs of an element also list its attributes, with their defaults.
+
 ## 1.4.0 — 2026-10-19
 
 ### Fixed
