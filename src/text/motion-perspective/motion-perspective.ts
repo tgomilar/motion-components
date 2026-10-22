@@ -225,7 +225,7 @@ export class MotionPerspective extends Controllable(LitElement) implements Motio
   render() {
     return html`
       <span class="sr-only">${this.text}</span>
-      <span class="track" aria-hidden="true">
+      <span class="track" aria-hidden="true" translate="no">
         ${[...(this.text ?? '')].map(
           (char) => html`<span class="char">${char === ' ' ? ' ' : char}</span>`,
         )}

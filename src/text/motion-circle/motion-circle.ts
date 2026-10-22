@@ -190,7 +190,7 @@ export class MotionCircle extends Controllable(LitElement) implements MotionCirc
     return html`
       <span class="sr-only">${this.text}</span>
       <div class="container" style="width:${size}px;height:${size}px">
-        <div class="ring" aria-hidden="true">
+        <div class="ring" aria-hidden="true" translate="no">
           ${chars.map((char, i) => {
             const angle = (360 / n) * i - 90
             const counterRotate = this.upright ? ` rotate(${-angle}deg)` : ''

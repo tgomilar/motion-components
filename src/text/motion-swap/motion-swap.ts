@@ -8,6 +8,7 @@ import type { PlaybackRun } from '../../utils/playback.js'
 import type { MotionSwapProps, TriggerMode } from './motion-swap.types.js'
 import type { AnimationPlaybackControls } from 'motion'
 import { wordParts } from '../utils/word-parts.js'
+import { watchLabel } from '../utils/split-text.js'
 import { customElement } from '../../utils/define.js'
 import { flag } from '../../utils/attributes.js'
 
@@ -188,10 +189,16 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
     const text = this.textContent?.trim()
     if (!text) return
 
-    this.replaceChildren()
     this.build(text)
     this.setPose(false)
     this.setAttribute('data-ready', '')
+    watchLabel(this, (next) => {
+      this.stopAnims()
+      this.oAnim?.stop()
+      this.dAnim?.stop()
+      this.build(next)
+      this.setPose(this.swapped)
+    })
 
     if (this.reduced) return
 
@@ -231,11 +238,15 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
     const words = text.split(/\s+/)
     this.pairs = []
 
-    const label = document.createElement('span')
-    label.textContent = words.join(' ')
-    label.style.cssText =
-      'position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;'
-    this.appendChild(label)
+    let label = this.querySelector<HTMLElement>(':scope > [data-label]')
+    if (!label) {
+      label = document.createElement('span')
+      label.dataset.label = ''
+      label.textContent = words.join(' ')
+      label.style.cssText =
+        'position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;'
+    }
+    this.replaceChildren(label)
 
     words.forEach((word, wi) => {
       if (wi > 0) {
@@ -245,6 +256,7 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
         const group = document.createElement('span')
         group.style.cssText = 'display: inline-block; white-space: nowrap;'
         group.setAttribute('aria-hidden', 'true')
+        group.translate = false
         ;[...part].forEach((char) => {
           const pair = this.createCharPair(char)
           this.pairs.push(pair)
@@ -260,6 +272,7 @@ export class MotionSwap extends Controllable(LitElement) implements MotionSwapPr
     space.textContent = ' '
     space.style.whiteSpace = 'pre'
     space.setAttribute('aria-hidden', 'true')
+    space.translate = false
     this.appendChild(space)
   }
 

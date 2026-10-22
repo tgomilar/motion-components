@@ -277,7 +277,7 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
     if (this.loop) {
       return html`
         <span class="sr-only">${this.text}</span>
-        <span class="track" aria-hidden="true">
+        <span class="track" aria-hidden="true" translate="no">
           ${Array.from(
             { length: this.numSets },
             (_, i) =>
@@ -290,7 +290,7 @@ export class MotionCurve extends Controllable(LitElement) implements MotionCurve
     }
 
     return html`<span class="sr-only">${this.text}</span
-      ><span aria-hidden="true"
+      ><span aria-hidden="true" translate="no"
         >${charsByWord(this.text ?? '', (char) => html`<span class="char">${char}</span>`)}</span
       >`
   }

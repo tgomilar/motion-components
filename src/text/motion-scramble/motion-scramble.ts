@@ -16,6 +16,10 @@ const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
  * Decode-style text scramble. Cycles each character through random glyphs,
  * locking them in left-to-right until the original text resolves.
  *
+ * **Accessibility:** screen readers read the whole text at all times from a
+ * visually hidden copy, never the random glyphs. The scrambling characters
+ * are `aria-hidden`.
+ *
  * @element motion-scramble
  *
  * @slot - The text to scramble. Plain text only — read once on connect.
@@ -63,6 +67,15 @@ export class MotionScramble
     :host {
       display: inline;
       font-variant-numeric: tabular-nums;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
   `
 
@@ -204,7 +217,8 @@ export class MotionScramble
   }
 
   render() {
-    return html`${this.displayed}`
+    return html`<span class="sr-only">${this.full}</span
+      ><span aria-hidden="true" translate="no">${this.displayed}</span>`
   }
 }
 

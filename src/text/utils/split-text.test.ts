@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { fixture, html, elementUpdated } from '@open-wc/testing-helpers'
 import { escapeHtml } from './split-text.js'
-import { stubReducedMotion } from '../../test/helpers.js'
+import { stubReducedMotion, waitFor } from '../../test/helpers.js'
 import '../motion-split/motion-split.js'
 import '../motion-headline/motion-headline.js'
 import '../motion-glitch/motion-glitch.js'
+import '../motion-swap/motion-swap.js'
 
 const payload = '<img src=x onerror="window.__xss = true">'
 
@@ -43,6 +44,44 @@ describe('reduced motion shows split text at once', () => {
         expect(s.style.opacity === '' || s.style.opacity === '1').toBe(true)
         expect(s.style.transform).toBe('')
       }
+    })
+  }
+})
+
+describe('page translation rewrites only the label', () => {
+  const cases = [
+    'motion-split by="chars"',
+    'motion-split by="lines"',
+    'motion-headline by="chars"',
+    'motion-headline variant="flip"',
+    'motion-swap',
+  ]
+  for (const tag of cases) {
+    it(tag, async () => {
+      stubReducedMotion(true)
+      const name = tag.split(' ')[0]
+      const host = document.createElement('div')
+      host.innerHTML = `<${tag}>Time with us</${name}>`
+      const el = (await fixture(html`${host}`)).firstElementChild as HTMLElement
+      await elementUpdated(el)
+
+      const label = el.querySelector<HTMLElement>(':scope > [data-label]')!
+      const pieces = () => [...el.children].filter((c) => c !== label)
+      const visible = () =>
+        [...el.childNodes]
+          .filter((n) => n !== label)
+          .map((n) => n.textContent)
+          .join('')
+          .replace(/\s+/g, ' ')
+      expect(pieces().every((c) => (c as HTMLElement).translate === false)).toBe(true)
+
+      label.innerHTML = '<font>Čas z nami</font>'
+      await waitFor(() => visible().includes('Č'), `${tag} follows the translated label`)
+
+      expect(el.querySelector(':scope > [data-label]')).toBe(label)
+      expect(visible()).not.toMatch(/[Tewthu]/)
+      if (name !== 'motion-swap') expect(visible().trim()).toBe('Čas z nami')
+      expect(pieces().every((c) => (c as HTMLElement).translate === false)).toBe(true)
     })
   }
 })

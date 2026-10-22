@@ -3,7 +3,7 @@ import { property } from 'lit/decorators.js'
 import { animate, stagger } from 'motion'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { PlaybackRun } from '../../utils/playback.js'
-import { escapeHtml, screenReaderText, splitText, wordGroup } from '../utils/split-text.js'
+import { escapeHtml, setPieces, splitText, watchLabel, wordGroup } from '../utils/split-text.js'
 import { LoopCycle, LoopTrigger, pauseOnHover } from '../../utils/loop.js'
 import type { LoopProps } from '../../utils/loop.js'
 import type { MotionHeadlineProps, HeadlineBy, HeadlineVariant } from './motion-headline.types.js'
@@ -159,14 +159,7 @@ export class MotionHeadline
   }
 
   firstUpdated() {
-    const isFlip = this.variant === 'flip'
-
-    if (isFlip) {
-      this.buildFlip()
-    } else {
-      const { spans } = splitText(this, this.by, true)
-      this.units = spans
-    }
+    this.split(this.textContent?.trim() ?? '')
 
     if (!this.units.length) {
       this.setAttribute('data-ready', '')
@@ -174,6 +167,7 @@ export class MotionHeadline
     }
 
     this.setAttribute('data-ready', '')
+    watchLabel(this, (text) => this.resplit(text))
 
     if (this.reduced) {
       this.finish()
@@ -189,8 +183,19 @@ export class MotionHeadline
     )
   }
 
-  private buildFlip() {
-    const originalText = this.textContent?.trim() ?? ''
+  private split(text: string) {
+    if (this.variant === 'flip') this.buildFlip(text)
+    else this.units = splitText(this, this.by, true, text).spans
+  }
+
+  private resplit(text: string) {
+    this.split(text)
+    const shown = this.playState !== 'idle'
+    if (shown) this.finish()
+    this.placeUnits(!shown)
+  }
+
+  private buildFlip(originalText: string) {
     if (!originalText) return
 
     const by = this.by === 'lines' ? 'words' : this.by
@@ -199,10 +204,10 @@ export class MotionHeadline
     this.style.perspective = '600px'
 
     const unit = (text: string) =>
-      `<span data-unit style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true">${escapeHtml(text)}</span>`
+      `<span data-unit style="display:inline-block;will-change:transform;transform:perspective(400px) rotateX(90deg);transform-origin:center bottom;opacity:0" aria-hidden="true" translate="no">${escapeHtml(text)}</span>`
     const pieces = by === 'chars' ? words.map((w) => wordGroup(w, unit)) : words.map(unit)
 
-    this.innerHTML = screenReaderText(originalText) + pieces.join(' ')
+    setPieces(this, originalText, pieces.join(' '))
     this.units = [...this.querySelectorAll<HTMLElement>('[data-unit]')]
   }
 

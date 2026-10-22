@@ -151,7 +151,7 @@ export class MotionStretch extends LitElement implements MotionStretchProps {
   render() {
     return html`
       <span class="sr-only">${this.text}</span>
-      <span class="track" aria-hidden="true">
+      <span class="track" aria-hidden="true" translate="no">
         ${[...(this.text ?? '')].map(
           (char) => html`<span class="char">${char === ' ' ? '\u00A0' : char}</span>`,
         )}

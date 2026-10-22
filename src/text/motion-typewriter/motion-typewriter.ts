@@ -254,7 +254,7 @@ export class MotionTypewriter
 
   render() {
     return html`<span class="sr-only">${this.full}</span
-      ><span aria-hidden="true"
+      ><span aria-hidden="true" translate="no"
         >${this.displayed}${this.cursor ? html`<span class="cursor"></span>` : ''}</span
       >`
   }

@@ -6,7 +6,8 @@ import type { MotionScramble } from './motion-scramble.js'
 import './motion-scramble.js'
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-const text = (el: MotionScramble) => el.shadowRoot?.textContent?.trim()
+const text = (el: MotionScramble) =>
+  el.shadowRoot?.querySelector('[aria-hidden]')?.textContent?.trim()
 
 describe('motion-scramble', () => {
   let io: IntersectionHandle
@@ -30,6 +31,14 @@ describe('motion-scramble', () => {
     const el = (await fixture(html`<motion-scramble>DECODE_ME</motion-scramble>`)) as MotionScramble
     io.enter()
     expect(el.playState).toBe('running')
+  })
+
+  it('keeps the full text in the screen reader copy while scrambling', async () => {
+    const el = (await fixture(html`<motion-scramble>DECODE_ME</motion-scramble>`)) as MotionScramble
+    io.enter()
+    await waitFor(() => text(el) !== 'DECODE_ME', 'scrambles the visible glyphs')
+    expect(el.shadowRoot?.querySelector('.sr-only')?.textContent).toBe('DECODE_ME')
+    expect(el.shadowRoot?.querySelector('[aria-hidden]')?.getAttribute('translate')).toBe('no')
   })
 
   it('finish() settles on the original text', async () => {

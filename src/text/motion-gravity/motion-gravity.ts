@@ -201,7 +201,7 @@ export class MotionGravity extends Controllable(LitElement) implements MotionGra
   render() {
     return html`
       <span class="sr-only">${this.text}</span>
-      <span aria-hidden="true">
+      <span aria-hidden="true" translate="no">
         ${charsByWord(this.text ?? '', (char) => html`<span class="char">${char}</span>`)}
       </span>
     `

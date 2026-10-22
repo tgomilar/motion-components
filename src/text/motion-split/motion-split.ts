@@ -4,7 +4,7 @@ import { animate, stagger } from 'motion'
 import { REVEAL_SPRING } from '../../utils/springs.js'
 import { Controllable, PlaybackController, controlsRun } from '../../utils/playback.js'
 import type { PlaybackRun } from '../../utils/playback.js'
-import { splitText } from '../utils/split-text.js'
+import { splitText, watchLabel } from '../utils/split-text.js'
 import { LoopCycle, LoopTrigger, pauseOnHover } from '../../utils/loop.js'
 import type { LoopProps } from '../../utils/loop.js'
 import type { MotionSplitProps, SplitBy } from './motion-split.types.js'
@@ -152,6 +152,7 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
     this.spans = spans
 
     this.setAttribute('data-ready', '')
+    watchLabel(this, (text) => this.resplit(text))
 
     if (this.reduced) {
       this.finish()
@@ -167,6 +168,14 @@ export class MotionSplit extends Controllable(LitElement) implements MotionSplit
       () => this.pause(),
       () => this.play(),
     )
+  }
+
+  private resplit(text: string) {
+    this.spans = splitText(this, this.by, false, text).spans
+    const shown = this.playState !== 'idle'
+    if (shown) this.finish()
+    this.placeUnits(shown ? 0 : this.y)
+    if (!this.reduced) this.viewport.arm()
   }
 
   disconnectedCallback() {
