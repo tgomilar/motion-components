@@ -1,6 +1,6 @@
 {
   "name": "motion-components",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "type": "module",
   "description": "Framework-agnostic web components for animated UI, powered by spring physics. Built on Motion and Lit.",
   "author": "Tanja Gomilar <tanja.gomilar@gmail.com>",
