@@ -2,7 +2,7 @@ import { svg } from 'lit'
 import type { SVGTemplateResult } from 'lit'
 import type { IconStateName } from './motion-icon-state.types.js'
 
-type Keyframes = Record<string, number | number[]>
+type Keyframes = Record<string, number | number[] | string | string[]>
 
 /**
  * Offset of an undrawn `.dash` shape. The dash pattern is `1 2`, so an offset a little past 1
@@ -10,14 +10,25 @@ type Keyframes = Record<string, number | number[]>
  */
 export const HIDDEN = 1.05
 
+// Single-axis scales are written as transform strings (`transform: 'scaleY(0)'`): on an SVG
+// element Motion sets a bare `scaleX` or `scaleY` as an attribute, which does nothing.
+
+export interface IconLoop {
+  /** The state the loop plays in. */
+  while: 'off' | 'on'
+  /** One endless animation per part, keyed by class name. */
+  parts: Record<string, { keyframes: Keyframes; duration: number }>
+  ease: 'linear' | 'easeInOut'
+}
+
 export interface IconStateDef {
   /** Shapes on a 24 px grid. `.dash` shapes are drawn in with `strokeDashoffset`. */
   shapes: SVGTemplateResult
   /** Per-part targets keyed by class name, for the inactive and active state. */
   off: Record<string, Keyframes>
   on: Record<string, Keyframes>
-  /** Parts that spin while the icon is inactive. */
-  spin?: string
+  /** Endless decorative motion in one state, such as the loading spinner. */
+  loop?: IconLoop
 }
 
 export const ICONS: Record<IconStateName, IconStateDef> = {
@@ -25,8 +36,16 @@ export const ICONS: Record<IconStateName, IconStateDef> = {
     shapes: svg`<line class="top" x1="4" y1="6" x2="20" y2="6" />
       <line class="mid" x1="4" y1="12" x2="20" y2="12" />
       <line class="bot" x1="4" y1="18" x2="20" y2="18" />`,
-    off: { top: { y: 0, rotate: 0 }, mid: { opacity: 1, scaleX: 1 }, bot: { y: 0, rotate: 0 } },
-    on: { top: { y: 6, rotate: 45 }, mid: { opacity: 0, scaleX: 0 }, bot: { y: -6, rotate: -45 } },
+    off: {
+      top: { y: 0, rotate: 0 },
+      mid: { opacity: 1, transform: 'scaleX(1)' },
+      bot: { y: 0, rotate: 0 },
+    },
+    on: {
+      top: { y: 6, rotate: 45 },
+      mid: { opacity: 0, transform: 'scaleX(0)' },
+      bot: { y: -6, rotate: -45 },
+    },
   },
   play: {
     shapes: svg`<path class="tri" d="M7 4.5v15l12-7.5z" />
@@ -34,13 +53,13 @@ export const ICONS: Record<IconStateName, IconStateDef> = {
       <line class="bar2" x1="15" y1="5" x2="15" y2="19" />`,
     off: {
       tri: { opacity: 1, scale: 1, rotate: 0 },
-      bar1: { opacity: 0, scaleY: 0 },
-      bar2: { opacity: 0, scaleY: 0 },
+      bar1: { opacity: 0, transform: 'scaleY(0)' },
+      bar2: { opacity: 0, transform: 'scaleY(0)' },
     },
     on: {
       tri: { opacity: 0, scale: 0.5, rotate: 90 },
-      bar1: { opacity: 1, scaleY: 1 },
-      bar2: { opacity: 1, scaleY: 1 },
+      bar1: { opacity: 1, transform: 'scaleY(1)' },
+      bar2: { opacity: 1, transform: 'scaleY(1)' },
     },
   },
   copy: {
@@ -88,7 +107,11 @@ export const ICONS: Record<IconStateName, IconStateDef> = {
       check: { strokeDashoffset: HIDDEN },
     },
     on: { arc: { opacity: 0 }, ring: { strokeDashoffset: 0 }, check: { strokeDashoffset: 0 } },
-    spin: 'arc',
+    loop: {
+      while: 'off',
+      parts: { arc: { keyframes: { rotate: [0, 360] }, duration: 0.9 } },
+      ease: 'linear',
+    },
   },
   eye: {
     shapes: svg`<path
@@ -99,5 +122,62 @@ export const ICONS: Record<IconStateName, IconStateDef> = {
       <line class="slash dash" x1="3" y1="3" x2="21" y2="21" pathLength="1" />`,
     off: { pupil: { scale: 1 }, slash: { strokeDashoffset: HIDDEN } },
     on: { pupil: { scale: 0.7 }, slash: { strokeDashoffset: 0 } },
+  },
+  equalizer: {
+    // Bars grow from the baseline, so they scale from their bottom edge.
+    shapes: svg`<line class="b1 base" x1="6" y1="4" x2="6" y2="20" />
+      <line class="b2 base" x1="10" y1="4" x2="10" y2="20" />
+      <line class="b3 base" x1="14" y1="4" x2="14" y2="20" />
+      <line class="b4 base" x1="18" y1="4" x2="18" y2="20" />`,
+    off: {
+      b1: { transform: 'scaleY(0.35)' },
+      b2: { transform: 'scaleY(0.7)' },
+      b3: { transform: 'scaleY(0.5)' },
+      b4: { transform: 'scaleY(0.85)' },
+    },
+    // Still heights for reduced motion; otherwise the loop takes over at once.
+    on: {
+      b1: { transform: 'scaleY(0.6)' },
+      b2: { transform: 'scaleY(1)' },
+      b3: { transform: 'scaleY(0.75)' },
+      b4: { transform: 'scaleY(0.9)' },
+    },
+    // Different lengths keep the bars out of step, like a real level meter.
+    loop: {
+      while: 'on',
+      parts: {
+        b1: {
+          keyframes: {
+            transform: ['scaleY(0.35)', 'scaleY(1)', 'scaleY(0.5)', 'scaleY(0.8)', 'scaleY(0.35)'],
+          },
+          duration: 1.6,
+        },
+        b2: {
+          keyframes: {
+            transform: ['scaleY(0.7)', 'scaleY(0.3)', 'scaleY(1)', 'scaleY(0.45)', 'scaleY(0.7)'],
+          },
+          duration: 2.1,
+        },
+        b3: {
+          keyframes: {
+            transform: ['scaleY(0.5)', 'scaleY(0.9)', 'scaleY(0.25)', 'scaleY(1)', 'scaleY(0.5)'],
+          },
+          duration: 1.4,
+        },
+        b4: {
+          keyframes: {
+            transform: [
+              'scaleY(0.85)',
+              'scaleY(0.4)',
+              'scaleY(0.75)',
+              'scaleY(0.3)',
+              'scaleY(0.85)',
+            ],
+          },
+          duration: 1.9,
+        },
+      },
+      ease: 'easeInOut',
+    },
   },
 }

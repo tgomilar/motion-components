@@ -14,6 +14,7 @@ const NAMES: IconStateName[] = [
   'heart',
   'loading',
   'eye',
+  'equalizer',
 ]
 
 const part = (el: MotionIconState, cls: string) =>
@@ -121,6 +122,73 @@ describe('motion-icon-state', () => {
     expect(getComputedStyle(part(el, 'arc')).opacity).toBe('0')
   })
 
+  it('scales single-axis parts: the menu middle line and the pause bars', async () => {
+    const menu = (await fixture(
+      html`<motion-icon-state name="menu" active></motion-icon-state>`,
+    )) as MotionIconState
+    const play = (await fixture(
+      html`<motion-icon-state name="play"></motion-icon-state>`,
+    )) as MotionIconState
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(getComputedStyle(part(menu, 'mid')).transform).toBe('matrix(0, 0, 0, 1, 0, 0)')
+    expect(getComputedStyle(part(play, 'bar1')).transform).toBe('matrix(1, 0, 0, 0, 0, 0)')
+    play.active = true
+    await elementUpdated(play)
+    await settle()
+    expect(getComputedStyle(part(play, 'bar1')).transform).toBe('matrix(1, 0, 0, 1, 0, 0)')
+  })
+
+  it('bounces the equalizer bars while playing and rests them when paused', async () => {
+    const el = (await fixture(
+      html`<motion-icon-state name="equalizer"></motion-icon-state>`,
+    )) as MotionIconState
+    const heights = () =>
+      ['b1', 'b2', 'b3', 'b4'].map((b) => getComputedStyle(part(el, b)).transform)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    const resting = heights()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(heights()).toEqual(resting)
+
+    el.active = true
+    await elementUpdated(el)
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    const playing = heights()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(heights()).not.toEqual(playing)
+
+    el.active = false
+    await elementUpdated(el)
+    await settle()
+    expect(heights()).toEqual(resting)
+  })
+
+  it('shows still playing bars under reduced motion', async () => {
+    stubReducedMotion(true)
+    const el = (await fixture(
+      html`<motion-icon-state name="equalizer" active></motion-icon-state>`,
+    )) as MotionIconState
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect((el as unknown as { loop: unknown }).loop).toBeNull()
+    expect(part(el, 'b2').style.transform).toContain('scaleY(1)')
+  })
+
+  it('pauseAll() holds the playing equalizer and resumeAll() releases it', async () => {
+    const el = (await fixture(
+      html`<motion-icon-state name="equalizer" active></motion-icon-state>`,
+    )) as MotionIconState
+    const heights = () =>
+      ['b1', 'b2', 'b3', 'b4'].map((b) => getComputedStyle(part(el, b)).transform)
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    pauseAll()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    const held = heights()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(heights()).toEqual(held)
+    resumeAll()
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect(heights()).not.toEqual(held)
+  })
+
   it('switches instantly under reduced motion', async () => {
     stubReducedMotion(true)
     const el = (await fixture(
@@ -136,7 +204,7 @@ describe('motion-icon-state', () => {
     const el = (await fixture(
       html`<motion-icon-state name="loading"></motion-icon-state>`,
     )) as MotionIconState
-    const spinning = () => (el as unknown as { spin: unknown }).spin !== null
+    const spinning = () => (el as unknown as { loop: unknown }).loop !== null
     expect(spinning()).toBe(true)
     const parent = el.parentElement!
     el.remove()

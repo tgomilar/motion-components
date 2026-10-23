@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- `motion-icon-state`: the middle line of `menu` only faded when it turned into close, and the pause bars of `play` only faded in; neither scaled. On an SVG element Motion sets `scaleX` and `scaleY` as attributes, which have no effect, so these parts now animate a `transform` instead.
+
+### Added
+
+- `motion-icon-state`: `name="equalizer"`, a now-playing marker. Without `active` it shows four still bars at different heights (paused); with `active` each bar bounces on its own rhythm (playing). Switching back springs the bars to rest. `pauseAll()` holds the bars, and under reduced motion the playing state shows still bars at full height.
+
 ## 1.4.1 — 2026-10-22
 
 ### Fixed

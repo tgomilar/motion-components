@@ -7,6 +7,7 @@ export type IconStateName =
   | 'heart'
   | 'loading'
   | 'eye'
+  | 'equalizer'
 
 export interface IconStateChangeDetail {
   active: boolean

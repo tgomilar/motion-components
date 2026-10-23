@@ -22,14 +22,15 @@ export type { MotionChangeDetail } from '../../utils/events.js'
 /**
  * An icon that morphs between two states with spring physics: menu and close,
  * play and pause, copy and check, plus and minus, chevron down and up, an empty
- * and a filled heart, loading and done, and eye and eye-off. Drawn on a 24 px
- * grid with 2 px round strokes, so it sits next to Lucide, Tabler and Heroicons.
+ * and a filled heart, loading and done, eye and eye-off, and a paused and a
+ * playing equalizer. Drawn on a 24 px grid with 2 px round strokes, so it sits
+ * next to Lucide, Tabler and Heroicons.
  *
  * **Use it for:** controls and indicators that switch between two states,
  * such as a menu button, a play and pause control, a copy button that
- * confirms, or a like button.
+ * confirms, a like button, or a now-playing marker on a track in a list.
  *
- * **Avoid it for:** icons outside the eight built-in pairs, or icons that
+ * **Avoid it for:** icons outside the nine built-in pairs, or icons that
  * only animate on hover or on scroll; use `motion-icon`, which takes any SVG.
  *
  * **Accessibility:** with `toggle`, the icon gets `role="button"`,
@@ -40,7 +41,8 @@ export type { MotionChangeDetail } from '../../utils/events.js'
  * gives the icon `role="img"`, and no `label` hides it from screen readers.
  *
  * **Reduced motion:** the icon switches to the new state at once, with no
- * morph, and the loading spinner does not spin.
+ * morph. The loading spinner does not spin, and the playing equalizer shows
+ * still bars at their full height.
  *
  * **Common mistakes:** setting `toggle` on an icon inside your own
  * `<button>`, which puts one button inside another; leave out `toggle` and
@@ -64,9 +66,9 @@ export type { MotionChangeDetail } from '../../utils/events.js'
  */
 @customElement('motion-icon-state')
 export class MotionIconState extends LitElement implements MotionIconStateProps {
-  /** Which icon: `'menu'`, `'play'`, `'copy'`, `'plus'`, `'chevron'`, `'heart'`, `'loading'` or `'eye'`. */
+  /** Which icon: `'menu'`, `'play'`, `'copy'`, `'plus'`, `'chevron'`, `'heart'`, `'loading'`, `'eye'` or `'equalizer'`. */
   @property({ type: String, reflect: true }) name: IconStateName = 'menu'
-  /** The second state: close, pause, check, minus, up, filled, done or eye-off. */
+  /** The second state: close, pause, check, minus, up, filled, done, eye-off or playing (the equalizer bars bounce). */
   @property({ type: Boolean, converter: flag, reflect: true }) active = false
   /** Makes the icon a button that switches `active` on click, Space or Enter. */
   @property({ type: Boolean, converter: flag, reflect: true }) toggle = false
@@ -119,9 +121,12 @@ export class MotionIconState extends LitElement implements MotionIconStateProps 
       fill: currentColor;
       fill-opacity: 0;
     }
+    .base {
+      transform-origin: bottom;
+    }
   `
 
-  private spin: AnimationPlaybackControls | null = null
+  private loop: { pause(): void; play(): void; stop(): void } | null = null
 
   private get reduced() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -129,10 +134,10 @@ export class MotionIconState extends LitElement implements MotionIconStateProps 
 
   connectedCallback() {
     super.connectedCallback()
-    registerLoop(this, () => this.spin)
+    registerLoop(this, () => this.loop)
     this.addEventListener('click', this.onClick)
     this.addEventListener('keydown', this.onKey)
-    if (this.hasUpdated) this.updateSpin()
+    if (this.hasUpdated) this.updateLoop()
   }
 
   disconnectedCallback() {
@@ -140,8 +145,8 @@ export class MotionIconState extends LitElement implements MotionIconStateProps 
     unregisterLoop(this)
     this.removeEventListener('click', this.onClick)
     this.removeEventListener('keydown', this.onKey)
-    this.spin?.stop()
-    this.spin = null
+    this.loop?.stop()
+    this.loop = null
   }
 
   private warned = false
@@ -150,8 +155,10 @@ export class MotionIconState extends LitElement implements MotionIconStateProps 
     if (changed.has('toggle') || changed.has('label') || changed.has('active')) this.applyRole()
     if (changed.has('name') || changed.has('active')) {
       const first = changed.has('name') || changed.get('active') === undefined
+      // Stop first, so the pose springs the parts back from wherever the loop left them.
+      if (changed.has('name') || !this.loopWanted) this.stopLoop()
       this.pose(first || this.reduced)
-      this.updateSpin()
+      this.updateLoop()
     }
   }
 
@@ -185,7 +192,12 @@ export class MotionIconState extends LitElement implements MotionIconStateProps 
     const def = ICONS[this.name]
     if (!def) return
     const targets = this.active ? def.on : def.off
-    for (const [part, keyframes] of Object.entries(targets)) {
+    const looping = this.loopWanted ? def.loop!.parts : {}
+    for (const [part, all] of Object.entries(targets)) {
+      // A running loop owns its properties; posing them too would fight it.
+      const owned = looping[part]?.keyframes ?? {}
+      const keyframes = Object.fromEntries(Object.entries(all).filter(([k]) => !(k in owned)))
+      if (Object.keys(keyframes).length === 0) continue
       const el = this.renderRoot.querySelector(`.${part}`)
       if (!el) continue
       const drawn = 'strokeDashoffset' in keyframes || 'opacity' in keyframes
@@ -204,21 +216,35 @@ export class MotionIconState extends LitElement implements MotionIconStateProps 
     }
   }
 
-  private updateSpin() {
-    const part = ICONS[this.name]?.spin
-    const el = part ? this.renderRoot.querySelector(`.${part}`) : null
-    const shouldSpin = Boolean(el) && !this.active && !this.reduced
-    if (shouldSpin && !this.spin) {
-      this.spin = animate(
-        el!,
-        { rotate: [0, 360] },
-        { duration: 0.9, repeat: Infinity, ease: 'linear' },
-      )
-      if (isLoopPaused(this)) this.spin.pause()
-    } else if (!shouldSpin && this.spin) {
-      this.spin.stop()
-      this.spin = null
+  private get loopWanted() {
+    const def = ICONS[this.name]?.loop
+    return Boolean(def) && def!.while === (this.active ? 'on' : 'off') && !this.reduced
+  }
+
+  private updateLoop() {
+    const def = ICONS[this.name]?.loop
+    const shouldLoop = this.loopWanted
+    if (shouldLoop && !this.loop) {
+      const runs: AnimationPlaybackControls[] = []
+      for (const [part, { keyframes, duration }] of Object.entries(def!.parts)) {
+        const el = this.renderRoot.querySelector(`.${part}`)
+        if (el) runs.push(animate(el, keyframes, { duration, repeat: Infinity, ease: def!.ease }))
+      }
+      // One handle for all parts, so pauseAll() holds the whole icon.
+      this.loop = {
+        pause: () => runs.forEach((r) => r.pause()),
+        play: () => runs.forEach((r) => r.play()),
+        stop: () => runs.forEach((r) => r.stop()),
+      }
+      if (isLoopPaused(this)) this.loop.pause()
+    } else if (!shouldLoop) {
+      this.stopLoop()
     }
+  }
+
+  private stopLoop() {
+    this.loop?.stop()
+    this.loop = null
   }
 
   /** Switches `active` and fires `motion-change`, as a click on a `toggle` icon does. */
